@@ -2,7 +2,7 @@ Excel toolkit.
 Table SHOULD be edit by advanced GUI applications, BUT convert to any other format. 
 
 # Features
-  - Convert Excel table to MarkDown Table
+  - Convert Excel sheet to MarkDown Table
   - HyperLink cell in Excel sheet will be **retained** as `[text](url)` format 
   - Cross Line cell in Excel sheet will be **expant** to multirow
   - Empty columns on the right side will be **trimed**, which is **detected** by the first 100 rows. 
