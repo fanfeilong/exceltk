@@ -1,5 +1,5 @@
 Excel toolkit.
-Table SHOULD be edit by advanced GUI applications, BUT convert to any other format. 
+Table SHOULD be edited by advanced GUI applications, BUT converted to any other format. 
 
 # Features
   - Convert Excel sheet to MarkDown Table
