@@ -16,5 +16,5 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - `exceltk.exe -t cm`, Now you can copy sheet from excel, then paster to any editor, which will be Markdown table.
 
 # Download:
-  - [exceltk0.0.5 debug version](https://github.com/fanfeilong/exceltk/blob/master/pub/exceltk.0.0.5.7z)
+  - [exceltk0.0.5 debug version](http://fanfeilong.github.io/exceltk0.0.5.7z)
 
