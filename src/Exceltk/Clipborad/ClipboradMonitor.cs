@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using ExcelToolKit;
 using System.IO;
 using System.Drawing;
+using System.Reflection;
 
 namespace exceltk.Clipborad {
     public class ClipboradMonitor : System.Windows.Forms.Form {
@@ -23,6 +24,7 @@ namespace exceltk.Clipborad {
         IntPtr nextClipboardViewer;
         RichTextBox richTextBox1;
         RadioButton radioButtonMdHead;
+        bool isChecked = false;
         bool display = false;
 
         /// <summary>
@@ -94,6 +96,17 @@ namespace exceltk.Clipborad {
             radioButtonMdHead.Anchor = AnchorStyles.Left|AnchorStyles.Top;
             radioButtonMdHead.BackColor = System.Drawing.Color.LightYellow;
             radioButtonMdHead.Text = "th";
+            radioButtonMdHead.CheckedChanged += (s, e) => {
+                isChecked = radioButtonMdHead.Checked;
+            };
+            radioButtonMdHead.Click += (s, e) => {
+                if (radioButtonMdHead.Checked && !isChecked) {
+                    radioButtonMdHead.Checked = false;
+                } else {
+                    radioButtonMdHead.Checked = true;
+                    isChecked = false;
+                }
+            };
             panenl.Controls.Add(radioButtonMdHead);
 
             // richTextBox1
@@ -115,7 +128,8 @@ namespace exceltk.Clipborad {
             Controls.Add(tableLayout);
             Name = "exceltk";
             Text = "exceltk - github.com/fanfeilong";
-            Icon = new Icon("table.ico");
+
+            Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
 
             ResumeLayout(false);
             
