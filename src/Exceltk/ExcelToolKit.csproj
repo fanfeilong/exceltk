@@ -6,7 +6,7 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{5ED8AB19-A352-47AD-97BF-AB49EBCD9C41}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>exceltk</RootNamespace>
     <AssemblyName>exceltk</AssemblyName>
@@ -34,11 +34,19 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>table.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -72,6 +80,11 @@
     <Compile Include="BinaryFormat\XlsBiffStream.cs" />
     <Compile Include="BinaryFormat\XlsBiffUncalced.cs" />
     <Compile Include="BinaryFormat\XlsBiffWindow1.cs" />
+    <Compile Include="Clipborad\ClipboardHelper.cs" />
+    <Compile Include="Clipborad\ClipboradMonitor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Clipborad\HTable2DataTable.cs" />
     <Compile Include="Model\XlsCell.cs" />
     <Compile Include="Model\XlsCellRangeAddress.cs" />
     <Compile Include="Model\XlsDirectoryEntry.cs" />
@@ -166,6 +179,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="table.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

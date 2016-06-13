@@ -152,7 +152,7 @@ namespace ExcelToolKit {
             excelReader.Close();
         }
 
-        private static string ToMd(this DataTable table) {
+        public static string ToMd(this DataTable table,bool insertHeader=true) {
             table.Shrink();
             //table.RemoveColumnsByRow(0, string.IsNullOrEmpty);
             var sb=new StringBuilder();
@@ -177,7 +177,7 @@ namespace ExcelToolKit {
                     sb.Append(value).Append("|");
                 }
                 sb.Append("\r\n");
-                if (i==0) {
+                if (i==0 && insertHeader) {
                     sb.Append("|");
                     foreach (DataColumn col in table.Columns) {
                         sb.Append(":--|");
