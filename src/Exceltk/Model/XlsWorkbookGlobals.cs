@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace ExcelToolKit.BinaryFormat {
@@ -100,6 +101,9 @@ namespace ExcelToolKit.BinaryFormat {
         }
 
         public void AddHyperLink(XlsBiffHyperLink hyperLink) {
+            if(hyperLink.Url!="_blank"){
+                Console.WriteLine(hyperLink.Url);
+            }
             m_HyperLinkTable.Add(hyperLink);
         }
 
