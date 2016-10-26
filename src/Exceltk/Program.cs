@@ -19,13 +19,30 @@ namespace ExcelToolKit {
 
         [STAThread]
         private static void Main(string[] args) {
-            Xls2MarkDown(args);
+            var cmd=new CommandParser(args);
+            InitConfig(cmd);
+            Xls2MarkDown(cmd);
             return;
         }
 
-        private static void Xls2MarkDown(string[] args) {
+        private static void InitConfig(CommandParser cmd) {
+            // default
+            Config.DecimalPrecision = 0;
+            if (cmd["t"]!=null){
+                if (cmd["t"] == "md"){
+                    if (cmd["p"]!=null) {
+                        int precision = 0;
+                        Int32.TryParse(cmd["p"],out precision);
+                        if(precision>0){
+                            Config.DecimalPrecision=precision;                            
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void Xls2MarkDown(CommandParser cmd) {
             int ret=1;
-            var cmd=new CommandParser(args);
             var allocConsole = false;
             do {
                 if (cmd["t"]!=null) {
@@ -72,9 +89,6 @@ namespace ExcelToolKit {
                 }
 
             } while (false);
-
-            
-            
 
             if (ret!=0) {
                 Console.WriteLine();

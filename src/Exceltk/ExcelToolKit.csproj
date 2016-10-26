@@ -86,6 +86,7 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Clipborad\HTable2DataTable.cs" />
+    <Compile Include="Config.cs" />
     <Compile Include="Model\XlsCell.cs" />
     <Compile Include="Model\XlsCellRangeAddress.cs" />
     <Compile Include="Model\XlsDirectoryEntry.cs" />

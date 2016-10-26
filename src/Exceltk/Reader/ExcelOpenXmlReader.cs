@@ -544,31 +544,34 @@ namespace ExcelToolKit {
                         var style = NumberStyles.Any;
                         CultureInfo culture = CultureInfo.InvariantCulture;
 
-                        if (double.TryParse(o.ToString(), style, culture, out number))
-                            o = number;
 
                         #region Read Cell Value
 
-                        if (null != a_t && a_t == XlsxWorksheet.A_s) //if string
-                        {
-                            o = m_workbook.SST[int.Parse(o.ToString())].ConvertEscapeChars();
-                        } // Requested change 4: missing (it appears that if should be else if)
-                        else if (null != a_t && a_t == XlsxWorksheet.N_inlineStr) //if string inline
-                        {
-                            o = o.ToString().ConvertEscapeChars();
-                        } else if (a_t == "b") //boolean
-                        {
-                            o = m_xmlReader.Value == "1";
-                        } else if (a_t == "str") {
-                            o = m_xmlReader.Value;
-                        } else if (null != a_s) //if something else
-                        {
-                            XlsxXf xf = m_workbook.Styles.CellXfs[int.Parse(a_s)];
-                            if (xf.ApplyNumberFormat && o != null && o.ToString() != string.Empty &&
+                        if (double.TryParse(o.ToString(), style, culture, out number)) {
+                            // numeric
+                            o=number;
+                        }
+
+                        if (null!=a_t&&a_t==XlsxWorksheet.A_s) {
+                            // string
+                            o=m_workbook.SST[int.Parse(o.ToString())].ConvertEscapeChars();
+                        } else if (null!=a_t&&a_t==XlsxWorksheet.N_inlineStr) {
+                            // string inline
+                            o=o.ToString().ConvertEscapeChars();
+                        } else if (a_t=="b") {
+                            // boolean
+                            o=m_xmlReader.Value=="1";
+                        } else if (a_t=="str") {
+                            // string
+                            o=m_xmlReader.Value;
+                        } else if (null!=a_s) {
+                            //something else
+                            XlsxXf xf=m_workbook.Styles.CellXfs[int.Parse(a_s)];
+                            if (xf.ApplyNumberFormat&&o!=null&&o.ToString()!=string.Empty&&
                                 IsDateTimeStyle(xf.NumFmtId)) {
-                                o = number.ConvertFromOATime();
-                            } else if (xf.NumFmtId == 49) {
-                                o = o.ToString();
+                                o=number.ConvertFromOATime();
+                            } else if (xf.NumFmtId==49) {
+                                o=o.ToString();
                             }
                         }
 

@@ -104,7 +104,6 @@ namespace ExcelToolKit {
             return true;
         }
 
-
         public static MarkDownTable ToMd(this string xls, string sheet) {
             FileStream stream=File.Open(xls, FileMode.Open, FileAccess.Read);
             IExcelDataReader excelReader=null;
@@ -166,16 +165,10 @@ namespace ExcelToolKit {
 
                 sb.Append("|");
                 foreach (object cell in row.ItemArray) {
-                    string value="";
-                    var xlsCell=cell as XlsCell;
-                    if (xlsCell!=null) {
-                        value=xlsCell.MarkDownText;
-                    } else {
-                        value=cell.ToString();
-                    }
-
+                    string value = GetCellValue(cell);
                     sb.Append(value).Append("|");
                 }
+
                 sb.Append("\r\n");
                 if (i==0 && insertHeader) {
                     sb.Append("|");
@@ -187,6 +180,27 @@ namespace ExcelToolKit {
                 i++;
             }
             return sb.ToString();
+        }
+
+        private static string GetCellValue(object cell){
+            string value;
+            var xlsCell = cell as XlsCell;
+            if (xlsCell != null){
+                value = xlsCell.MarkDownText;
+            } else{
+                value = cell.ToString();
+            }
+
+            // Decimal precision
+            if(Config.DecimalPrecision>0){
+                if (Regex.IsMatch(value, @"^(-?[0-9]{1,}[.][0-9]*)$")) {
+                    var old = value;
+                    value=string.Format(Config.DecimalFormat, Double.Parse(value));
+                    //Console.Write("{0}/{1} ",old,value);
+                }    
+            }
+
+            return value;
         }
 
         public static bool IsSingleByteEncoding(this Encoding encoding) {
