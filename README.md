@@ -7,7 +7,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - CrossLine cell in Excel sheet will be **expanded** to multirow
   - Empty columns on the right side will be **trimed**, which is **detected** by the first 100 rows. 
   - Support parse sheet to markdown inner clipboard directly.
-  - Support decimail precision setting
+  - Support decimal precision setting
 
 # Useage:
   - `exceltk.exe -t md -xls example.xls` 
