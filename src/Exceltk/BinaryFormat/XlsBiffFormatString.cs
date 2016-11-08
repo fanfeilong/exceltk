@@ -5,7 +5,7 @@ namespace ExcelToolKit.BinaryFormat {
     /// Represents a string value of formula
     /// </summary>
     internal class XlsBiffFormatString : XlsBiffRecord {
-        private Encoding m_UseEncoding=Encoding.Default;
+        private Encoding m_UseEncoding=ExcelToolKit.Extension.DefaultEncoding();
         private string m_value;
 
         internal XlsBiffFormatString(byte[] bytes, uint offset, ExcelBinaryReader reader)
@@ -52,7 +52,7 @@ namespace ExcelToolKit.BinaryFormat {
                         case BIFFRECORDTYPE.FORMAT:
                             int offset=m_readoffset+5;
                             byte flags=ReadByte(3);
-                            m_UseEncoding=(flags&0x01)==0x01?Encoding.Unicode:Encoding.Default;
+                            m_UseEncoding=(flags&0x01)==0x01?Encoding.Unicode:ExcelToolKit.Extension.DefaultEncoding();
                             if ((flags&0x04)==0x01) // asian phonetic block size
                                 offset+=4;
                             if ((flags&0x08)==0x01) // number of rtf blocks

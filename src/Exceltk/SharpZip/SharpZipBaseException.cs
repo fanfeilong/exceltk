@@ -34,10 +34,6 @@
 // exception statement from your version.
 
 using System;
-using System.Runtime.Serialization;
-#if !NETCF_1_0 && !NETCF_2_0
-
-#endif
 
 namespace ICSharpCode.SharpZipLib {
     /// <summary>
@@ -46,25 +42,13 @@ namespace ICSharpCode.SharpZipLib {
     /// </summary>
     /// <remarks>NOTE: Not all exceptions thrown will be derived from this class.
     /// A variety of other exceptions are possible for example <see cref="ArgumentNullException"></see></remarks>
-#if !NETCF_1_0 && !NETCF_2_0
-    [Serializable]
-#endif
-    public class SharpZipBaseException : ApplicationException {
-#if !NETCF_1_0 && !NETCF_2_0
-        /// <summary>
-        /// Deserialization constructor 
-        /// </summary>
-        /// <param name="info"><see cref="System.Runtime.Serialization.SerializationInfo"/> for this constructor</param>
-        /// <param name="context"><see cref="StreamingContext"/> for this constructor</param>
-        protected SharpZipBaseException(SerializationInfo info, StreamingContext context)
-            : base(info, context) {
-        }
-#endif
+    public class SharpZipBaseException : Exception {
 
         /// <summary>
         /// Initializes a new instance of the SharpZipBaseException class.
         /// </summary>
-        public SharpZipBaseException() {
+        public SharpZipBaseException() 
+        {
         }
 
         /// <summary>
@@ -72,7 +56,8 @@ namespace ICSharpCode.SharpZipLib {
         /// </summary>
         /// <param name="message">A message describing the exception.</param>
         public SharpZipBaseException(string message)
-            : base(message) {
+            : base(message) 
+        {
         }
 
         /// <summary>
@@ -82,7 +67,8 @@ namespace ICSharpCode.SharpZipLib {
         /// <param name="message">A message describing the exception.</param>
         /// <param name="innerException">The inner exception</param>
         public SharpZipBaseException(string message, Exception innerException)
-            : base(message, innerException) {
+            : base(message, innerException) 
+        {
         }
     }
 }

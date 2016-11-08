@@ -5,7 +5,7 @@ namespace ExcelToolKit.BinaryFormat {
     /// Represents a string (max 255 bytes)
     /// </summary>
     internal class XlsBiffLabelCell : XlsBiffBlankCell {
-        private Encoding m_UseEncoding=Encoding.Default;
+        private Encoding m_UseEncoding=ExcelToolKit.Extension.DefaultEncoding();
 
         internal XlsBiffLabelCell(byte[] bytes, uint offset, ExcelBinaryReader reader)
             : base(bytes, offset, reader) {

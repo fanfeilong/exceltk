@@ -320,8 +320,15 @@ namespace ICSharpCode.SharpZipLib.Tar {
         /// Closes this stream. Calls the TarBuffer's close() method.
         /// The underlying stream is closed by the TarBuffer.
         /// </summary>
-        public override void Close() {
-            tarBuffer.Close();
+        private bool disposed_;
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                if (!disposed_) {
+                    tarBuffer.Dispose();
+                    disposed_=true;
+                }
+            }
+            base.Dispose(disposing);
         }
 
         #endregion

@@ -1,13 +1,17 @@
-﻿using exceltk.Clipborad;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+
+#if OS_WINDOWS
+using exceltk.Clipborad;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+#endif
 
 namespace ExcelToolKit {
     internal class Program {
-
+        
+        #if OS_WINDOWS
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern bool AllocConsole();
 
@@ -16,6 +20,7 @@ namespace ExcelToolKit {
 
         [DllImport("kernel32", SetLastError = true)]
         static extern bool AttachConsole(int dwProcessId);
+        #endif
 
         [STAThread]
         private static void Main(string[] args) {
@@ -43,15 +48,19 @@ namespace ExcelToolKit {
 
         private static void Xls2MarkDown(CommandParser cmd) {
             int ret=1;
+            #if OS_WINDOWS
             var allocConsole = false;
+            #endif
             do {
                 if (cmd["t"]!=null) {
                     if (cmd["t"] == "md") {
+                        #if OS_WINDOWS
                         if (!AttachConsole(-1)) {
                             AllocConsole();
                             allocConsole = true;
                         }
-                        
+                        #endif
+
                         if (cmd["xls"] == null) {
                             break;
                         }
@@ -81,7 +90,9 @@ namespace ExcelToolKit {
                         ret = 0;
                         Console.WriteLine("Done!");
                     } else if (cmd["t"] == "cm") {
+                        #if OS_WINDOWS
                         Application.Run(new ClipboradMonitor());
+                        #endif
                         ret = 0;
                     } else {
                         // Ignore
@@ -97,6 +108,7 @@ namespace ExcelToolKit {
                 Console.WriteLine("2. Monitor and convert clipboard to markdown: exceltk -t cm");
             }
 
+            #if OS_WINDOWS
             SendKeys.SendWait("{ENTER}");
             if (allocConsole) {
                 FreeConsole();
@@ -104,6 +116,7 @@ namespace ExcelToolKit {
 
             System.Environment.Exit(0);
             Application.ExitThread();
+            #endif
         }
     }
 }

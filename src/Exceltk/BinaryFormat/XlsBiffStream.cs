@@ -54,7 +54,6 @@ namespace ExcelToolKit.BinaryFormat {
         /// </summary>
         /// <param name="offset">Offset value</param>
         /// <param name="origin">Offset origin</param>
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Seek(int offset, SeekOrigin origin) {
             switch (origin) {
                 case SeekOrigin.Begin:
@@ -79,7 +78,6 @@ namespace ExcelToolKit.BinaryFormat {
         /// Reads record under cursor and advances cursor position to next record
         /// </summary>
         /// <returns></returns>
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public XlsBiffRecord Read() {
             if ((uint)m_offset>=bytes.Length)
                 return null;

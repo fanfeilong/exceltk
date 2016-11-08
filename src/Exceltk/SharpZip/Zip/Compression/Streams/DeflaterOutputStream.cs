@@ -290,7 +290,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
             salt=new byte[entry.AESSaltLen];
             // Salt needs to be cryptographically random, and unique per file
             if (_aesRnd==null)
-                _aesRnd=new RNGCryptoServiceProvider();
+                _aesRnd=RandomNumberGenerator.Create();
             _aesRnd.GetBytes(salt);
             int blockSize=entry.AESKeySize/8; // bits to bytes
 
@@ -463,10 +463,12 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         /// <param name="state">The state to use.</param>
         /// <returns>Returns an <see cref="IAsyncResult"/></returns>
         /// <exception cref="NotSupportedException">Any access</exception>
+#if OS_WINDOWS
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback,
                                                object state) {
             throw new NotSupportedException("DeflaterOutputStream BeginRead not currently supported");
         }
+#endif
 
         /// <summary>
         /// Asynchronous writes arent supported, a NotSupportedException is always thrown
@@ -478,10 +480,12 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         /// <param name="state">The state object.</param>
         /// <returns>Returns an IAsyncResult.</returns>
         /// <exception cref="NotSupportedException">Any access</exception>
+#if OS_WINDOWS
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback,
-                                                object state) {
+                                                object state){
             throw new NotSupportedException("BeginWrite is not supported");
         }
+#endif
 
         /// <summary>
         /// Flushes the stream by calling <see cref="DeflaterOutputStream.Flush">Flush</see> on the deflater and then
@@ -497,27 +501,34 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         /// Calls <see cref="Finish"/> and closes the underlying
         /// stream when <see cref="IsStreamOwner"></see> is true.
         /// </summary>
-        public override void Close() {
-            if (!isClosed_) {
-                isClosed_=true;
+        private bool disposed_;
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                if (!disposed_) {
+                    if (!isClosed_) {
+                        isClosed_=true;
 
-                try {
-                    Finish();
+                        try {
+                            Finish();
 #if NETCF_1_0
 					keys=null;
 #else
-                    if (cryptoTransform_!=null) {
-                        GetAuthCodeIfAES();
-                        cryptoTransform_.Dispose();
-                        cryptoTransform_=null;
-                    }
+                            if (cryptoTransform_!=null) {
+                                GetAuthCodeIfAES();
+                                cryptoTransform_.Dispose();
+                                cryptoTransform_=null;
+                            }
 #endif
-                } finally {
-                    if (isStreamOwner_) {
-                        baseOutputStream_.Close();
+                        } finally {
+                            if (isStreamOwner_) {
+                                baseOutputStream_.Dispose();
+                            }
+                        }
                     }
+                    disposed_=true;
                 }
             }
+            base.Dispose(disposing);
         }
 
         private void GetAuthCodeIfAES() {
@@ -587,7 +598,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 
 #if !NET_1_1 && !NETCF_2_0
         // Static to help ensure that multiple files within a zip will get different random salt
-        private static RNGCryptoServiceProvider _aesRnd;
+        private static RandomNumberGenerator _aesRnd;
 #endif
 
         #endregion

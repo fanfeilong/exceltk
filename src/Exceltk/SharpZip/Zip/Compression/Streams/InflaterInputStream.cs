@@ -612,22 +612,31 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         /// <param name="state">A user-provided object that distinguishes this particular asynchronous write request from other requests</param>
         /// <returns>An <see cref="System.IAsyncResult">IAsyncResult</see> that references the asynchronous write</returns>
         /// <exception cref="NotSupportedException">Any access</exception>
+ #if OS_WINDOWS
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback,
                                                 object state) {
             throw new NotSupportedException("InflaterInputStream BeginWrite not supported");
         }
+#endif
 
         /// <summary>
         /// Closes the input stream.  When <see cref="IsStreamOwner"></see>
         /// is true the underlying stream is also closed.
-        /// </summary>
-        public override void Close() {
-            if (!isClosed) {
-                isClosed=true;
-                if (isStreamOwner) {
-                    baseInputStream.Close();
+        /// </summary> 
+        private bool disposed_;
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                if (!disposed_) {
+                    if (!isClosed) {
+                        isClosed=true;
+                        if (isStreamOwner) {
+                            baseInputStream.Dispose();
+                        }
+                    }
+                    disposed_=true;
                 }
             }
+            base.Dispose(disposing);
         }
 
         /// <summary>

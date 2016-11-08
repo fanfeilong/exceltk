@@ -60,7 +60,11 @@ namespace ICSharpCode.SharpZipLib.Encryption {
         private readonly byte[] _counterNonce;
         private readonly byte[] _encryptBuffer;
         private readonly ICryptoTransform _encryptor;
+        #if !OS_WINDOWS
+        IncrementalHash incrementalHash;
+        #else
         private readonly HMACSHA1 _hmacsha1;
+        #endif
         private readonly byte[] _pwdVerifier;
 
         private readonly bool _writeMode;
@@ -88,7 +92,7 @@ namespace ICSharpCode.SharpZipLib.Encryption {
 
             // Performs the equivalent of derive_key in Dr Brian Gladman's pwd2key.c
             var pdb=new Rfc2898DeriveBytes(key, saltBytes, KEY_ROUNDS);
-            var rm=new RijndaelManaged();
+            var rm=new RijndaelImplementation();
             rm.Mode=CipherMode.ECB; // No feedback from cipher for CTR mode
             _counterNonce=new byte[_blockSize];
             byte[] byteKey1=pdb.GetBytes(_blockSize);
@@ -96,7 +100,12 @@ namespace ICSharpCode.SharpZipLib.Encryption {
             _encryptor=rm.CreateEncryptor(byteKey1, byteKey2);
             _pwdVerifier=pdb.GetBytes(PWD_VER_LENGTH);
             //
+            
+#if !OS_WINDOWS
+           incrementalHash =  IncrementalHash.CreateHMAC(HashAlgorithmName.SHA1, byteKey2);
+#else
             _hmacsha1=new HMACSHA1(byteKey2);
+#endif
             _writeMode=writeMode;
         }
 
@@ -119,7 +128,12 @@ namespace ICSharpCode.SharpZipLib.Encryption {
             // Pass the data stream to the hash algorithm for generating the Auth Code.
             // This does not change the inputBuffer. Do this before decryption for read mode.
             if (!_writeMode) {
+#if !OS_WINDOWS
+                incrementalHash.AppendData(inputBuffer, inputOffset, inputCount);
+#else
                 _hmacsha1.TransformBlock(inputBuffer, inputOffset, inputCount, inputBuffer, inputOffset);
+#endif
+                
             }
             // Encrypt with AES in CTR mode. Regards to Dr Brian Gladman for this.
             int ix=0;
@@ -140,7 +154,12 @@ namespace ICSharpCode.SharpZipLib.Encryption {
             }
             if (_writeMode) {
                 // This does not change the buffer. 
+                
+#if !OS_WINDOWS
+                incrementalHash.AppendData(outputBuffer, outputOffset, inputCount);
+#else
                 _hmacsha1.TransformBlock(outputBuffer, outputOffset, inputCount, outputBuffer, outputOffset);
+#endif
             }
             return inputCount;
         }
@@ -204,10 +223,21 @@ namespace ICSharpCode.SharpZipLib.Encryption {
             // We usually don't get advance notice of final block. Hash requres a TransformFinal.
             if (!_finalised) {
                 var dummy=new byte[0];
+               
+#if !OS_WINDOWS
+                incrementalHash.AppendData(dummy, 0, 0);
+#else
                 _hmacsha1.TransformFinalBlock(dummy, 0, 0);
+#endif
                 _finalised=true;
             }
+#if !OS_WINDOWS
+            byte[] incrementalA = incrementalHash.GetHashAndReset();
+            return incrementalA;
+#else
             return _hmacsha1.Hash;
+#endif
+            
         }
     }
 }

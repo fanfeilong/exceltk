@@ -295,15 +295,6 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
             }
         }
 
-        /// <summary>
-        /// End the current block and end compression.
-        /// Close the stream and free any resources
-        /// </summary>
-        public override void Close() {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         #endregion
 
         private void MakeMaps() {
@@ -371,12 +362,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
         /// Releases the unmanaged resources used by the <see cref="BZip2OutputStream"/> and optionally releases the managed resources.
         /// </summary>
         /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
-#if NET_1_0 || NET_1_1 || NETCF_1_0
-		protected virtual void Dispose(bool disposing)
-#else
-        protected override void Dispose(bool disposing)
-#endif
- {
+        protected override void Dispose(bool disposing){
             try {
 #if !NET_1_0 && !NET_1_1 && !NETCF_1_0
                 base.Dispose(disposing);
@@ -396,7 +382,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
             } finally {
                 if (disposing) {
                     if (IsStreamOwner) {
-                        baseStream.Close();
+                        baseStream.Dispose();
                     }
                 }
             }

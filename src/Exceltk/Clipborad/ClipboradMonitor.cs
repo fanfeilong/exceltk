@@ -1,14 +1,13 @@
-﻿using System;
+﻿#if OS_WINDOWS
+using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
-using ExcelToolKit;
 using System.IO;
 using System.Drawing;
 using System.Reflection;
+using ExcelToolKit;
 
 namespace exceltk.Clipborad {
     public class ClipboradMonitor : System.Windows.Forms.Form {
@@ -223,7 +222,7 @@ namespace exceltk.Clipborad {
             int rowEnd = 0;
             int rowStart = 0;
 
-            DataTable dataTable = new DataTable();
+            DataTable dataTable = new DataTable("");
             bool firstRow = true;
 
             do {
@@ -324,3 +323,4 @@ namespace exceltk.Clipborad {
         }
     }
 }
+#endif

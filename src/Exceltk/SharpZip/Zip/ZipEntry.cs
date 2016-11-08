@@ -166,7 +166,12 @@ namespace ICSharpCode.SharpZipLib.Zip {
     /// <br/>
     /// <br/>Author of the original java version : Jochen Hoenicke
     /// </summary>
-    public class ZipEntry : ICloneable {
+    public class ZipEntry
+#if OS_WINDOWS
+ : ICloneable {
+#else
+    {
+#endif
         [Flags]
         private enum Known : byte {
             None=0,

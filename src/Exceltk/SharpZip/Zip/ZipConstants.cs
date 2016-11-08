@@ -41,6 +41,7 @@
 //	22-12-2009	DavidPierson	Added AES support
 
 using System;
+using System.Globalization;
 using System.Text;
 using System.Threading;
 
@@ -508,6 +509,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
     // 850 is a good default for english speakers particularly in Europe.
 		static int defaultCodePage = CultureInfo.CurrentCulture.TextInfo.ANSICodePage;
 #else
+#if OS_WINDOWS
         /// <remarks>
         /// Get OEM codepage from NetFX, which parses the NLP file with culture info table etc etc.
         /// But sometimes it yields the special value of 1 which is nicknamed <c>CodePageNoOEM</c> in <see cref="Encoding"/> sources (might also mean <c>CP_OEMCP</c>, but Encoding puts it so).
@@ -523,6 +525,9 @@ namespace ICSharpCode.SharpZipLib.Zip {
              (Thread.CurrentThread.CurrentCulture.TextInfo.OEMCodePage==42))
                 ?437 // The default OEM encoding in a console in a default Windows installation, as a fallback.
                 :Thread.CurrentThread.CurrentCulture.TextInfo.OEMCodePage;
+#else
+        private static int defaultCodePage=ExcelToolKit.Extension.DefaultEncoding().CodePage;
+#endif
 #endif
 
         /// <summary>
@@ -541,7 +546,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                     (value==1)||(value==2)||(value==3)||(value==42)) {
                     throw new ArgumentOutOfRangeException("value");
                 }
-
+                
                 defaultCodePage=value;
             }
         }

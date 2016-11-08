@@ -17,7 +17,7 @@ namespace ExcelToolKit.BinaryFormat {
 
         #endregion
 
-        private Encoding m_UseEncoding=Encoding.Default;
+        private Encoding m_UseEncoding=ExcelToolKit.Extension.DefaultEncoding();
 
         internal XlsBiffFormulaCell(byte[] bytes, uint offset, ExcelBinaryReader reader)
             : base(bytes, offset, reader) {
@@ -99,7 +99,7 @@ namespace ExcelToolKit.BinaryFormat {
         public string Formula {
             get {
                 byte[] bts=base.ReadArray(0x10, FormulaLength);
-                return Encoding.Default.GetString(bts, 0, bts.Length);
+                return ExcelToolKit.Extension.DefaultEncoding().GetString(bts, 0, bts.Length);
             }
         }
     }

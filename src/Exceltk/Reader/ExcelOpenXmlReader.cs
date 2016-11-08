@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Globalization;
 using System.IO;
 using System.Xml;
@@ -51,7 +50,7 @@ namespace ExcelToolKit {
             if (!m_zipWorker.IsValid) {
                 m_isValid = false;
                 m_exceptionMessage = m_zipWorker.ExceptionMessage;
-                Close();
+                Dispose();
             } else {
                 m_isValid = true;
                 ReadGlobals();
@@ -252,8 +251,12 @@ namespace ExcelToolKit {
         }
 
         public bool IsDBNull(int i) {
-            return (null == m_cellsValues[i])
+#if OS_WINDOWS
+            return (null == m_cellsValues[i])   
                 || (DBNull.Value == m_cellsValues[i]);
+#else
+            return (null == m_cellsValues[i]);
+#endif
         }
 
         public object this[int i] {
@@ -261,67 +264,6 @@ namespace ExcelToolKit {
                 return m_cellsValues[i];
             }
         }
-
-        public DataTable GetSchemaTable() {
-            throw new NotSupportedException();
-        }
-
-        public int RecordsAffected {
-            get {
-                throw new NotSupportedException();
-            }
-        }
-
-        public byte GetByte(int i) {
-            throw new NotSupportedException();
-        }
-
-        public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length) {
-            throw new NotSupportedException();
-        }
-
-        public char GetChar(int i) {
-            throw new NotSupportedException();
-        }
-
-        public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length) {
-            throw new NotSupportedException();
-        }
-
-        public IDataReader GetData(int i) {
-            throw new NotSupportedException();
-        }
-
-        public string GetDataTypeName(int i) {
-            throw new NotSupportedException();
-        }
-
-        public Type GetFieldType(int i) {
-            throw new NotSupportedException();
-        }
-
-        public Guid GetGuid(int i) {
-            throw new NotSupportedException();
-        }
-
-        public string GetName(int i) {
-            throw new NotSupportedException();
-        }
-
-        public int GetOrdinal(string name) {
-            throw new NotSupportedException();
-        }
-
-        public int GetValues(object[] values) {
-            throw new NotSupportedException();
-        }
-
-        public object this[string name] {
-            get {
-                throw new NotSupportedException();
-            }
-        }
-
         #endregion
 
         #region Implement
@@ -775,7 +717,7 @@ namespace ExcelToolKit {
                     // No Sheet Columns
                     //Console.WriteLine("SheetName:{0}, ColumnCount:{1}", sheet.Name, sheet.ColumnsCount);
                     for (int i = 0; i < sheet.ColumnsCount; i++) {
-                        table.Columns.Add(null, typeof(Object));
+                        table.Columns.Add(i.ToString(), typeof(Object));
                     }
                 } else if (ReadSheetRow(sheet)) {
                     // Read Sheet Columns
@@ -796,6 +738,9 @@ namespace ExcelToolKit {
                 table.BeginLoadData();
                 //Console.WriteLine("SheetIndex Is:{0},Name:{1}",sheetIndex,sheet.Name);
                 while (ReadSheetRow(sheet)) {
+                    if(m_cellsValues==null){
+                        Console.WriteLine("null cell values");
+                    }
                     table.Rows.Add(m_cellsValues);
                 }
                 if (table.Rows.Count > 0) {

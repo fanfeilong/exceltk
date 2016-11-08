@@ -27,7 +27,7 @@ namespace ExcelToolKit.BinaryFormat {
         #endregion
 
         private bool isV8=true;
-        private Encoding m_UseEncoding=Encoding.Default;
+        private Encoding m_UseEncoding=ExcelToolKit.Extension.DefaultEncoding();
 
         internal XlsBiffBoundSheet(byte[] bytes, uint offset, ExcelBinaryReader reader)
             : base(bytes, offset, reader) {
@@ -70,13 +70,13 @@ namespace ExcelToolKit.BinaryFormat {
                 int start=0x8;
                 if (isV8) {
                     if (base.ReadByte(0x7)==0) {
-                        return Encoding.Default.GetString(m_bytes, m_readoffset+start, len);
+                        return ExcelToolKit.Extension.DefaultEncoding().GetString(m_bytes, m_readoffset+start, len);
                     } else {
                         return m_UseEncoding.GetString(m_bytes, m_readoffset+start,
                                                        m_UseEncoding.IsSingleByteEncoding()?len:len*2);
                     }
                 } else {
-                    return Encoding.Default.GetString(m_bytes, m_readoffset+start-1, len);
+                    return ExcelToolKit.Extension.DefaultEncoding().GetString(m_bytes, m_readoffset+start-1, len);
                 }
             }
         }

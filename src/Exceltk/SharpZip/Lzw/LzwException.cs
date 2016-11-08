@@ -34,30 +34,12 @@
 // exception statement from your version.
 
 using System;
-using System.Runtime.Serialization;
-#if !NETCF_1_0 && !NETCF_2_0
-
-#endif
 
 namespace ICSharpCode.SharpZipLib.LZW {
     /// <summary>
     /// LzwException represents a LZW specific exception
     /// </summary>
-#if !NETCF_1_0 && !NETCF_2_0
-    [Serializable]
-#endif
     public class LzwException : SharpZipBaseException {
-#if !NETCF_1_0 && !NETCF_2_0
-        /// <summary>
-        /// Deserialization constructor 
-        /// </summary>
-        /// <param name="info"><see cref="SerializationInfo"/> for this constructor</param>
-        /// <param name="context"><see cref="StreamingContext"/> for this constructor</param>
-        protected LzwException(SerializationInfo info, StreamingContext context)
-            : base(info, context) {
-        }
-#endif
-
         /// <summary>
         /// Initialise a new instance of LzwException
         /// </summary>

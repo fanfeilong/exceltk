@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if OS_WINDOWS
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -90,7 +91,7 @@ EndSelection:<<<<<<<<4";
 
             // re-encode the string so it will work  correctly (fixed in CLR 4.0)      
             if (Environment.Version.Major < 4 && html.Length != Encoding.UTF8.GetByteCount(html))
-                htmlFragment = Encoding.Default.GetString(Encoding.UTF8.GetBytes(htmlFragment));
+                htmlFragment=ExcelToolKit.Extension.DefaultEncoding().GetString(Encoding.UTF8.GetBytes(htmlFragment));
 
             var dataObject = new DataObject();
             dataObject.SetData(DataFormats.Html, htmlFragment);
@@ -213,3 +214,4 @@ EndSelection:<<<<<<<<4";
         }
     }
 }
+#endif

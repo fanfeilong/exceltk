@@ -110,10 +110,10 @@ namespace ExcelToolKit {
                 CleanFromTemp(true);
                 //true tells CleanFromTemp not to raise an IO Exception if this operation fails. If it did then the real error here would be masked
             } finally {
-                fileStream.Close();
+                fileStream.Dispose();
 
                 if (null!=zipFile)
-                    zipFile.Close();
+                    zipFile.Dispose();
             }
 
             return _isValid?CheckFolderTree():false;

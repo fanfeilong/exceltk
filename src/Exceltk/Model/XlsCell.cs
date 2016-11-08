@@ -1,5 +1,5 @@
 ﻿using System.Text.RegularExpressions;
-using System.Web;
+using ExcelToolKit.Util;
 
 namespace ExcelToolKit {
     public class XlsCell {

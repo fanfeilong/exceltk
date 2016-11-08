@@ -229,11 +229,9 @@ namespace ExcelToolKit.BinaryFormat {
                 return m_minifat;
 
             //if no minifat then return null
-            if (MiniFatSectorCount==0||MiniSectorSize==0xFFFFFFFE)
+            if (MiniFatSectorCount==0) //TODO(fanfeilong): ||MiniSectorSize==0xFFFFFFFE
                 return null;
 
-            uint value;
-            int miniSectorSize=MiniSectorSize;
             var sectors=new List<uint>(MiniFatSectorCount);
 
             //find the sector where the minifat starts

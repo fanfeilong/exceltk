@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Text;
 using ExcelToolKit.BinaryFormat;
@@ -111,7 +110,7 @@ namespace ExcelToolKit {
                     m_workbookData.Tables.Add(table);
             }
 
-            m_file.Close();
+            m_file.Dispose();
             m_isClosed=true;
             m_workbookData.AcceptChanges();
             m_workbookData.FixDataTypes();
@@ -141,7 +140,7 @@ namespace ExcelToolKit {
         }
 
         public void Close() {
-            m_file.Close();
+            m_file.Dispose();
             m_isClosed=true;
         }
 
@@ -219,7 +218,7 @@ namespace ExcelToolKit {
                 return DateTime.Parse(valString);
             }
 
-            return DateTime.FromOADate(dVal);
+            return dVal.FromOADate();
         }
 
         public decimal GetDecimal(int i) {
@@ -276,72 +275,16 @@ namespace ExcelToolKit {
         }
 
         public bool IsDBNull(int i) {
+#if OS_WINDOWS
             return (null==m_cellsValues[i].Value)||(DBNull.Value==m_cellsValues[i].Value);
+#else
+            return (null==m_cellsValues[i].Value);
+#endif
         }
 
         public object this[int i] {
             get {
                 return m_cellsValues[i];
-            }
-        }
-
-        public DataTable GetSchemaTable() {
-            throw new NotSupportedException();
-        }
-
-        public int RecordsAffected {
-            get {
-                throw new NotSupportedException();
-            }
-        }
-
-        public byte GetByte(int i) {
-            throw new NotSupportedException();
-        }
-
-        public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length) {
-            throw new NotSupportedException();
-        }
-
-        public char GetChar(int i) {
-            throw new NotSupportedException();
-        }
-
-        public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length) {
-            throw new NotSupportedException();
-        }
-
-        public IDataReader GetData(int i) {
-            throw new NotSupportedException();
-        }
-
-        public string GetDataTypeName(int i) {
-            throw new NotSupportedException();
-        }
-
-        public Type GetFieldType(int i) {
-            throw new NotSupportedException();
-        }
-
-        public Guid GetGuid(int i) {
-            throw new NotSupportedException();
-        }
-
-        public string GetName(int i) {
-            throw new NotSupportedException();
-        }
-
-        public int GetOrdinal(string name) {
-            throw new NotSupportedException();
-        }
-
-        public int GetValues(object[] values) {
-            throw new NotSupportedException();
-        }
-
-        public object this[string name] {
-            get {
-                throw new NotSupportedException();
             }
         }
 
@@ -1060,7 +1003,7 @@ namespace ExcelToolKit {
             m_exceptionMessage=message;
             m_isValid=false;
 
-            m_file.Close();
+            m_file.Dispose();
             m_isClosed=true;
 
             m_workbookData=null;

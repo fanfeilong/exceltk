@@ -219,13 +219,20 @@ namespace ICSharpCode.SharpZipLib.Tar {
         /// Ends the TAR archive and closes the underlying OutputStream.
         /// </summary>
         /// <remarks>This means that Finish() is called followed by calling the
-        /// TarBuffer's Close().</remarks>
-        public override void Close() {
-            if (!isClosed) {
-                isClosed=true;
-                Finish();
-                buffer.Close();
+        /// TarBuffer's Close().</remarks> 
+        private bool disposed_;
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                if (!disposed_) {
+                    if (!isClosed) {
+                        isClosed=true;
+                        Finish();
+                        buffer.Dispose();
+                    }
+                    disposed_=true;
+                }
             }
+            base.Dispose(disposing);
         }
 
         /// <summary>

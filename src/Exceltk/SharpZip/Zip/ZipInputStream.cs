@@ -236,7 +236,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 header==ZipConstants.ArchiveExtraDataSignature||
                 header==ZipConstants.Zip64CentralFileHeaderSignature) {
                 // No more individual entries exist
-                Close();
+                Dispose();
                 return null;
             }
 
@@ -648,12 +648,17 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// <summary>
         /// Closes the zip input stream
         /// </summary>
-        public override void Close() {
-            internalReader=ReadingNotAvailable;
-            crc=null;
-            entry=null;
-
-            base.Close();
+        private bool disposed_;
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                if (!disposed_) {
+                    internalReader=ReadingNotAvailable;
+                    crc=null;
+                    entry=null;
+                    disposed_=true;
+                }
+            }
+            base.Dispose(disposing);
         }
     }
 }

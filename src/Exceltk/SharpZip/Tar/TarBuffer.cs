@@ -552,17 +552,17 @@ or which contains garbage records after a zero block.
         /// Close the TarBuffer. If this is an output buffer, also flush the
         /// current block before closing.
         /// </summary>
-        public void Close() {
+        public void Dispose() {
             if (outputStream!=null) {
                 WriteFinalRecord();
 
                 if (isStreamOwner_) {
-                    outputStream.Close();
+                    outputStream.Dispose();
                 }
                 outputStream=null;
             } else if (inputStream!=null) {
                 if (isStreamOwner_) {
-                    inputStream.Close();
+                    inputStream.Dispose();
                 }
                 inputStream=null;
             }

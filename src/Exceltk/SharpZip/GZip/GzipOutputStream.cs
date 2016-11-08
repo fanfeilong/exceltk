@@ -173,18 +173,25 @@ namespace ICSharpCode.SharpZipLib.GZip {
         /// <summary>
         /// Writes remaining compressed output data to the output stream
         /// and closes it.
-        /// </summary>
-        public override void Close() {
-            try {
-                Finish();
-            } finally {
-                if (state_!=OutputState.Closed) {
-                    state_=OutputState.Closed;
-                    if (IsStreamOwner) {
-                        baseOutputStream_.Close();
+        /// </summary>    
+        private bool disposed_;
+        protected override void Dispose(bool disposing) {
+            if(disposing){
+                if(!disposed_){
+                    try {
+                        Finish();
+                    } finally {
+                        if (state_!=OutputState.Closed) {
+                            state_=OutputState.Closed;
+                            if (IsStreamOwner) {
+                                baseOutputStream_.Dispose();
+                            }
+                        }
                     }
+                    disposed_ = true;
                 }
             }
+            base.Dispose(disposing);
         }
 
         #endregion

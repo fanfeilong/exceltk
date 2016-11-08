@@ -494,9 +494,9 @@ namespace ICSharpCode.SharpZipLib.Tar {
                     }
 
                     if (asciiTrans) {
-                        outw.Close();
+                        outw.Dispose();
                     } else {
-                        outputStream.Close();
+                        outputStream.Dispose();
                     }
                 }
             }
@@ -648,11 +648,11 @@ namespace ICSharpCode.SharpZipLib.Tar {
                 if (disposing) {
                     if (tarOut!=null) {
                         tarOut.Flush();
-                        tarOut.Close();
+                        tarOut.Dispose();
                     }
 
                     if (tarIn!=null) {
-                        tarIn.Close();
+                        tarIn.Dispose();
                     }
                 }
             }

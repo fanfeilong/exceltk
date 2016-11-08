@@ -44,6 +44,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using ICSharpCode.SharpZipLib.Checksums;
 using ICSharpCode.SharpZipLib.Zip.Compression;
@@ -812,7 +813,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// <summary>
         /// The entries for the archive.
         /// </summary>
-        private ArrayList entries=new ArrayList();
+        private List<ZipEntry> entries=new List<ZipEntry>();
 
         /// <summary>
         /// Used to track the crc of data added to entries.

@@ -76,7 +76,12 @@ namespace ICSharpCode.SharpZipLib.Tar {
     /// This class encapsulates the Tar Entry Header used in Tar Archives.
     /// The class also holds a number of tar constants, used mostly in headers.
     /// </summary>
-    public class TarHeader : ICloneable {
+    public class TarHeader
+#if OS_WINDOWS
+ : ICloneable {
+#else
+    {
+#endif
         #region Constants
 
         /// <summary>
@@ -490,7 +495,7 @@ namespace ICSharpCode.SharpZipLib.Tar {
 #if NETCF_1_0 || NETCF_2_0
 					string currentUser = "PocketPC";
 #else
-                    string currentUser=Environment.UserName;
+                    string currentUser = ExcelToolKit.Extension.GetUserName();
 #endif
                     if (currentUser.Length>UNAMELEN) {
                         currentUser=currentUser.Substring(0, UNAMELEN);

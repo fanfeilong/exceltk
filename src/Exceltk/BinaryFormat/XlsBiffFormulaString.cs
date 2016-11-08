@@ -6,7 +6,7 @@ namespace ExcelToolKit.BinaryFormat {
     /// </summary>
     internal class XlsBiffFormulaString : XlsBiffRecord {
         private const int LEADING_BYTES_COUNT=3;
-        private Encoding m_UseEncoding=Encoding.Default;
+        private Encoding m_UseEncoding=ExcelToolKit.Extension.DefaultEncoding();
 
         internal XlsBiffFormulaString(byte[] bytes, uint offset, ExcelBinaryReader reader)
             : base(bytes, offset, reader) {

@@ -45,6 +45,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -731,7 +732,11 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
             // TODO: This will be slow as the next ice age for huge archives!
             for (int i=0; i<entries_.Length; i++) {
+#if OS_WINDOWS
                 if (string.Compare(name, entries_[i].Name, ignoreCase, CultureInfo.InvariantCulture)==0) {
+#else
+                if (string.Compare(name, entries_[i].Name, ignoreCase)==0) {
+#endif
                     return i;
                 }
             }
@@ -1387,16 +1392,17 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
             // NOTE: the baseStream_ may not currently support writing or seeking.
 
-            updateIndex_=new Hashtable();
+            updateIndex_=new Dictionary<string,int>();
 
-            updates_=new ArrayList(entries_.Length);
-            foreach (ZipEntry entry in entries_) {
-                int index=updates_.Add(new ZipUpdate(entry));
+            updates_=new List<ZipUpdate>(entries_.Length);
+            foreach (ZipEntry entry in entries_){
+                int index = updates_.Count;
+                updates_.Add(new ZipUpdate(entry));
                 updateIndex_.Add(entry.Name, index);
             }
 
             // We must sort by offset before using offset's calculated sizes
-            updates_.Sort(new UpdateComparer());
+            updates_.Sort(UpdateComparer);
 
             int idx=0;
             foreach (ZipUpdate update in updates_) {
@@ -1522,8 +1528,9 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
                 // Direct replacement is faster than delete and add.
                 updates_[index]=update;
-            } else {
-                index=updates_.Add(update);
+            } else{
+                index = updates_.Count;
+                updates_.Add(update);
                 updateCount_+=1;
                 updateIndex_.Add(update.Entry.Name, index);
             }
@@ -2494,7 +2501,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 updateFile=new ZipHelperStream(copyStream);
                 updateFile.IsStreamOwner=true;
 
-                baseStream_.Close();
+                baseStream_.Dispose();
                 baseStream_=null;
             } else {
                 if (archiveStorage_.UpdateMode==FileUpdateMode.Direct) {
@@ -2508,7 +2515,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                     baseStream_=archiveStorage_.OpenForDirectUpdate(baseStream_);
                     updateFile=new ZipHelperStream(baseStream_);
                 } else {
-                    baseStream_.Close();
+                    baseStream_.Dispose();
                     baseStream_=null;
                     updateFile=new ZipHelperStream(Name);
                 }
@@ -2540,54 +2547,43 @@ namespace ICSharpCode.SharpZipLib.Zip {
         }
 
         /// <summary>
-        /// Class used to sort updates.
+        /// Compares two objects and returns a value indicating whether one is 
+        /// less than, equal to or greater than the other.
         /// </summary>
-        private class UpdateComparer : IComparer {
-            #region IComparer Members
+        /// <param name="x">First object to compare</param>
+        /// <param name="y">Second object to compare.</param>
+        /// <returns>Compare result.</returns>
+        private static int UpdateComparer(
+            ZipUpdate zx,
+            ZipUpdate zy) {
 
-            /// <summary>
-            /// Compares two objects and returns a value indicating whether one is 
-            /// less than, equal to or greater than the other.
-            /// </summary>
-            /// <param name="x">First object to compare</param>
-            /// <param name="y">Second object to compare.</param>
-            /// <returns>Compare result.</returns>
-            public int Compare(
-                object x,
-                object y) {
-                var zx=x as ZipUpdate;
-                var zy=y as ZipUpdate;
+            int result;
 
-                int result;
+            if (zx==null) {
+                if (zy==null) {
+                    result=0;
+                } else {
+                    result=-1;
+                }
+            } else if (zy==null) {
+                result=1;
+            } else {
+                int xCmdValue=((zx.Command==UpdateCommand.Copy)||(zx.Command==UpdateCommand.Modify))?0:1;
+                int yCmdValue=((zy.Command==UpdateCommand.Copy)||(zy.Command==UpdateCommand.Modify))?0:1;
 
-                if (zx==null) {
-                    if (zy==null) {
+                result=xCmdValue-yCmdValue;
+                if (result==0) {
+                    long offsetDiff=zx.Entry.Offset-zy.Entry.Offset;
+                    if (offsetDiff<0) {
+                        result=-1;
+                    } else if (offsetDiff==0) {
                         result=0;
                     } else {
-                        result=-1;
-                    }
-                } else if (zy==null) {
-                    result=1;
-                } else {
-                    int xCmdValue=((zx.Command==UpdateCommand.Copy)||(zx.Command==UpdateCommand.Modify))?0:1;
-                    int yCmdValue=((zy.Command==UpdateCommand.Copy)||(zy.Command==UpdateCommand.Modify))?0:1;
-
-                    result=xCmdValue-yCmdValue;
-                    if (result==0) {
-                        long offsetDiff=zx.Entry.Offset-zy.Entry.Offset;
-                        if (offsetDiff<0) {
-                            result=-1;
-                        } else if (offsetDiff==0) {
-                            result=0;
-                        } else {
-                            result=1;
-                        }
+                        result=1;
                     }
                 }
-                return result;
             }
-
-            #endregion
+            return result;
         }
 
         private void RunUpdates() {
@@ -2609,7 +2605,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
                 // Sort the updates by offset within copies/modifies, then adds.
                 // This ensures that data required by copies will not be overwritten.
-                updates_.Sort(new UpdateComparer());
+                updates_.Sort(UpdateComparer);
             } else {
                 workFile=Create(archiveStorage_.GetTemporaryOutput());
                 workFile.UseZip64=UseZip64;
@@ -2695,7 +2691,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                     }
                 }
             } catch {
-                workFile.Close();
+                workFile.Dispose();
                 if (!directUpdate&&(workFile.Name!=null)) {
                     File.Delete(workFile.Name);
                 }
@@ -2708,7 +2704,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 isNewArchive_=false;
                 ReadEntries();
             } else {
-                baseStream_.Close();
+                baseStream_.Dispose();
                 Reopen(archiveStorage_.ConvertTemporaryToFinal());
             }
         }
@@ -2898,8 +2894,8 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
         #region IDisposable Members
 
-        void IDisposable.Dispose() {
-            Close();
+        public void Dispose(){
+            Dispose(true);
         }
 
         #endregion
@@ -2911,7 +2907,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
                 if (IsStreamOwner&&(baseStream_!=null)) {
                     lock (baseStream_) {
-                        baseStream_.Close();
+                        baseStream_.Dispose();
                     }
                 }
 
@@ -3288,9 +3284,9 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
         #region Zip Update Instance Fields
 
-        private ArrayList updates_;
+        private List<ZipUpdate> updates_;
         private long updateCount_; // Count is managed manually as updates_ can contain nulls!
-        private Hashtable updateIndex_;
+        private Dictionary<string, int> updateIndex_;
         private IArchiveStorage archiveStorage_;
         private IDynamicDataSource updateDataSource_;
         private bool contentsEdited_;
@@ -3503,13 +3499,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
             }
 
             /// <summary>
-            /// Close this stream instance.
-            /// </summary>
-            public override void Close() {
-                // Do nothing
-            }
-
-            /// <summary>
             /// Write any buffered data to underlying storage.
             /// </summary>
             public override void Flush() {
@@ -3632,16 +3621,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
                     baseStream_.Seek(readPos_++, SeekOrigin.Begin);
                     return baseStream_.ReadByte();
                 }
-            }
-
-            /// <summary>
-            /// Close this <see cref="PartialInputStream">partial input stream</see>.
-            /// </summary>
-            /// <remarks>
-            /// The underlying stream is not closed.  Close the parent ZipFile class to do that.
-            /// </remarks>
-            public override void Close() {
-                // Do nothing at all!
             }
 
             /// <summary>
@@ -4124,7 +4103,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
             bool newFileCreated=false;
 
             try {
-                temporaryStream_.Close();
+                temporaryStream_.Dispose();
                 File.Move(fileName_, moveTempName);
                 File.Move(temporaryName_, fileName_);
                 newFileCreated=true;
@@ -4152,7 +4131,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// <param name="stream">The <see cref="Stream"/> to copy.</param>
         /// <returns>Returns a temporary output <see cref="Stream"/> that is a copy of the input.</returns>
         public override Stream MakeTemporaryCopy(Stream stream) {
-            stream.Close();
+            stream.Dispose();
 
             temporaryName_=GetTempFileName(fileName_, true);
             File.Copy(fileName_, temporaryName_, true);
@@ -4173,7 +4152,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
             Stream result;
             if ((stream==null)||!stream.CanWrite) {
                 if (stream!=null) {
-                    stream.Close();
+                    stream.Dispose();
                 }
 
                 result=new FileStream(fileName_,
@@ -4189,9 +4168,19 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// <summary>
         /// Disposes this instance.
         /// </summary>
-        public override void Dispose() {
-            if (temporaryStream_!=null) {
-                temporaryStream_.Close();
+        public override void Dispose(){
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        private bool disposed_;
+        protected void Dispose(bool disposing) {
+            if (disposing) {
+                if (!disposed_) {
+                    if (temporaryStream_!=null) {
+                        temporaryStream_.Dispose();
+                    }
+                    disposed_=true;
+                }
             }
         }
 
@@ -4327,7 +4316,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                     stream.Position=0;
                     StreamUtils.Copy(stream, result, new byte[4096]);
 
-                    stream.Close();
+                    stream.Dispose();
                 }
             } else {
                 result=stream;
@@ -4341,7 +4330,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// </summary>
         public override void Dispose() {
             if (temporaryStream_!=null) {
-                temporaryStream_.Close();
+                temporaryStream_.Dispose();
             }
         }
 

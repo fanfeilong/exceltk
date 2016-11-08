@@ -36,6 +36,10 @@
 using System;
 using System.IO;
 
+#if !OS_WINDOWS 
+using ExcelToolKit;
+#endif
+
 namespace ICSharpCode.SharpZipLib.Tar {
     /// <summary>
     /// This class represents an entry in a Tar archive. It consists
@@ -64,7 +68,12 @@ namespace ICSharpCode.SharpZipLib.Tar {
     /// defaults and the File is set to null.</p>
     /// <see cref="TarHeader"/>
     /// </summary>
-    public class TarEntry : ICloneable {
+    public class TarEntry 
+    #if OS_WINDOWS
+    : ICloneable {
+    #else
+    {
+    #endif
         #region Constructors
 
         /// <summary>
@@ -366,8 +375,8 @@ namespace ICSharpCode.SharpZipLib.Tar {
 
 #if !NETCF_1_0 && !NETCF_2_0
             // 23-Jan-2004 GnuTar allows device names in path where the name is not local to the current directory
-            if (name.IndexOf(Environment.CurrentDirectory)==0) {
-                name=name.Substring(Environment.CurrentDirectory.Length);
+            if (name.IndexOf(Directory.GetCurrentDirectory())==0) {
+                name=name.Substring(Directory.GetCurrentDirectory().Length);
             }
 #endif
 

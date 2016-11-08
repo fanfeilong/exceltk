@@ -221,12 +221,24 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
 
         /// <summary>
         /// Closes the stream, releasing any associated resources.
-        /// </summary>
-        public override void Close() {
-            if (IsStreamOwner&&(baseStream!=null)) {
-                baseStream.Close();
-            }
+        /// </summary>  
+        public new void Dispose(){
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+        protected override void Dispose(bool disposing) {
+            if(disposing){
+                if (!disposed_){
+                    if (IsStreamOwner&&(baseStream!=null)) {
+                        baseStream.Dispose();
+                    }
+                    disposed_ = true;
+                }
+
+            }
+            base.Dispose(disposing);
+        }
+        private bool disposed_;
 
         /// <summary>
         /// Read a byte from stream advancing position

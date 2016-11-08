@@ -34,31 +34,13 @@
 // exception statement from your version.
 
 using System;
-using System.Runtime.Serialization;
-#if !NETCF_1_0 && !NETCF_2_0
-
-#endif
 
 namespace ICSharpCode.SharpZipLib.Tar {
     /// <summary>
     /// This exception is used to indicate that there is a problem
     /// with a TAR archive header.
     /// </summary>
-#if !NETCF_1_0 && !NETCF_2_0
-    [Serializable]
-#endif
     public class InvalidHeaderException : TarException {
-#if !NETCF_1_0 && !NETCF_2_0
-        /// <summary>
-        /// Deserialization constructor 
-        /// </summary>
-        /// <param name="information"><see cref="SerializationInfo"/> for this constructor</param>
-        /// <param name="context"><see cref="StreamingContext"/> for this constructor</param>
-        protected InvalidHeaderException(SerializationInfo information, StreamingContext context)
-            : base(information, context) {
-        }
-#endif
-
         /// <summary>
         /// Initialise a new instance of the InvalidHeaderException class.
         /// </summary>

@@ -23,7 +23,8 @@ namespace ExcelToolKit.BinaryFormat {
         /// <param name="sizeOfSector"></param>
         /// <param name="isMini"></param>
         /// <param name="rootDir"></param>
-        public XlsFat(XlsHeader hdr, List<uint> sectors, int sizeOfSector, bool isMini, XlsRootDirectory rootDir) {
+        public XlsFat(XlsHeader hdr, List<uint> sectors, int sizeOfSector, bool isMini, XlsRootDirectory rootDir){
+            m_sectorSize = sizeOfSector;
             m_isMini=isMini;
             m_rootDir=rootDir;
             m_hdr=hdr;

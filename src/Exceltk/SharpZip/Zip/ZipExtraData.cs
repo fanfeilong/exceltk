@@ -583,7 +583,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// </summary>
         public void Dispose() {
             if (_newEntry!=null) {
-                _newEntry.Close();
+                _newEntry.Dispose();
             }
         }
 

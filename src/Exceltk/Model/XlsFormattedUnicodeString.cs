@@ -143,7 +143,7 @@ namespace ExcelToolKit.BinaryFormat {
             get {
                 return IsMultiByte
                            ?Encoding.Unicode.GetString(m_bytes, (int)(m_offset+HeadSize), (int)ByteCount)
-                           :Encoding.Default.GetString(m_bytes, (int)(m_offset+HeadSize), (int)ByteCount);
+                           :ExcelToolKit.Extension.DefaultEncoding().GetString(m_bytes, (int)(m_offset+HeadSize), (int)ByteCount);
             }
         }
     }

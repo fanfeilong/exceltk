@@ -60,7 +60,7 @@ namespace ExcelToolKit.BinaryFormat {
                     Buffer.BlockCopy(m_bytes, (int)offset, buff, 0, (int)(last-offset));
                     if (encoding==0&&str.IsMultiByte) {
                         len-=(last-prefix-offset)/2;
-                        string temp=Encoding.Default.GetString(m_bytes, (int)contoffset+5, (int)len);
+                        string temp=ExcelToolKit.Extension.DefaultEncoding().GetString(m_bytes, (int)contoffset+5, (int)len);
                         byte[] tempbytes=Encoding.Unicode.GetBytes(temp);
                         Buffer.BlockCopy(tempbytes, 0, buff, (int)(last-offset), tempbytes.Length);
                         Buffer.BlockCopy(m_bytes, (int)(contoffset+5+len), buff, (int)(last-offset+len+len),
@@ -71,7 +71,7 @@ namespace ExcelToolKit.BinaryFormat {
                         string temp=Encoding.Unicode.GetString(m_bytes,
                                                                  (int)contoffset+5,
                                                                  (int)(len+len));
-                        byte[] tempbytes=Encoding.Default.GetBytes(temp);
+                        byte[] tempbytes=ExcelToolKit.Extension.DefaultEncoding().GetBytes(temp);
                         Buffer.BlockCopy(tempbytes, 0, buff, (int)(last-offset), tempbytes.Length);
                         Buffer.BlockCopy(m_bytes, (int)(contoffset+5+len+len), buff, (int)(last-offset+len),
                                          (int)postfix);

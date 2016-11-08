@@ -1,9 +1,7 @@
-using System.Data;
 using System.IO;
 
 namespace ExcelToolKit {
-    public interface IExcelDataReader : IDataReader {
-
+    public interface IExcelDataReader {
         bool IsValid {get;}
         string ExceptionMessage {get;}
         string Name {get;}
@@ -13,5 +11,6 @@ namespace ExcelToolKit {
         void Initialize(Stream fileStream);
         DataSet AsDataSet();
         DataSet AsDataSet(bool convertOADateTime);
+        void Close();
     }
 }

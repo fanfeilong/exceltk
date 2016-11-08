@@ -199,13 +199,20 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// <remarks>
         /// The underlying stream is closed only if <see cref="IsStreamOwner"/> is true.
         /// </remarks>
-        public override void Close() {
-            Stream toClose=stream_;
-            stream_=null;
-            if (isOwner_&&(toClose!=null)) {
-                isOwner_=false;
-                toClose.Close();
+        private bool disposed_;
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                if (!disposed_) {
+                    Stream toClose=stream_;
+                    stream_=null;
+                    if (isOwner_&&(toClose!=null)) {
+                        isOwner_=false;
+                        toClose.Dispose();
+                    }
+                    disposed_=true;
+                }
             }
+            base.Dispose(disposing);
         }
 
         #endregion

@@ -1,11 +1,11 @@
-﻿using ExcelToolKit;
+﻿#if OS_WINDOWS
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using ExcelToolKit;
 
 namespace exceltk.Clipborad {
     /// <summary>
@@ -69,7 +69,7 @@ namespace exceltk.Clipborad {
         public static DataTable ParseTable(string tableHtml) {
             string tableHtmlWithoutComments = WithoutComments(tableHtml);
 
-            DataTable dataTable = new DataTable();
+            DataTable dataTable = new DataTable("");
 
             MatchCollection rowMatches = Regex.Matches(
                 tableHtmlWithoutComments,
@@ -179,3 +179,4 @@ namespace exceltk.Clipborad {
         }
     }
 }
+#endif
