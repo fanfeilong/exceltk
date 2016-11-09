@@ -4,4 +4,6 @@ src/Exceltk/obj/
 src/exceltk.suo
 src/bin/
 src/obj/
-
+src/.vs
+src/exceltk.sln.docstates.suo
+src/exceltk.suo
