@@ -79,7 +79,7 @@ namespace ExcelToolKit {
             return numOpenBefore%2==1&&numClosedAfter%2==1;
         }
 
-        private int NumberOfUnescapedOccurances(char value, string src) {
+        private static int NumberOfUnescapedOccurances(char value, string src) {
             int numOccurances=0;
             char lastChar=Char.MinValue;
             foreach (char c in src) {

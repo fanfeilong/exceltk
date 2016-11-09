@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ExcelToolKit {
     public class DataSet : IDisposable {
@@ -44,15 +43,15 @@ namespace ExcelToolKit {
         public void AddColumnHandleDuplicate(string columnName) {
             //if a colum  already exists with the name append _i to the duplicates
             string adjustedColumnName=columnName;
-            DataColumn column=this.Columns[columnName];
+            DataColumn column=Columns[columnName];
             int i=1;
             while (column!=null) {
                 adjustedColumnName=string.Format("{0}_{1}", columnName, i);
-                column=this.Columns[adjustedColumnName];
+                column=Columns[adjustedColumnName];
                 i++;
             }
 
-            this.Columns.Add(adjustedColumnName, typeof(Object));
+            Columns.Add(adjustedColumnName, typeof(Object));
         }
         public DataRow NewRow(){
             var r = new DataRow();
@@ -60,7 +59,7 @@ namespace ExcelToolKit {
             return r;
         }
         public void Clear(){
-            this.Rows.Clear();
+            Rows.Clear();
         }
         public void BeginLoadData(){
             
@@ -100,7 +99,7 @@ namespace ExcelToolKit {
         }
         public DataTable this[string index]{
             get{
-                return this.Values[this.Indexs[index]];
+                return Values[Indexs[index]];
             }
         }
         public int Count{
@@ -109,9 +108,9 @@ namespace ExcelToolKit {
             }
         }
         public void Add(DataTable table){
-            int index = this.Values.Count;
-            this.Values.Add(table);
-            this.Indexs.Add(table.TableName,index);
+            int index = Values.Count;
+            Values.Add(table);
+            Indexs.Add(table.TableName,index);
         }
         public void AddRange(DataTable[] tables){
             foreach (var dataTable in tables){
@@ -119,8 +118,8 @@ namespace ExcelToolKit {
             }
         }
         public void Clear() {
-            this.Values.Clear();
-            this.Indexs.Clear();
+            Values.Clear();
+            Indexs.Clear();
         }
         public DataTableCollection(){
             Values=new List<DataTable>();
@@ -153,8 +152,9 @@ namespace ExcelToolKit {
             DataType=type;
         }
         public DataColumn Clone(){
-            var v = new DataColumn(ColumnName,DataType);
-            v.DefaultValue = DefaultValue;
+            var v = new DataColumn(ColumnName,DataType){
+                DefaultValue = DefaultValue
+            };
             return v;
         }
     }
@@ -187,16 +187,16 @@ namespace ExcelToolKit {
             }
         }
         public void Add(string name,Type type){
-            this.Indexs.Add(name);
-            this.Values.Add(name, new DataColumn(name, type));
+            Indexs.Add(name);
+            Values.Add(name, new DataColumn(name, type));
         }
         public void Add(string name) {
-            this.Indexs.Add(name);
-            this.Values.Add(name, new DataColumn(name, typeof(object)));
+            Indexs.Add(name);
+            Values.Add(name, new DataColumn(name, typeof(object)));
         }
         public void Add(DataColumn v) {
-            this.Indexs.Add(v.ColumnName);
-            this.Values.Add(v.ColumnName, v);
+            Indexs.Add(v.ColumnName);
+            Values.Add(v.ColumnName, v);
         }
         public void AddRange(IEnumerable<DataColumn> vs ){
             foreach (var dataColumn in vs){
@@ -294,7 +294,7 @@ namespace ExcelToolKit {
             Values.RemoveAt(index);
         }
         public void Clear(){
-            this.Values.Clear();
+            Values.Clear();
         }
         public DataRowCollection(){
             Values = new List<DataRow>();

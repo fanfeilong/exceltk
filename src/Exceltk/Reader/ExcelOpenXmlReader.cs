@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Xml;
@@ -374,10 +375,11 @@ namespace ExcelToolKit {
 
             // read up to the sheetData element. if this element is empty then 
             // there aren't any rows and we need to null out dimension
+            Debug.Assert(m_namespaceUri!=null);
             m_xmlReader.ReadToFollowing(XlsxWorksheet.N_sheetData, m_namespaceUri);
             if (m_xmlReader.IsEmptyElement) {
-                sheet.IsEmpty = true;
-            }
+                sheet.IsEmpty=true;
+            }                
         }
 
         private bool ResetSheetReader(XlsxWorksheet sheet) {
@@ -447,7 +449,10 @@ namespace ExcelToolKit {
                     int i = sheet.ColumnsCount;
                 }
 
-                int rowIndex = int.Parse(m_xmlReader.GetAttribute(XlsxWorksheet.A_r));
+                var rowIndexText = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
+                Debug.Assert(rowIndexText!=null);
+                int rowIndex=int.Parse(rowIndexText);
+
                 if (rowIndex != (m_depth + 1)) {
                     m_emptyRowCount = rowIndex - m_depth - 1;
                 }
@@ -483,13 +488,10 @@ namespace ExcelToolKit {
                         double number;
                         object o = m_xmlReader.Value;
 
-                        var style = NumberStyles.Any;
-                        CultureInfo culture = CultureInfo.InvariantCulture;
-
 
                         #region Read Cell Value
 
-                        if (double.TryParse(o.ToString(), style, culture, out number)) {
+                        if (double.TryParse(o.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out number)) {
                             // numeric
                             o=number;
                         }
@@ -572,6 +574,7 @@ namespace ExcelToolKit {
                     while (reader.Read()) {
                         if (reader.NodeType == XmlNodeType.Element && reader.LocalName == XlsxWorkbook.N_rel) {
                             string rid = reader.GetAttribute(XlsxWorkbook.A_id);
+                            Debug.Assert(rid!=null);
                             hyperDict[rid] = reader.GetAttribute(XlsxWorkbook.A_target);
                         }
                     }
@@ -593,6 +596,7 @@ namespace ExcelToolKit {
 
                 //Console.WriteLine("hyperlink:{0}",hyperDict[rid]);
                 string hyperlink = display;
+                Debug.Assert(rid!=null);
                 if (hyperDict.ContainsKey(rid)) {
                     hyperlink = hyperDict[rid];
                 }
@@ -683,7 +687,7 @@ namespace ExcelToolKit {
             return dict;
         }
 
-        private int LastIndexOfNonNull(object[] cellsValues) {
+        private static int LastIndexOfNonNull(object[] cellsValues) {
             for (int i = cellsValues.Length - 1; i >= 0; i--) {
                 if (cellsValues[i] != null) {
                     return i;
@@ -717,11 +721,12 @@ namespace ExcelToolKit {
                     // No Sheet Columns
                     //Console.WriteLine("SheetName:{0}, ColumnCount:{1}", sheet.Name, sheet.ColumnsCount);
                     for (int i = 0; i < sheet.ColumnsCount; i++) {
-                        table.Columns.Add(i.ToString(), typeof(Object));
+                        table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
                     }
                 } else if (ReadSheetRow(sheet)) {
                     // Read Sheet Columns
                     //Console.WriteLine("Read Sheet Columns");
+                    Debug.Assert(m_cellsValues!=null);
                     for (int index = 0; index < m_cellsValues.Length; index++) {
                         if (m_cellsValues[index] != null && m_cellsValues[index].ToString().Length > 0) {
                             table.AddColumnHandleDuplicate(m_cellsValues[index].ToString());

@@ -64,7 +64,7 @@ namespace ExcelToolKit.OpenXmlFormat {
             //INFO: Check for a simple Solution
             value=value.Replace("$", "");
             if (value.Contains(":")) {
-                value=value.Substring(0, value.IndexOf(":"));
+                value=value.Substring(0, value.IndexOf(":", System.StringComparison.Ordinal));
             }
 
             int index=0;

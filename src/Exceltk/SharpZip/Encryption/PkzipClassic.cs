@@ -39,6 +39,7 @@
 #if !NETCF_1_0
 
 using System;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using ICSharpCode.SharpZipLib.Checksums;
 
@@ -393,7 +394,7 @@ namespace ICSharpCode.SharpZipLib.Encryption {
                 if (key_==null) {
                     GenerateKey();
                 }
-
+                Debug.Assert(key_!=null);
                 return (byte[])key_.Clone();
             }
 

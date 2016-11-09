@@ -40,14 +40,7 @@ namespace ICSharpCode.SharpZipLib.Core {
     /// <summary>
     /// Provides simple <see cref="Stream"/>" utilities.
     /// </summary>
-    public sealed class StreamUtils {
-        /// <summary>
-        /// Initialise an instance of <see cref="StreamUtils"></see>
-        /// </summary>
-        private StreamUtils() {
-            // Do nothing.
-        }
-
+    public static class StreamUtils {
         /// <summary>
         /// Read from a <see cref="Stream"/> ensuring all the required data is read.
         /// </summary>

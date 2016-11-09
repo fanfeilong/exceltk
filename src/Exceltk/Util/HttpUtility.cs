@@ -33,6 +33,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -44,7 +45,7 @@ namespace ExcelToolKit.Util {
                 int count=Count;
                 if (count==0)
                     return "";
-                StringBuilder sb=new StringBuilder();
+                var sb=new StringBuilder();
                 foreach (var key in this.Keys){
                     sb.AppendFormat("{0}={1}&", key, UrlEncode(this[key]));                    
                 }
@@ -116,12 +117,11 @@ namespace ExcelToolKit.Util {
 
             long len=s.Length;
             var bytes=new List<byte>();
-            int xchar;
-            char ch;
 
             for (int i=0; i<len; i++) {
-                ch=s[i];
+                char ch = s[i];
                 if (ch=='%'&&i+2<len&&s[i+1]!='%') {
+                    int xchar;
                     if (s[i+1]=='u'&&i+5<len) {
                         // unicode hex sequence
                         xchar=GetChar(s, i+2, 4);
@@ -159,7 +159,7 @@ namespace ExcelToolKit.Util {
         }
 
         static int GetInt(byte b) {
-            char c=(char)b;
+            var c=(char)b;
             if (c>='0'&&c<='9')
                 return c-'0';
 
@@ -217,13 +217,13 @@ namespace ExcelToolKit.Util {
             if (count<0||offset+count>bytes.Length)
                 throw new ArgumentOutOfRangeException("count");
 
-            StringBuilder output=new StringBuilder();
-            MemoryStream acc=new MemoryStream();
+            var output=new StringBuilder();
+            var acc=new MemoryStream();
 
             int end=count+offset;
-            int xchar;
             for (int i=offset; i<end; i++) {
-                if (bytes[i]=='%'&&i+2<count&&bytes[i+1]!='%') {
+                if (bytes[i]=='%'&&i+2<count&&bytes[i+1]!='%'){
+                    int xchar;
                     if (bytes[i+1]==(byte)'u'&&i+5<end) {
                         if (acc.Length>0) {
                             output.Append(GetChars(acc, e));
@@ -296,10 +296,10 @@ namespace ExcelToolKit.Util {
             if (count<0||offset>len-count)
                 throw new ArgumentOutOfRangeException("count");
 
-            MemoryStream result=new MemoryStream();
+            var result=new MemoryStream();
             int end=offset+count;
             for (int i=offset; i<end; i++) {
-                char c=(char)bytes[i];
+                var c=(char)bytes[i];
                 if (c=='+') {
                     c=' ';
                 } else if (c=='%'&&i<end-2) {
@@ -343,7 +343,7 @@ namespace ExcelToolKit.Util {
                 return s;
 
             // avoided GetByteCount call
-            byte[] bytes=new byte[Enc.GetMaxByteCount(s.Length)];
+            var bytes=new byte[Enc.GetMaxByteCount(s.Length)];
             int realLen=Enc.GetBytes(s, 0, s.Length, bytes, 0);
             return Encoding.ASCII.GetString(UrlEncodeToBytes(bytes, 0, realLen));
         }
@@ -413,7 +413,7 @@ namespace ExcelToolKit.Util {
             if (str.Length==0)
                 return new byte[0];
 
-            MemoryStream result=new MemoryStream(str.Length);
+            var result=new MemoryStream(str.Length);
             foreach (char c in str) {
                 HttpEncoder.UrlEncodeChar(c, result, true);
             }
@@ -571,7 +571,7 @@ namespace ExcelToolKit.Util {
             if (query[0]=='?')
                 query=query.Substring(1);
 
-            HttpQSCollection result=new HttpQSCollection();
+            var result=new HttpQSCollection();
             ParseQueryString(query, encoding, result);
             return result;
         }
@@ -601,7 +601,7 @@ namespace ExcelToolKit.Util {
                         namePos++;
                 }
 
-                string name, value;
+                string name;
                 if (valuePos==-1) {
                     name=null;
                     valuePos=namePos;
@@ -614,8 +614,9 @@ namespace ExcelToolKit.Util {
                 } else {
                     namePos=valueEnd+1;
                 }
-                value=UrlDecode(decoded.Substring(valuePos, valueEnd-valuePos), encoding);
+                string value = UrlDecode(decoded.Substring(valuePos, valueEnd-valuePos), encoding);
 
+                Debug.Assert(name!=null);
                 result.Add(name, value);
                 if (namePos==-1)
                     break;

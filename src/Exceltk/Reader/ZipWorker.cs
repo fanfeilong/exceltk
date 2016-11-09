@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip;
 
@@ -16,10 +18,10 @@ namespace ExcelToolKit {
         private const string FILE_sheet="sheet{0}.{1}";
         private const string FOLDER_rels="_rels";
         private const string FILE_rels="workbook.{0}.rels";
+        private const string _format="xml";
 
         private readonly string _tempEnv;
         private string _exceptionMessage;
-        private string _format="xml";
         private bool _isCleaned;
 
         private bool _isValid;
@@ -116,7 +118,7 @@ namespace ExcelToolKit {
                     zipFile.Dispose();
             }
 
-            return _isValid?CheckFolderTree():false;
+            return _isValid && CheckFolderTree();
         }
 
         /// <summary>
@@ -204,6 +206,7 @@ namespace ExcelToolKit {
             string tPath=Path.Combine(_tempPath, entry.Name);
             string path=entry.IsDirectory?tPath:Path.GetDirectoryName(Path.GetFullPath(tPath));
 
+            Debug.Assert(path!=null);
             if (!Directory.Exists(path)) {
                 Directory.CreateDirectory(path);
             }
@@ -211,8 +214,6 @@ namespace ExcelToolKit {
             if (!entry.IsFile)
                 return;
 
-            //			try
-            //			{
             using (FileStream stream=File.Create(tPath)) {
                 if (buffer==null) {
                     buffer=new byte[0x1000];
@@ -224,20 +225,13 @@ namespace ExcelToolKit {
                         stream.Write(buffer, 0, count);
                     }
                 }
-
-
                 stream.Flush();
             }
-            //			}
-            //			catch
-            //			{
-            //				throw;
-            //			}
         }
 
         private void NewTempPath() {
             string tempID=Guid.NewGuid().ToString("N");
-            _tempPath=Path.Combine(_tempEnv, TMP+DateTime.Now.ToFileTimeUtc().ToString()+tempID);
+            _tempPath=Path.Combine(_tempEnv, TMP+DateTime.Now.ToFileTimeUtc().ToString(CultureInfo.InvariantCulture)+tempID);
 
             _isCleaned=false;
 

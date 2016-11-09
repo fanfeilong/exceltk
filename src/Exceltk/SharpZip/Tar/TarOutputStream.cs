@@ -79,7 +79,7 @@ namespace ICSharpCode.SharpZipLib.Tar {
 
         /// <summary>
         /// Get/set flag indicating ownership of the underlying stream.
-        /// When the flag is true <see cref="Close"></see> will close the underlying stream also.
+        /// When the flag is true <see cref="Dispose"></see> will close the underlying stream also.
         /// </summary>
         public bool IsStreamOwner {
             get {
@@ -233,17 +233,6 @@ namespace ICSharpCode.SharpZipLib.Tar {
                 }
             }
             base.Dispose(disposing);
-        }
-
-        /// <summary>
-        /// Get the record size being used by this stream's TarBuffer.
-        /// </summary>
-        /// <returns>
-        /// The TarBuffer record size.
-        /// </returns>
-        [Obsolete("Use RecordSize property instead")]
-        public int GetRecordSize() {
-            return buffer.RecordSize;
         }
 
         /// <summary>

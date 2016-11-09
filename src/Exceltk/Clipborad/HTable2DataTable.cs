@@ -1,6 +1,8 @@
 ﻿#if OS_WINDOWS
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,11 +29,13 @@ namespace exceltk.Clipborad {
         /// <summary>
         /// Given an HTML string containing n table tables, parse them into a DataSet containing n DataTables.
         /// </summary>
-        /// <param name="html">An HTML string containing n HTML tables</param>
+        /// <param name="htmlObj">An HTML string containing n HTML tables</param>
         /// <returns>A DataSet containing a DataTable for each HTML table in the input HTML</returns>
         public static DataSet ParseDataSet(this object htmlObj) {
             
             var ms = htmlObj as MemoryStream;
+            Debug.Assert(ms!=null);
+
             ms.Position = 0;
             var bytes = new byte[ms.Length];
             ms.Read(bytes, 0, (int)ms.Length);
@@ -48,8 +52,8 @@ namespace exceltk.Clipborad {
                 }
             }
 
-            DataSet dataSet = new DataSet();
-            MatchCollection tableMatches = Regex.Matches(
+            var dataSet = new DataSet();
+            var tableMatches = Regex.Matches(
                 WithoutComments(html),
                 TablePattern,
                 ExpressionOptions);
@@ -69,9 +73,9 @@ namespace exceltk.Clipborad {
         public static DataTable ParseTable(string tableHtml) {
             string tableHtmlWithoutComments = WithoutComments(tableHtml);
 
-            DataTable dataTable = new DataTable("");
+            var dataTable = new DataTable("");
 
-            MatchCollection rowMatches = Regex.Matches(
+            var rowMatches = Regex.Matches(
                 tableHtmlWithoutComments,
                 RowPattern,
                 ExpressionOptions);
@@ -99,7 +103,7 @@ namespace exceltk.Clipborad {
         /// </summary>
         /// <param name="rowMatches">A collection of all the rows to add to the DataTable</param>
         /// <param name="dataTable">The DataTable to which we add rows</param>
-        private static void ParseRows(MatchCollection rowMatches, DataTable dataTable) {
+        private static void ParseRows(IEnumerable rowMatches, DataTable dataTable) {
             foreach (Match rowMatch in rowMatches) {
                 // if the row contains header tags don't use it - it is a header not a row
                 if (!rowMatch.Value.Contains("<th")) {
@@ -168,12 +172,12 @@ namespace exceltk.Clipborad {
             const string bspan = "<span";
             const string espan = "</span>";
 
-            int start = text.IndexOf(bspan);
-            int end = text.IndexOf(espan);
+            int start = text.IndexOf(bspan, System.StringComparison.Ordinal);
+            int end = text.IndexOf(espan, System.StringComparison.Ordinal);
             while (start >= 0 && end >= 0) {
                 text = text.Remove(start, end - start+espan.Length);
-                start = text.IndexOf(bspan);
-                end = text.IndexOf(espan);
+                start = text.IndexOf(bspan, System.StringComparison.Ordinal);
+                end = text.IndexOf(espan, System.StringComparison.Ordinal);
             }
             return text;
         }

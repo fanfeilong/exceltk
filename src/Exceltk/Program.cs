@@ -27,7 +27,6 @@ namespace ExcelToolKit {
             var cmd=new CommandParser(args);
             InitConfig(cmd);
             Xls2MarkDown(cmd);
-            return;
         }
 
         private static void InitConfig(CommandParser cmd) {
@@ -67,28 +66,35 @@ namespace ExcelToolKit {
 
                         string xls = cmd["xls"];
                         string sheet = cmd["sheet"];
-                        string output = Path.Combine(Path.GetDirectoryName(xls), Path.GetFileNameWithoutExtension(xls));
+                        string dirName = Path.GetDirectoryName(xls);
+                        string fileName = Path.GetFileNameWithoutExtension(xls);
+                        if(dirName!=null&&fileName!=null){
+                            string output=Path.Combine(dirName, fileName);
 
-                        if (!File.Exists(xls)) {
-                            Console.WriteLine("xls file is not exist:{0}", xls);
-                            break;
-                        }
+                            if (!File.Exists(xls)) {
+                                Console.WriteLine("xls file is not exist:{0}", xls);
+                                break;
+                            }
 
-                        if (sheet != null) {
-                            Extension.MarkDownTable table = xls.ToMd(sheet);
-                            string tableFile = output + table.Name + ".md";
-                            File.WriteAllText(tableFile, table.Value);
-                            Console.WriteLine("Output File: {0}", tableFile);
-                        } else {
-                            IEnumerable<Extension.MarkDownTable> tables = xls.ToMd();
-                            foreach (Extension.MarkDownTable table in tables) {
-                                string tableFile = output + table.Name + ".md";
+                            if (sheet!=null) {
+                                MarkDownTable table=xls.ToMd(sheet);
+                                string tableFile=output+table.Name+".md";
                                 File.WriteAllText(tableFile, table.Value);
                                 Console.WriteLine("Output File: {0}", tableFile);
+                            } else {
+                                IEnumerable<MarkDownTable> tables=xls.ToMd();
+                                foreach (MarkDownTable table in tables) {
+                                    string tableFile=output+table.Name+".md";
+                                    File.WriteAllText(tableFile, table.Value);
+                                    Console.WriteLine("Output File: {0}", tableFile);
+                                }
                             }
+                            ret=0;
+                            Console.WriteLine("Done!");                            
+                        }else{
+                            Console.WriteLine("ERROR: xls path is valid:{0}",xls);
                         }
-                        ret = 0;
-                        Console.WriteLine("Done!");
+
                     } else if (cmd["t"] == "cm") {
                         #if OS_WINDOWS
                         Application.Run(new ClipboradMonitor());
@@ -115,7 +121,6 @@ namespace ExcelToolKit {
             }
 
             System.Environment.Exit(0);
-            Application.ExitThread();
             #endif
         }
     }

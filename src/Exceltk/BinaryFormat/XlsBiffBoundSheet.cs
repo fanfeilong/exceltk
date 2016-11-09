@@ -67,7 +67,7 @@ namespace ExcelToolKit.BinaryFormat {
             get {
                 ushort len=base.ReadByte(0x6);
 
-                int start=0x8;
+                const int start = 0x8;
                 if (isV8) {
                     if (base.ReadByte(0x7)==0) {
                         return ExcelToolKit.Extension.DefaultEncoding().GetString(m_bytes, m_readoffset+start, len);

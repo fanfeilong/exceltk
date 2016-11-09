@@ -69,6 +69,8 @@ struct header
 */
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ICSharpCode.SharpZipLib.Tar {
@@ -541,15 +543,6 @@ namespace ICSharpCode.SharpZipLib.Tar {
         public int DevMinor {
             get;
             set;
-        }
-
-        /// <summary>
-        /// Get the name of this entry.
-        /// </summary>
-        /// <returns>The entry's name.</returns>
-        [Obsolete("Use the Name property instead", true)]
-        public string GetName() {
-            return name;
         }
 
         #endregion
@@ -1052,12 +1045,8 @@ namespace ICSharpCode.SharpZipLib.Tar {
         /// </summary>
         /// <param name = "buffer">The tar entry's header buffer.</param>
         /// <returns>The computed checksum.</returns>
-        private static int ComputeCheckSum(byte[] buffer) {
-            int sum=0;
-            for (int i=0; i<buffer.Length; ++i) {
-                sum+=buffer[i];
-            }
-            return sum;
+        private static int ComputeCheckSum(IEnumerable<byte> buffer){
+            return buffer.Aggregate(0, (current, t) => current + t);
         }
 
         /// <summary>

@@ -68,11 +68,10 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// Static constructor.
         /// </summary>
         static ZipNameTransform() {
-            char[] invalidPathChars;
 #if NET_1_0 || NET_1_1 || NETCF_1_0
-			invalidPathChars = Path.InvalidPathChars;
+			char[] invalidPathChars = Path.InvalidPathChars;
 #else
-            invalidPathChars=Path.GetInvalidPathChars();
+            char[] invalidPathChars =Path.GetInvalidPathChars();
 #endif
             int howMany=invalidPathChars.Length+2;
 
@@ -134,7 +133,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         public string TransformFile(string name) {
             if (name!=null) {
                 string lowerName=name.ToLower();
-                if ((trimPrefix_!=null)&&(lowerName.IndexOf(trimPrefix_)==0)) {
+                if ((trimPrefix_!=null)&&(lowerName.IndexOf(trimPrefix_, System.StringComparison.Ordinal)==0)) {
                     name=name.Substring(trimPrefix_.Length);
                 }
 
@@ -152,10 +151,10 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 }
 
                 // Convert consecutive // characters to /
-                int index=name.IndexOf("//");
+                int index=name.IndexOf("//", System.StringComparison.Ordinal);
                 while (index>=0) {
                     name=name.Remove(index, 1);
-                    index=name.IndexOf("//");
+                    index=name.IndexOf("//", System.StringComparison.Ordinal);
                 }
 
                 name=MakeValidName(name, '_');

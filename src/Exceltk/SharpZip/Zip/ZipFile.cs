@@ -402,7 +402,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// <remarks>Set to null if no password is required.</remarks>
         public string Password {
             set {
-                if ((value==null)||(value.Length==0)) {
+                if (string.IsNullOrEmpty(value)) {
                     key=null;
                 } else {
                     rawPassword_=value;
@@ -662,19 +662,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
         public string Name {
             get {
                 return name_;
-            }
-        }
-
-        /// <summary>
-        /// Gets the number of entries in this zip file.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">
-        /// The Zip file has been closed.
-        /// </exception>
-        [Obsolete("Use the Count property instead")]
-        public int Size {
-            get {
-                return entries_.Length;
             }
         }
 
@@ -2186,7 +2173,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// </summary>
         /// <param name="update">The update to get the size for.</param>
         /// <returns>The descriptor size, zero if there isnt one.</returns>
-        private int GetDescriptorSize(ZipUpdate update) {
+        private static int GetDescriptorSize(ZipUpdate update) {
             int result=0;
             if ((update.Entry.Flags&(int)GeneralBitFlags.Descriptor)!=0) {
                 result=ZipConstants.DataDescriptorSize-4;
@@ -2407,10 +2394,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         }
 
         private void CopyEntryDirect(ZipFile workFile, ZipUpdate update, ref long destinationPosition) {
-            bool skipOver=false;
-            if (update.Entry.Offset==destinationPosition) {
-                skipOver=true;
-            }
+            bool skipOver = update.Entry.Offset==destinationPosition;
 
             if (!skipOver) {
                 baseStream_.Position=destinationPosition;
@@ -2550,8 +2534,8 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// Compares two objects and returns a value indicating whether one is 
         /// less than, equal to or greater than the other.
         /// </summary>
-        /// <param name="x">First object to compare</param>
-        /// <param name="y">Second object to compare.</param>
+        /// <param name="zx">First object to compare</param>
+        /// <param name="zy">Second object to compare.</param>
         /// <returns>Compare result.</returns>
         private static int UpdateComparer(
             ZipUpdate zx,
@@ -2731,41 +2715,10 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 filename_=fileName;
             }
 
-            [Obsolete]
-            public ZipUpdate(string fileName, string entryName, CompressionMethod compressionMethod) {
-                command_=UpdateCommand.Add;
-                entry_=new ZipEntry(entryName);
-                entry_.CompressionMethod=compressionMethod;
-                filename_=fileName;
-            }
-
-            [Obsolete]
-            public ZipUpdate(string fileName, string entryName)
-                : this(fileName, entryName, CompressionMethod.Deflated) {
-                // Do nothing.
-            }
-
-            [Obsolete]
-            public ZipUpdate(IStaticDataSource dataSource, string entryName, CompressionMethod compressionMethod) {
-                command_=UpdateCommand.Add;
-                entry_=new ZipEntry(entryName);
-                entry_.CompressionMethod=compressionMethod;
-                dataSource_=dataSource;
-            }
-
             public ZipUpdate(IStaticDataSource dataSource, ZipEntry entry) {
                 command_=UpdateCommand.Add;
                 entry_=entry;
                 dataSource_=dataSource;
-            }
-
-            public ZipUpdate(ZipEntry original, ZipEntry updated) {
-                throw new ZipException("Modify not currently supported");
-                /*
-				command_ = UpdateCommand.Modify;
-				entry_ = ( ZipEntry )original.Clone();
-				outEntry_ = ( ZipEntry )updated.Clone();
-			*/
             }
 
             public ZipUpdate(UpdateCommand command, ZipEntry entry) {

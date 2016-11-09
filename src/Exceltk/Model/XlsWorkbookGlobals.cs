@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ExcelToolKit.BinaryFormat {
     /// <summary>
@@ -107,13 +108,8 @@ namespace ExcelToolKit.BinaryFormat {
             m_HyperLinkTable.Add(hyperLink);
         }
 
-        public XlsBiffHyperLink GetHyperLink(int row, int column) {
-            foreach (XlsBiffHyperLink h in m_HyperLinkTable) {
-                if (h.CellRangeAddress.Contain(row, column)) {
-                    return h;
-                }
-            }
-            return null;
+        public XlsBiffHyperLink GetHyperLink(int row, int column){
+            return m_HyperLinkTable.FirstOrDefault(h => h.CellRangeAddress.Contain(row, column));
         }
     }
 }

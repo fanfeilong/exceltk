@@ -53,7 +53,7 @@ namespace ICSharpCode.SharpZipLib.Core {
         public static string DropPathRoot(string path) {
             string result=path;
 
-            if ((path!=null)&&(path.Length>0)) {
+            if (!string.IsNullOrEmpty(path)) {
                 if ((path[0]=='\\')||(path[0]=='/')) {
                     // UNC name ?
                     if ((path.Length>1)&&((path[1]=='\\')||(path[1]=='/'))) {

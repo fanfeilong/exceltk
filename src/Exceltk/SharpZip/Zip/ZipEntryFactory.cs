@@ -246,7 +246,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         public ZipEntry MakeFileEntry(string fileName, string entryName, bool useFileSystem) {
             var result=
                 new ZipEntry(
-                    nameTransform_.TransformFile(entryName!=null&&entryName.Length>0?entryName:fileName));
+                    nameTransform_.TransformFile(!string.IsNullOrEmpty(entryName)?entryName:fileName));
             result.IsUnicodeText=isUnicodeText_;
 
             int externalAttributes=0;

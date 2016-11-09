@@ -38,6 +38,7 @@
 // exception statement from your version.
 
 using System;
+using System.Linq;
 
 namespace ICSharpCode.SharpZipLib.Zip.Compression {
     /// <summary>
@@ -423,7 +424,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
             public readonly short[] freqs;
             private readonly int maxLength;
 
-            public readonly int minNumCodes;
+            private readonly int minNumCodes;
 
             private short[] codes;
             public byte[] length;
@@ -662,12 +663,8 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
             /// Get encoded length
             /// </summary>
             /// <returns>Encoded length, the sum of frequencies * lengths</returns>
-            public int GetEncodedLength() {
-                int len=0;
-                for (int i=0; i<freqs.Length; i++) {
-                    len+=freqs[i]*length[i];
-                }
-                return len;
+            public int GetEncodedLength(){
+                return freqs.Select((t, i) => t*length[i]).Sum();
             }
 
             /// <summary>
@@ -675,15 +672,14 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
             /// in the bit length tree.
             /// </summary>
             public void CalcBLFreq(Tree blTree) {
-                int max_count; /* max repeat count */
-                int min_count; /* min repeat count */
-                int count; /* repeat count of the current code */
                 int curlen=-1; /* length of current code */
 
                 int i=0;
                 while (i<numCodes) {
-                    count=1;
+                    int count = 1; /* repeat count of the current code */
                     int nextlen=length[i];
+                    int max_count; /* max repeat count */
+                    int min_count; /* min repeat count */
                     if (nextlen==0) {
                         max_count=138;
                         min_count=3;
@@ -722,15 +718,14 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
             /// </summary>
             /// <param name="blTree">Tree to write</param>
             public void WriteTree(Tree blTree) {
-                int max_count; // max repeat count
-                int min_count; // min repeat count
-                int count; // repeat count of the current code
                 int curlen=-1; // length of current code
 
                 int i=0;
                 while (i<numCodes) {
-                    count=1;
+                    int count = 1; // repeat count of the current code
                     int nextlen=length[i];
+                    int max_count; // max repeat count
+                    int min_count; // min repeat count
                     if (nextlen==0) {
                         max_count=138;
                         min_count=3;
@@ -814,8 +809,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
                 int incrBitLen=maxLength-1;
                 do {
                     // Find the first bit length which could increase:
-                    while (bl_counts[--incrBitLen]==0)
-                        ;
+                    while (bl_counts[--incrBitLen]==0){}
 
                     // Move this node one down and remove a corresponding
                     // number of overflow nodes.

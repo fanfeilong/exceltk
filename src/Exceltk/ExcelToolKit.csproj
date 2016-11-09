@@ -173,13 +173,16 @@
     <Compile Include="SharpZip\Zip\ZipNameTransform.cs" />
     <Compile Include="SharpZip\Zip\ZipOutputStream.cs" />
     <Compile Include="Util\ComandParser.cs" />
+    <Compile Include="Extension\DataSetExtension.cs" />
+    <Compile Include="Extension\DateExtension.cs" />
     <Compile Include="Util\Errors.cs" />
     <Compile Include="Reader\ExcelFileType.cs" />
-    <Compile Include="Util\Extension.cs" />
-    <Compile Include="Util\FormatReader.cs" />
+    <Compile Include="Extension\Extension.cs" />
+    <Compile Include="Reader\FormatReader.cs" />
     <Compile Include="Util\HttpEncoder.cs" />
     <Compile Include="Util\HttpUtility.cs" />
-    <Compile Include="Util\ZipWorker.cs" />
+    <Compile Include="Extension\MarkDownExtension.cs" />
+    <Compile Include="Reader\ZipWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

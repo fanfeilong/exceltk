@@ -38,6 +38,7 @@
 //	2012-06-07	Z-1675	RootPath was case and slash direction sensitive; trailing slash caused failure
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -318,21 +319,6 @@ namespace ICSharpCode.SharpZipLib.Tar {
         }
 
         /// <summary>
-        /// Set the ascii file translation flag.
-        /// </summary>
-        /// <param name= "translateAsciiFiles">
-        /// If true, translate ascii text files.
-        /// </param>
-        [Obsolete("Use the AsciiTranslate property")]
-        public void SetAsciiTranslation(bool translateAsciiFiles) {
-            if (isDisposed) {
-                throw new ObjectDisposedException("TarArchive");
-            }
-
-            asciiTranslate=translateAsciiFiles;
-        }
-
-        /// <summary>
         /// Set user and group information that will be used to fill in the
         /// tar archive's entry headers. This information is based on that available 
         /// for the linux operating system, which is not always available on other
@@ -362,14 +348,6 @@ namespace ICSharpCode.SharpZipLib.Tar {
             this.groupId=groupId;
             this.groupName=groupName;
             applyUserInfoOverrides=true;
-        }
-
-        /// <summary>
-        /// Close the archive.
-        /// </summary>
-        [Obsolete("Use Close instead")]
-        public void CloseArchive() {
-            Close();
         }
 
         /// <summary>
@@ -433,7 +411,9 @@ namespace ICSharpCode.SharpZipLib.Tar {
             if (Path.IsPathRooted(name)) {
                 // NOTE:
                 // for UNC names...  \\machine\share\zoom\beet.txt gives \zoom\beet.txt
-                name=name.Substring(Path.GetPathRoot(name).Length);
+                var root = Path.GetPathRoot(name);
+                Debug.Assert(root!=null);
+                name=name.Substring(root.Length);
             }
 
             name=name.Replace('/', Path.DirectorySeparatorChar);
@@ -629,7 +609,7 @@ namespace ICSharpCode.SharpZipLib.Tar {
                     }
                 }
 
-                if ((tempFileName!=null)&&(tempFileName.Length>0)) {
+                if (!string.IsNullOrEmpty(tempFileName)) {
                     File.Delete(tempFileName);
                 }
 

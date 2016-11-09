@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace ExcelToolKit.BinaryFormat {
     /// <summary>
@@ -37,16 +36,6 @@ namespace ExcelToolKit.BinaryFormat {
             get {
                 return m_offset;
             }
-        }
-
-        //TODO:Remove ReadStream
-        /// <summary>
-        /// Always returns null, use biff-specific methods
-        /// </summary>
-        /// <returns></returns>
-        [Obsolete("Use BIFF-specific methods for this stream")]
-        public new byte[] ReadStream() {
-            return bytes;
         }
 
         /// <summary>

@@ -137,7 +137,7 @@ or which contains garbage records after a zero block.
 
         /// <summary>
         /// Get/set flag indicating ownership of the underlying stream.
-        /// When the flag is true <see cref="Close"></see> will close the underlying stream also.
+        /// When the flag is true <see cref="Dispose"></see> will close the underlying stream also.
         /// </summary>
         public bool IsStreamOwner {
             get {
@@ -158,25 +158,6 @@ or which contains garbage records after a zero block.
             get {
                 return currentRecordIndex;
             }
-        }
-
-        /// <summary>
-        /// Get the TAR Buffer's record size.
-        /// </summary>
-        /// <returns>The record size in bytes.
-        /// This is equal to the <see cref="BlockFactor"/> multiplied by the <see cref="BlockSize"/></returns>
-        [Obsolete("Use RecordSize property instead")]
-        public int GetRecordSize() {
-            return recordSize;
-        }
-
-        /// <summary>
-        /// Get the TAR Buffer's block factor
-        /// </summary>
-        /// <returns>The block factor; the number of blocks per record.</returns>
-        [Obsolete("Use BlockFactor property instead")]
-        public int GetBlockFactor() {
-            return blockFactor;
         }
 
         /// <summary>
@@ -275,35 +256,6 @@ or which contains garbage records after a zero block.
                 currentBlockIndex=0;
             }
         }
-
-        /// <summary>
-        /// Determine if an archive block indicates End of Archive. End of
-        /// archive is indicated by a block that consists entirely of null bytes.
-        /// All remaining blocks for the record should also be null's
-        /// However some older tars only do a couple of null blocks (Old GNU tar for one)
-        /// and also partial records
-        /// </summary>
-        /// <param name = "block">The data block to check.</param>
-        /// <returns>Returns true if the block is an EOF block; false otherwise.</returns>
-        [Obsolete("Use IsEndOfArchiveBlock instead")]
-        public bool IsEOFBlock(byte[] block) {
-            if (block==null) {
-                throw new ArgumentNullException("block");
-            }
-
-            if (block.Length!=BlockSize) {
-                throw new ArgumentException("block length is invalid");
-            }
-
-            for (int i=0; i<BlockSize; ++i) {
-                if (block[i]!=0) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
 
         /// <summary>
         /// Determine if an archive block indicates the End of an Archive has been reached.
@@ -415,31 +367,6 @@ or which contains garbage records after a zero block.
 
             currentRecordIndex++;
             return true;
-        }
-
-        /// <summary>
-        /// Get the current block number, within the current record, zero based.
-        /// </summary>
-        /// <returns>
-        /// The current zero based block number.
-        /// </returns>
-        /// <remarks>
-        /// The absolute block number = (<see cref="GetCurrentRecordNum">record number</see> * <see cref="BlockFactor">block factor</see>) + <see cref="GetCurrentBlockNum">block number</see>.
-        /// </remarks>
-        [Obsolete("Use CurrentBlock property instead")]
-        public int GetCurrentBlockNum() {
-            return currentBlockIndex;
-        }
-
-        /// <summary>
-        /// Get the current record number.
-        /// </summary>
-        /// <returns>
-        /// The current zero based record number.
-        /// </returns>
-        [Obsolete("Use CurrentRecord property instead")]
-        public int GetCurrentRecordNum() {
-            return currentRecordIndex;
         }
 
         /// <summary>

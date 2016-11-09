@@ -29,7 +29,7 @@ namespace exceltk.Clipborad {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.Container components = null;
+        private readonly System.ComponentModel.Container components = null;
 
         public ClipboradMonitor() {
             //
@@ -68,9 +68,9 @@ namespace exceltk.Clipborad {
             var tableLayout = new TableLayoutPanel();
             var panenl = new Panel();
 
-            var w = 292;
-            var h = 273;
-            var t = 20;
+            const int w = 292;
+            const int h = 273;
+            const int t = 20;
 
             SuspendLayout();
 
@@ -202,7 +202,7 @@ namespace exceltk.Clipborad {
             richTextBox1.Text = src;
         }
 
-        DataTable GetTableFromHtml(object src) {
+        static DataTable GetTableFromHtml(object src) {
             var dataSet = src.ParseDataSet();
             if (dataSet == null) {
                 return null;
@@ -222,7 +222,7 @@ namespace exceltk.Clipborad {
             int rowEnd = 0;
             int rowStart = 0;
 
-            DataTable dataTable = new DataTable("");
+            var dataTable = new DataTable("");
             bool firstRow = true;
 
             do {
@@ -247,7 +247,7 @@ namespace exceltk.Clipborad {
 
                 int cellEnd = 0;
                 int cellStart = 0;
-                List<string> dataRow = new List<string>();
+                var dataRow = new List<string>();
                 do {
                     cellEnd = row.IndexOf(@"\cell ", cellEnd, StringComparison.OrdinalIgnoreCase);
                     if (cellEnd < 0)
@@ -278,9 +278,8 @@ namespace exceltk.Clipborad {
             return dataTable;
         }
 
-        string CellValue(string cell) {
+        static string CellValue(string cell) {
             int start = 0;
-            int end = 0;
 
             while (start < cell.Length) {
                 start = cell.IndexOf('\\', start);
@@ -290,7 +289,7 @@ namespace exceltk.Clipborad {
                     cell = cell.Remove(start, 1);   //1 offset to erase space
                     start++; //skip "\"
                 } else {
-                    end = cell.IndexOf(' ', start);
+                    var end = cell.IndexOf(' ', start);
                     if (end < 0)
                         if (cell.Length > 0)
                             end = cell.Length - 1;
@@ -314,7 +313,7 @@ namespace exceltk.Clipborad {
             return cell;
         }
 
-        private void SetClipboard(string value) {
+        private static void SetClipboard(string value) {
             var dataObject = new DataObject();
             var bytes = Encoding.Unicode.GetBytes(value);
             var stream = new MemoryStream(bytes);

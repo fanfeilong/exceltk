@@ -78,7 +78,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
 
         /// <summary>
         /// Get/set flag indicating ownership of underlying stream.
-        /// When the flag is true <see cref="Close"></see> will close the underlying stream also.
+        /// When the flag is true <see cref="Dispose"></see> will close the underlying stream also.
         /// </summary>
         public bool IsStreamOwner {
             get {
@@ -489,7 +489,6 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
 
         private void GetAndMoveToFrontDecode() {
             var yy=new byte[256];
-            int nextSym;
 
             int limitLast=BZip2Constants.BaseBlockSize*blockSize100k;
             origPtr=BsGetIntVS(24);
@@ -542,7 +541,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
             if (zvec-baseArray[zt][zn]<0||zvec-baseArray[zt][zn]>=BZip2Constants.MaximumAlphaSize) {
                 throw new BZip2Exception("Bzip data error");
             }
-            nextSym=perm[zt][zvec-baseArray[zt][zn]];
+            int nextSym = perm[zt][zvec-baseArray[zt][zn]];
 
             while (true) {
                 if (nextSym==EOB) {

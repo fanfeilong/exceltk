@@ -446,10 +446,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
         /// <returns>True if a match greater than the minimum length is found</returns>
         private bool FindLongestMatch(int curMatch) {
             int chainLength=max_chain;
-            int niceLength=this.niceLength;
-            short[] prev=this.prev;
+            int currentNiceLength=this.niceLength;
+            short[] currentPrev=this.prev;
             int scan=strstart;
-            int match;
             int best_end=strstart+matchLen;
             int best_len=Math.Max(matchLen, MIN_MATCH-1);
 
@@ -467,8 +466,8 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
             /* Do not look for matches beyond the end of the input. This is necessary
 			* to make deflate deterministic.
 			*/
-            if (niceLength>lookahead) {
-                niceLength=lookahead;
+            if (currentNiceLength>lookahead) {
+                currentNiceLength=lookahead;
             }
 
 #if DebugDeflation
@@ -494,7 +493,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
                     continue;
                 }
 
-                match=curMatch+2;
+                int match = curMatch+2;
                 scan+=2;
 
                 /* We check for insufficient lookahead only every 8th comparison;
@@ -522,7 +521,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
                     best_end=scan;
                     best_len=scan-strstart;
 
-                    if (best_len>=niceLength) {
+                    if (best_len>=currentNiceLength) {
                         break;
                     }
 
@@ -530,7 +529,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
                     scan_end=window[best_end];
                 }
                 scan=strstart;
-            } while ((curMatch=(prev[curMatch&WMASK]&0xffff))>limit&&--chainLength!=0);
+            } while ((curMatch=(currentPrev[curMatch&WMASK]&0xffff))>limit&&--chainLength!=0);
 
             matchLen=Math.Min(best_len, lookahead);
             return matchLen>=MIN_MATCH;

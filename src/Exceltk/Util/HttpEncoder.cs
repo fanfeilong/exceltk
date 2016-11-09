@@ -35,17 +35,18 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace ExcelToolKit.Util {
     public
     class HttpEncoder {
         public static readonly CultureInfo InvariantCulture=CultureInfo.InvariantCulture;
-        static char[] hexChars="0123456789abcdef".ToCharArray();
-        static object entitiesLock=new object();
+        static readonly char[] hexChars="0123456789abcdef".ToCharArray();
+        static readonly object entitiesLock=new object();
         static SortedDictionary<string, char> entities;
-        static HttpEncoder defaultEncoder;
-        static HttpEncoder currentEncoderLazy;
+        static readonly HttpEncoder defaultEncoder;
+        static readonly HttpEncoder currentEncoderLazy;
         static HttpEncoder currentEncoder;
 
         static IDictionary<string, char> Entities {
@@ -157,7 +158,7 @@ namespace ExcelToolKit.Util {
             if (String.IsNullOrEmpty(value))
                 return value;
 
-            MemoryStream result=new MemoryStream();
+            var result=new MemoryStream();
             int length=value.Length;
             for (int i=0; i<length; i++)
                 UrlPathEncodeChar(value[i], result);
@@ -179,7 +180,7 @@ namespace ExcelToolKit.Util {
             if (count<0||count>blen-offset)
                 throw new ArgumentOutOfRangeException("count");
 
-            MemoryStream result=new MemoryStream(count);
+            var result=new MemoryStream(count);
             int end=offset+count;
             for (int i=offset; i<end; i++)
                 UrlEncodeChar((char)bytes[i], result, false);
@@ -194,21 +195,12 @@ namespace ExcelToolKit.Util {
             if (s.Length==0)
                 return String.Empty;
 
-            bool needEncode=false;
-            for (int i=0; i<s.Length; i++) {
-                char c=s[i];
-                if (c=='&'||c=='"'||c=='<'||c=='>'||c>159
-                    ||c=='\''
-                ) {
-                    needEncode=true;
-                    break;
-                }
-            }
+            bool needEncode = s.Any(c => c == '&' || c == '"' || c == '<' || c == '>' || c > 159 || c == '\'');
 
             if (!needEncode)
                 return s;
 
-            StringBuilder output=new StringBuilder();
+            var output=new StringBuilder();
             int len=s.Length;
 
             for (int i=0; i<len; i++) {
@@ -254,21 +246,12 @@ namespace ExcelToolKit.Util {
         internal static string HtmlAttributeEncode(string s) {
             if (String.IsNullOrEmpty(s))
                 return String.Empty;
-            bool needEncode=false;
-            for (int i=0; i<s.Length; i++) {
-                char c=s[i];
-                if (c=='&'||c=='"'||c=='<'
-                    ||c=='\''
-                ) {
-                    needEncode=true;
-                    break;
-                }
-            }
+            bool needEncode = s.Any(c => c == '&' || c == '"' || c == '<' || c == '\'');
 
             if (!needEncode)
                 return s;
 
-            StringBuilder output=new StringBuilder();
+            var output=new StringBuilder();
             int len=s.Length;
 
             for (int i=0; i<len; i++) {
@@ -304,9 +287,9 @@ namespace ExcelToolKit.Util {
 
             if (s.IndexOf('&')==-1)
                 return s;
-            StringBuilder rawEntity=new StringBuilder();
-            StringBuilder entity=new StringBuilder();
-            StringBuilder output=new StringBuilder();
+            var rawEntity=new StringBuilder();
+            var entity=new StringBuilder();
+            var output=new StringBuilder();
             int len=s.Length;
             // 0 -> nothing,
             // 1 -> right after '&'
@@ -428,19 +411,23 @@ namespace ExcelToolKit.Util {
                 //FIXME: what happens when there is an internal error?
                 //if (!isUnicode)
                 //	throw new ArgumentOutOfRangeException ("c", c, "c must be less than 256");
-                int idx;
-                int i=(int)c;
+                var i=(int)c;
 
                 result.WriteByte((byte)'%');
                 result.WriteByte((byte)'u');
-                idx=i>>12;
+
+                int idx = i>>12;
                 result.WriteByte((byte)hexChars[idx]);
+
                 idx=(i>>8)&0x0F;
                 result.WriteByte((byte)hexChars[idx]);
+
                 idx=(i>>4)&0x0F;
                 result.WriteByte((byte)hexChars[idx]);
+
                 idx=i&0x0F;
                 result.WriteByte((byte)hexChars[idx]);
+
                 return;
             }
 

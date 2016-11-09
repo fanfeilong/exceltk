@@ -34,7 +34,10 @@
 // exception statement from your version.
 
 using System;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using ICSharpCode.SharpZipLib.Core;
 
@@ -67,12 +70,10 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// Initialise static class information.
         /// </summary>
         static WindowsNameTransform() {
-            char[] invalidPathChars;
-
 #if NET_1_0 || NET_1_1 || NETCF_1_0
-			invalidPathChars = Path.InvalidPathChars;
+			char[] invalidPathChars = Path.InvalidPathChars;
 #else
-            invalidPathChars=Path.GetInvalidPathChars();
+            char[] invalidPathChars = Path.GetInvalidPathChars();
 #endif
             int howMany=invalidPathChars.Length+3;
 
@@ -138,10 +139,8 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 return _replacementChar;
             }
             set {
-                for (int i=0; i<InvalidEntryChars.Length; ++i) {
-                    if (InvalidEntryChars[i]==value) {
-                        throw new ArgumentException("invalid path character");
-                    }
+                if (InvalidEntryChars.Any(t => t==value)){
+                    throw new ArgumentException("invalid path character");
                 }
 
                 if ((value==Path.DirectorySeparatorChar)||(value==Path.AltDirectorySeparatorChar)) {
@@ -187,6 +186,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 // This may exceed windows length restrictions.
                 // Combine will throw a PathTooLongException in that case.
                 if (_baseDirectory!=null) {
+                    Debug.Assert(name!=null);
                     name=Path.Combine(_baseDirectory, name);
                 }
             } else {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Xml;
 
@@ -73,12 +74,13 @@ namespace ExcelToolKit.OpenXmlFormat {
                             if (reader.NodeType==XmlNodeType.Element&&reader.Depth==1)
                                 break;
 
-                            if (reader.NodeType==XmlNodeType.Element&&reader.LocalName==XlsxNumFmt.N_numFmt) {
-                                _Styles.NumFmts.Add(
-                                    new XlsxNumFmt(
-                                        int.Parse(reader.GetAttribute(XlsxNumFmt.A_numFmtId)),
-                                        reader.GetAttribute(XlsxNumFmt.A_formatCode)
-                                        ));
+                            if (reader.NodeType==XmlNodeType.Element&&reader.LocalName==XlsxNumFmt.N_numFmt){
+                                var formatIdText = reader.GetAttribute(XlsxNumFmt.A_numFmtId);
+                                Debug.Assert(formatIdText!=null);
+                                var formatId=int.Parse(formatIdText);
+                                var formatCode=reader.GetAttribute(XlsxNumFmt.A_formatCode);
+                                var numberFormat=new XlsxNumFmt(formatId, formatCode);
+                                _Styles.NumFmts.Add(numberFormat);                                    
                             }
                         }
 
@@ -159,10 +161,14 @@ namespace ExcelToolKit.OpenXmlFormat {
 
             using (XmlReader reader=XmlReader.Create(xmlFileStream)) {
                 while (reader.Read()) {
-                    if (reader.NodeType==XmlNodeType.Element&&reader.LocalName==N_sheet) {
-                        sheets.Add(new XlsxWorksheet(
-                                       reader.GetAttribute(A_name),
-                                       int.Parse(reader.GetAttribute(A_sheetId)), reader.GetAttribute(A_rid)));
+                    if (reader.NodeType==XmlNodeType.Element&&reader.LocalName==N_sheet){
+                        var sheetIdText = reader.GetAttribute(A_sheetId);
+                        Debug.Assert(sheetIdText!=null);
+                        var sheetName=reader.GetAttribute(A_name);
+                        var sheetId=int.Parse(sheetIdText);
+                        var rid=reader.GetAttribute(A_rid);
+                        var sheet=new XlsxWorksheet(sheetName, sheetId, rid);
+                        sheets.Add(sheet);
                     }
                 }
 

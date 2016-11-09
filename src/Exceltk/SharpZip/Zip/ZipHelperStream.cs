@@ -34,6 +34,7 @@
 // exception statement from your version.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace ICSharpCode.SharpZipLib.Zip {
@@ -217,99 +218,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
         #endregion
 
-        // Write the local file header
-        // TODO: ZipHelperStream.WriteLocalHeader is not yet used and needs checking for ZipFile and ZipOuptutStream usage
-        private void WriteLocalHeader(ZipEntry entry, EntryPatchData patchData) {
-            CompressionMethod method=entry.CompressionMethod;
-            bool headerInfoAvailable=true; // How to get this?
-            bool patchEntryHeader=false;
-
-            WriteLEInt(ZipConstants.LocalHeaderSignature);
-
-            WriteLEShort(entry.Version);
-            WriteLEShort(entry.Flags);
-            WriteLEShort((byte)method);
-            WriteLEInt((int)entry.DosTime);
-
-            if (headerInfoAvailable) {
-                WriteLEInt((int)entry.Crc);
-                if (entry.LocalHeaderRequiresZip64) {
-                    WriteLEInt(-1);
-                    WriteLEInt(-1);
-                } else {
-                    WriteLEInt(entry.IsCrypted
-                                   ?(int)entry.CompressedSize+ZipConstants.CryptoHeaderSize
-                                   :(int)entry.CompressedSize);
-                    WriteLEInt((int)entry.Size);
-                }
-            } else {
-                if (patchData!=null) {
-                    patchData.CrcPatchOffset=stream_.Position;
-                }
-                WriteLEInt(0); // Crc
-
-                if (patchData!=null) {
-                    patchData.SizePatchOffset=stream_.Position;
-                }
-
-                // For local header both sizes appear in Zip64 Extended Information
-                if (entry.LocalHeaderRequiresZip64&&patchEntryHeader) {
-                    WriteLEInt(-1);
-                    WriteLEInt(-1);
-                } else {
-                    WriteLEInt(0); // Compressed size
-                    WriteLEInt(0); // Uncompressed size
-                }
-            }
-
-            byte[] name=ZipConstants.ConvertToArray(entry.Flags, entry.Name);
-
-            if (name.Length>0xFFFF) {
-                throw new ZipException("Entry name too long.");
-            }
-
-            var ed=new ZipExtraData(entry.ExtraData);
-
-            if (entry.LocalHeaderRequiresZip64&&(headerInfoAvailable||patchEntryHeader)) {
-                ed.StartNewEntry();
-                if (headerInfoAvailable) {
-                    ed.AddLeLong(entry.Size);
-                    ed.AddLeLong(entry.CompressedSize);
-                } else {
-                    ed.AddLeLong(-1);
-                    ed.AddLeLong(-1);
-                }
-                ed.AddNewEntry(1);
-
-                if (!ed.Find(1)) {
-                    throw new ZipException("Internal error cant find extra data");
-                }
-
-                if (patchData!=null) {
-                    patchData.SizePatchOffset=ed.CurrentReadIndex;
-                }
-            } else {
-                ed.Delete(1);
-            }
-
-            byte[] extra=ed.GetEntryData();
-
-            WriteLEShort(name.Length);
-            WriteLEShort(extra.Length);
-
-            if (name.Length>0) {
-                stream_.Write(name, 0, name.Length);
-            }
-
-            if (entry.LocalHeaderRequiresZip64&&patchEntryHeader) {
-                patchData.SizePatchOffset+=stream_.Position;
-            }
-
-            if (extra.Length>0) {
-                stream_.Write(extra, 0, extra.Length);
-            }
-        }
-
         /// <summary>
         /// Locates a block with the desired <paramref name="signature"/>.
         /// </summary>
@@ -426,6 +334,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
             WriteLEShort(commentLength);
 
             if (commentLength>0) {
+                Debug.Assert(comment!=null);
                 Write(comment, 0, comment.Length);
             }
         }

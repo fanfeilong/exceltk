@@ -36,7 +36,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
     /// <summary>
     /// Defines internal values for both compression and decompression
     /// </summary>
-    internal sealed class BZip2Constants {
+    internal static class BZip2Constants {
         /// <summary>
         /// When multiplied by compression parameter (1-9) gives the block size for compression
         /// 9 gives the best compression but uses the most memory.
@@ -146,9 +146,6 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
                 645, 990, 626, 197, 510, 357, 358, 850, 858, 364,
                 936, 638
             };
-
-        private BZip2Constants() {
-        }
     }
 }
 

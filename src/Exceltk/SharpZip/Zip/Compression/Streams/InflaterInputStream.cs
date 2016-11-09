@@ -404,7 +404,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 
         /// <summary>
         /// Get/set flag indicating ownership of underlying stream.
-        /// When the flag is true <see cref="Close"/> will close the underlying stream also.
+        /// When the flag is true <see cref="Dispose"/> will close the underlying stream also.
         /// </summary>
         /// <remarks>
         /// The default value is true.

@@ -12,7 +12,11 @@ namespace ICSharpCode.SharpZipLib.Encryption {
         }
     }
     public abstract class Rijndael2 : SymmetricAlgorithm {
-        public new static Rijndael2 Create() {
+        #if OS_WINDOWS
+        public static new Rijndael2 Create() {
+        #else
+        public static Rijndael2 Create() {
+        #endif
             return new RijndaelImplementation();
         }
 

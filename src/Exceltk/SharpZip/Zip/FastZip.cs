@@ -35,6 +35,7 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics;
 using System.IO;
 using ICSharpCode.SharpZipLib.Core;
 
@@ -472,6 +473,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 IEnumerator enumerator=zipFile_.GetEnumerator();
                 while (continueRunning_&&enumerator.MoveNext()) {
                     var entry=(ZipEntry)enumerator.Current;
+                    Debug.Assert(entry!=null);
                     if (entry.IsFile) {
                         // TODO Path.GetDirectory can fail here on invalid characters.
                         if (directoryFilter_.IsMatch(Path.GetDirectoryName(entry.Name))&&
@@ -627,43 +629,43 @@ namespace ICSharpCode.SharpZipLib.Zip {
                     targetName=extractNameTransform_.TransformDirectory(targetName);
                 }
 
-                doExtraction=!((targetName==null)||(targetName.Length==0));
+                doExtraction=!string.IsNullOrEmpty(targetName);
             }
 
             // TODO: Fire delegate/throw exception were compression method not supported, or name is invalid?
 
-            string dirName=null;
-
-            if (doExtraction) {
-                if (entry.IsDirectory) {
-                    dirName=targetName;
-                } else {
-                    dirName=Path.GetDirectoryName(Path.GetFullPath(targetName));
+            if (doExtraction){
+                string dirName=null;
+                if (entry.IsDirectory){
+                    dirName = targetName;
+                } else{
+                    dirName = Path.GetDirectoryName(Path.GetFullPath(targetName));
                 }
-            }
 
-            if (doExtraction&&!Directory.Exists(dirName)) {
-                if (!entry.IsDirectory||CreateEmptyDirectories) {
-                    try {
-                        Directory.CreateDirectory(dirName);
-                    } catch (Exception ex) {
-                        doExtraction=false;
-                        if (events_!=null) {
-                            if (entry.IsDirectory) {
-                                continueRunning_=events_.OnDirectoryFailure(targetName, ex);
-                            } else {
-                                continueRunning_=events_.OnFileFailure(targetName, ex);
+                Debug.Assert(dirName != null);
+                if (!Directory.Exists(dirName)){
+                    if (!entry.IsDirectory || CreateEmptyDirectories){
+                        try{
+                            Directory.CreateDirectory(dirName);
+                        } catch (Exception ex){
+                            doExtraction = false;
+                            if (events_ != null){
+                                if (entry.IsDirectory){
+                                    continueRunning_ = events_.OnDirectoryFailure(targetName, ex);
+                                } else{
+                                    continueRunning_ = events_.OnFileFailure(targetName, ex);
+                                }
+                            } else{
+                                continueRunning_ = false;
+                                throw;
                             }
-                        } else {
-                            continueRunning_=false;
-                            throw;
                         }
                     }
                 }
-            }
 
-            if (doExtraction&&entry.IsFile) {
-                ExtractFileEntry(entry, targetName);
+                if (entry.IsFile){
+                    ExtractFileEntry(entry, targetName);
+                }
             }
         }
 
@@ -680,8 +682,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
 		}
 #else
         private static bool NameIsValid(string name) {
-            return (name!=null)&&
-                   (name.Length>0)&&
+            return (!string.IsNullOrEmpty(name))&&
                    (name.IndexOfAny(Path.GetInvalidPathChars())<0);
         }
 #endif

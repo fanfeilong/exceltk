@@ -133,7 +133,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
 
         /// <summary>
         /// Get/set flag indicating ownership of underlying stream.
-        /// When the flag is true <see cref="Close"></see> will close the underlying stream also.
+        /// When the flag is true <see cref="Dispose"></see> will close the underlying stream also.
         /// </summary>
         public bool IsStreamOwner {
             get {
@@ -849,7 +849,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
                 gs=ge+1;
                 ++selCtr;
             }
-            if (!(selCtr==nSelectors)) {
+            if (selCtr != nSelectors) {
                 Panic();
             }
         }
@@ -1186,7 +1186,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
 					--*/
                     for (j=0; j<=255; j++) {
                         sb=(ss<<8)+j;
-                        if (!((ftab[sb]&SETMASK)==SETMASK)) {
+                        if ((ftab[sb]&SETMASK) != SETMASK) {
                             int lo=ftab[sb]&CLEARMASK;
                             int hi=(ftab[sb+1]&CLEARMASK)-1;
                             if (hi>lo) {

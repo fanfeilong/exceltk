@@ -41,6 +41,7 @@
 //	2010-05-25	Z-1663	Fixed exception when testing local header compressed size of -1
 
 using System;
+using System.Globalization;
 using System.IO;
 using ICSharpCode.SharpZipLib.Checksums;
 using ICSharpCode.SharpZipLib.Encryption;
@@ -453,14 +454,14 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// <param name="offset">The offset at which data read should be stored.</param>
         /// <param name="count">The maximum number of bytes to read.</param>
         /// <returns>Returns the number of bytes actually read.</returns>
-        private int ReadingNotAvailable(byte[] destination, int offset, int count) {
+        private static int ReadingNotAvailable(byte[] destination, int offset, int count) {
             throw new InvalidOperationException("Unable to read from this stream");
         }
 
         /// <summary>
         /// Handle attempts to read from this entry by throwing an exception
         /// </summary>
-        private int ReadingNotSupported(byte[] destination, int offset, int count) {
+        private static int ReadingNotSupported(byte[] destination, int offset, int count) {
             throw new ZipException("The compression method for this entry is not supported");
         }
 
@@ -475,7 +476,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         private int InitialRead(byte[] destination, int offset, int count) {
             if (!CanDecompressEntry) {
                 throw new ZipException("Library cannot extract this entry. Version required is ("+
-                                       entry.Version.ToString()+")");
+                                       entry.Version.ToString(CultureInfo.InvariantCulture)+")");
             }
 
             // Handle encryption if required.

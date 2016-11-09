@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace ExcelToolKit.BinaryFormat {
     /// <summary>
@@ -16,28 +17,30 @@ namespace ExcelToolKit.BinaryFormat {
         /// <param name="hdr">XlsHeader object</param>
         public XlsRootDirectory(XlsHeader hdr) {
             var stream=new XlsStream(hdr, hdr.RootDirectoryEntryStart, false, null);
-            byte[] array=stream.ReadStream();
-            byte[] tmp;
-            XlsDirectoryEntry entry;
+            var array=stream.ReadStream();
             var entries=new List<XlsDirectoryEntry>();
             for (int i=0; i<array.Length; i+=XlsDirectoryEntry.Length) {
-                tmp=new byte[XlsDirectoryEntry.Length];
+                var tmp = new byte[XlsDirectoryEntry.Length];
                 Buffer.BlockCopy(array, i, tmp, 0, tmp.Length);
                 entries.Add(new XlsDirectoryEntry(tmp, hdr));
             }
             m_entries=entries;
-            for (int i=0; i<entries.Count; i++) {
-                entry=entries[i];
+            foreach (var entry in entries){
+                if (m_root==null&&entry.EntryType==STGTY.STGTY_ROOT){
+                    m_root = entry;
+                }
 
-                ////Console.WriteLine("Directory Entry:{0} type:{1}, firstsector:{2}, streamSize:{3}, isEntryMiniStream:{4}", entry.EntryName, entry.EntryType.ToString(), entry.StreamFirstSector, entry.StreamSize, entry.IsEntryMiniStream);
-                if (m_root==null&&entry.EntryType==STGTY.STGTY_ROOT)
-                    m_root=entry;
-                if (entry.ChildSid!=(uint)FATMARKERS.FAT_FreeSpace)
-                    entry.Child=entries[(int)entry.ChildSid];
-                if (entry.LeftSiblingSid!=(uint)FATMARKERS.FAT_FreeSpace)
-                    entry.LeftSibling=entries[(int)entry.LeftSiblingSid];
-                if (entry.RightSiblingSid!=(uint)FATMARKERS.FAT_FreeSpace)
-                    entry.RightSibling=entries[(int)entry.RightSiblingSid];
+                if (entry.ChildSid!=(uint)FATMARKERS.FAT_FreeSpace){
+                    entry.Child = entries[(int) entry.ChildSid];
+                }
+
+                if (entry.LeftSiblingSid!=(uint)FATMARKERS.FAT_FreeSpace){
+                    entry.LeftSibling = entries[(int) entry.LeftSiblingSid];
+                }
+
+                if (entry.RightSiblingSid!=(uint)FATMARKERS.FAT_FreeSpace){
+                    entry.RightSibling = entries[(int) entry.RightSiblingSid];
+                }
             }
             stream.CalculateMiniFat(this);
         }
@@ -65,12 +68,8 @@ namespace ExcelToolKit.BinaryFormat {
         /// </summary>
         /// <param name="EntryName">String name of entry</param>
         /// <returns>Entry if found, null otherwise</returns>
-        public XlsDirectoryEntry FindEntry(string EntryName) {
-            foreach (XlsDirectoryEntry e in m_entries) {
-                if (string.Equals(e.EntryName, EntryName, StringComparison.CurrentCultureIgnoreCase))
-                    return e;
-            }
-            return null;
+        public XlsDirectoryEntry FindEntry(string EntryName){
+            return m_entries.FirstOrDefault(e => string.Equals(e.EntryName, EntryName, StringComparison.CurrentCultureIgnoreCase));
         }
     }
 }

@@ -46,7 +46,7 @@ namespace ExcelToolKit {
         }
 
         public string FilteUrl(string url){
-            var regex=@"https?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?";
+            const string regex = @"https?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?";
             var m=Regex.Match(url, regex);
             if(m.Captures.Count>0){
                 return m.Groups[0].Value;

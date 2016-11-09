@@ -255,9 +255,8 @@ namespace ICSharpCode.SharpZipLib.GZip {
             // 7. Read extra field
             if ((flags&GZipConstants.FEXTRA)!=0) {
                 // XLEN is total length of extra subfields, we will skip them all
-                int len1, len2;
-                len1=inputBuffer.ReadLeByte();
-                len2=inputBuffer.ReadLeByte();
+                int len1 = inputBuffer.ReadLeByte();
+                int len2 = inputBuffer.ReadLeByte();
                 if ((len1<0)||(len2<0)) {
                     throw new EndOfStreamException("EOS reading GZIP header");
                 }
@@ -303,13 +302,12 @@ namespace ICSharpCode.SharpZipLib.GZip {
 
             // 10. Read header CRC
             if ((flags&GZipConstants.FHCRC)!=0) {
-                int tempByte;
                 int crcval=inputBuffer.ReadLeByte();
                 if (crcval<0) {
                     throw new EndOfStreamException("EOS reading GZIP header");
                 }
 
-                tempByte=inputBuffer.ReadLeByte();
+                int tempByte = inputBuffer.ReadLeByte();
                 if (tempByte<0) {
                     throw new EndOfStreamException("EOS reading GZIP header");
                 }

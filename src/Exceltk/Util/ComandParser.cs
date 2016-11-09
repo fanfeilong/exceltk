@@ -11,7 +11,7 @@ namespace ExcelToolKit {
         private readonly Dictionary<string, string> Parameters;
 
         // Constructor
-        public CommandParser(string[] Args) {
+        public CommandParser(IEnumerable<string> Args) {
             Parameters=new Dictionary<string, string>();
             var Spliter=new Regex(@"^-{1,2}",
                                     RegexOptions.IgnoreCase|RegexOptions.Compiled);
@@ -20,16 +20,15 @@ namespace ExcelToolKit {
                                     RegexOptions.IgnoreCase|RegexOptions.Compiled);
 
             string Parameter=null;
-            string[] Parts;
 
             // Valid parameters forms:
             // {-,/,--}param value(",'))
             // Examples: 
             // -param1 value1 -param2 value2" 
-            foreach (string Txt in Args) {
+            foreach (string Txt in Args){
                 // Look for new parameters (-,/ or --) and a
                 // possible enclosed value (=,:)
-                Parts=Spliter.Split(Txt, 3);
+                string[] Parts = Spliter.Split(Txt, 3);
 
                 switch (Parts.Length) {
                     // Found a value (for the last parameter 

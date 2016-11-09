@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace ExcelToolKit {
+﻿namespace ExcelToolKit {
     public static class Config {
         public static int DecimalPrecision{
             get;

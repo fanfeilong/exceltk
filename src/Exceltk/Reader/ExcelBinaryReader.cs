@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using ExcelToolKit.BinaryFormat;
@@ -351,11 +353,11 @@ namespace ExcelToolKit {
 
             do {
                 row=m_stream.ReadAt(offs) as XlsBiffRow;
-                if (row==null)
-                    break;
-
+                if (row==null){
+                    break;                    
+                }
                 offs+=row.Size;
-            } while (null!=row);
+            } while (true);
 
             return offs;
         }
@@ -541,7 +543,7 @@ namespace ExcelToolKit {
                     dims=(XlsBiffDimensions)trec;
                     break;
                 }
-            } while (trec!=null&&trec.ID!=BIFFRECORDTYPE.ROW);
+            } while (trec.ID!=BIFFRECORDTYPE.ROW);
 
             //
             // Read Row
@@ -580,6 +582,7 @@ namespace ExcelToolKit {
                 m_maxRow=(int)dims.LastRow;
                 sheet.Dimensions=dims;
             } else {
+                Debug.Assert(idx!=null);
                 m_maxCol=256;
                 m_maxRow=(int)idx.LastExistingRow;
             }
@@ -644,11 +647,9 @@ namespace ExcelToolKit {
                 if ((rec is XlsBiffDbCell)) {
                     break;
                 }
-                ; //break;
                 if (rec is XlsBiffEOF) {
                     return false;
                 }
-                ;
 
                 var cell=rec as XlsBiffBlankCell;
 
@@ -658,7 +659,6 @@ namespace ExcelToolKit {
                     m_cellOffset-=rec.Size;
                     break;
                 }
-                ;
 
                 pushCellValue(cell);
             }
@@ -676,7 +676,7 @@ namespace ExcelToolKit {
 
             var table=new DataTable(sheet.Name);
 
-            bool triggerCreateColumns=true;
+            const bool triggerCreateColumns = true;
 
             if (idx!=null) {
                 //Console.WriteLine("Read WholeWorkSheetWithIndex");
@@ -693,12 +693,13 @@ namespace ExcelToolKit {
         private bool readWholeWorkSheetWithIndex(XlsBiffIndex idx, bool triggerCreateColumns, DataTable table) {
             m_dbCellAddrs=idx.DbCellAddresses;
 
-            for (int index=0; index<m_dbCellAddrs.Length; index++) {
-                if (m_depth==m_maxRow)
+            foreach (uint dbCellAddress in m_dbCellAddrs){
+                if (m_depth==m_maxRow){
                     break;
+                }
 
                 // init reading data
-                m_cellOffset=findFirstDataCellOffset((int)m_dbCellAddrs[index]);
+                m_cellOffset=findFirstDataCellOffset((int)dbCellAddress);
 
                 if (m_cellOffset==-2) {
                     return false;
@@ -744,8 +745,9 @@ namespace ExcelToolKit {
 
         private void readWholeWorkSheetNoIndex(bool triggerCreateColumns, DataTable table) {
             while (Read()) {
-                if (m_depth==m_maxRow)
-                    break;
+                if (m_depth==m_maxRow){
+                    break;                    
+                }
 
                 bool justAddedColumns=false;
                 //DataTable columns
@@ -851,12 +853,9 @@ namespace ExcelToolKit {
 
                     object _oValue=((XlsBiffFormulaCell)cell).Value;
 
-                    if (null!=_oValue&&_oValue is FORMULAERROR) {
-                        _oValue=null;
-                    } else {
-                        m_cellsValues[cell.ColumnIndex]=new XlsCell(!ConvertOaDate
-                                                                          ?_oValue
-                                                                          :tryConvertOADateTime(_oValue, (cell.XFormat)));
+                    if (!(_oValue is FORMULAERROR)) {
+                        m_cellsValues[cell.ColumnIndex]=
+                        new XlsCell(!ConvertOaDate?_oValue:tryConvertOADateTime(_oValue, (cell.XFormat)));
                         //date time offset
                     }
 
@@ -885,11 +884,7 @@ namespace ExcelToolKit {
                 m_depth==m_maxRow)
                 return false;
 
-            m_canRead=readWorkSheetRow();
-
-            //read last row
-            if (!m_canRead&&m_depth>0)
-                m_canRead=true;
+            m_canRead=readWorkSheetRow()||m_depth>0;
 
             if (!m_canRead&&m_dbCellAddrsIndex<(m_dbCellAddrs.Length-1)) {
                 m_dbCellAddrsIndex++;
@@ -982,7 +977,6 @@ namespace ExcelToolKit {
                 initializeSheetRead();
                 return;
             }
-            ;
 
             if (idx==null) {
                 //no index, but should have the first row record
@@ -993,7 +987,6 @@ namespace ExcelToolKit {
                 m_cellOffset=findFirstDataCellOffset((int)m_dbCellAddrs[m_dbCellAddrsIndex]);
                 if (m_cellOffset<0) {
                     fail("Badly formed binary file. Has INDEX but no DBCELL");
-                    return;
                 }
             }
         }
@@ -1016,7 +1009,7 @@ namespace ExcelToolKit {
 
         private object tryConvertOADateTime(double value, ushort XFormat) {
             ushort format=0;
-            if (XFormat>=0&&XFormat<m_globals.ExtendedFormats.Count) {
+            if (XFormat<m_globals.ExtendedFormats.Count) {
                 XlsBiffRecord rec=m_globals.ExtendedFormats[XFormat];
                 switch (rec.ID) {
                     case BIFFRECORDTYPE.XF_V2:
@@ -1089,7 +1082,7 @@ namespace ExcelToolKit {
                 case 0x2f: // "mm:ss.0";
                     return value.ConvertFromOATime();
                 case 0x31: // "@";
-                    return value.ToString();
+                    return value.ToString(CultureInfo.InvariantCulture);
 
                 default:
                     XlsBiffFormatString fmtString;

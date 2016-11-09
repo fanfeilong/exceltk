@@ -36,6 +36,7 @@
 // exception statement from your version.
 
 using System;
+using System.Diagnostics;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
 namespace ICSharpCode.SharpZipLib.Zip.Compression {
@@ -106,6 +107,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression {
                             }
                             input.DropBits(3);
                             //  		System.err.println("blLens["+BL_ORDER[ptr]+"]: "+len);
+                            Debug.Assert(blLens!=null);
                             blLens[BL_ORDER[ptr]]=(byte)len;
                             ptr++;
                         }

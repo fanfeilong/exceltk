@@ -44,6 +44,7 @@
 //	2012-07-18	Z-1676	Translate to forward slashes and remove drive from name in constructor
 
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace ICSharpCode.SharpZipLib.Zip {
@@ -256,43 +257,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
             versionToExtract=(ushort)versionRequiredToExtract;
             this.method=method;
         }
-
-        /// <summary>
-        /// Creates a deep copy of the given zip entry.
-        /// </summary>
-        /// <param name="entry">
-        /// The entry to copy.
-        /// </param>
-        [Obsolete("Use Clone instead")]
-        public ZipEntry(ZipEntry entry) {
-            if (entry==null) {
-                throw new ArgumentNullException("entry");
-            }
-
-            known=entry.known;
-            name=entry.name;
-            size=entry.size;
-            compressedSize=entry.compressedSize;
-            crc=entry.crc;
-            dosTime=entry.dosTime;
-            method=entry.method;
-            comment=entry.comment;
-            versionToExtract=entry.versionToExtract;
-            versionMadeBy=entry.versionMadeBy;
-            externalFileAttributes=entry.externalFileAttributes;
-            flags=entry.flags;
-
-            zipFileIndex=entry.zipFileIndex;
-            offset=entry.offset;
-
-            forceZip64_=entry.forceZip64_;
-
-            if (entry.extra!=null) {
-                extra=new byte[entry.extra.Length];
-                Array.Copy(entry.extra, 0, extra, 0, entry.extra.Length);
-            }
-        }
-
         #endregion
 
         /// <summary>
@@ -1002,11 +966,11 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 }
             } else if (extraData.Find(0x5455)) {
                 int length=extraData.ValueLength;
-                int flags=extraData.ReadByte();
+                int theFlags=extraData.ReadByte();
 
                 // Can include other times but these are ignored.  Length of data should
                 // actually be 1 + 4 * no of bits in flags.
-                if (((flags&1)!=0)&&(length>=5)) {
+                if (((theFlags&1)!=0)&&(length>=5)) {
                     int iTime=extraData.ReadInt();
 
                     DateTime=(new DateTime(1970, 1, 1, 0, 0, 0).ToUniversalTime()+
@@ -1186,7 +1150,9 @@ namespace ICSharpCode.SharpZipLib.Zip {
             if (Path.IsPathRooted(name)) {
                 // NOTE:
                 // for UNC names...  \\machine\share\zoom\beet.txt gives \zoom\beet.txt
-                name=name.Substring(Path.GetPathRoot(name).Length);
+                var root = Path.GetPathRoot(name);
+                Debug.Assert(root!=null);
+                name=name.Substring(root.Length);
             }
 
             name=name.Replace(@"\", "/");

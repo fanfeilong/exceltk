@@ -166,8 +166,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 #else
             if (cryptoTransform_!=null) {
 #if !NET_1_1 && !NETCF_2_0
-                if (cryptoTransform_ is ZipAESTransform) {
-                    AESAuthCode=((ZipAESTransform)cryptoTransform_).GetAuthCode();
+                var cryptoTransform = cryptoTransform_ as ZipAESTransform;
+                if (cryptoTransform != null){
+                    AESAuthCode=cryptoTransform.GetAuthCode();
                 }
 #endif
                 cryptoTransform_.Dispose();
@@ -178,7 +179,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 
         /// <summary>
         /// Get/set flag indicating ownership of the underlying stream.
-        /// When the flag is true <see cref="Close"></see> will close the underlying stream also.
+        /// When the flag is true <see cref="Dispose"></see> will close the underlying stream also.
         /// </summary>
         public bool IsStreamOwner {
             get {
@@ -531,10 +532,11 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
             base.Dispose(disposing);
         }
 
-        private void GetAuthCodeIfAES() {
+        private void GetAuthCodeIfAES(){
 #if !NET_1_1 && !NETCF_2_0
-            if (cryptoTransform_ is ZipAESTransform) {
-                AESAuthCode=((ZipAESTransform)cryptoTransform_).GetAuthCode();
+            var cryptoTransform = cryptoTransform_ as ZipAESTransform;
+            if (cryptoTransform != null){
+                AESAuthCode=cryptoTransform.GetAuthCode();
             }
 #endif
         }

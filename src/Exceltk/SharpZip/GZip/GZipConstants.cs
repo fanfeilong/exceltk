@@ -40,7 +40,7 @@ namespace ICSharpCode.SharpZipLib.GZip {
     /// <summary>
     /// This class contains constants used for gzip.
     /// </summary>
-    public sealed class GZipConstants {
+    public static class GZipConstants {
         /// <summary>
         /// Magic number found at start of GZIP header
         /// </summary>
@@ -82,12 +82,5 @@ namespace ICSharpCode.SharpZipLib.GZip {
         /// flag bit mask indicating comment is present
         /// </summary>
         public const int FCOMMENT=0x10;
-
-        /// <summary>
-        /// Initialise default instance.
-        /// </summary>
-        /// <remarks>Constructor is private to prevent instances being created.</remarks>
-        private GZipConstants() {
-        }
     }
 }

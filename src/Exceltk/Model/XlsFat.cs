@@ -30,7 +30,7 @@ namespace ExcelToolKit.BinaryFormat {
             m_hdr=hdr;
             m_sectors_for_fat=sectors.Count;
             sizeOfSector=hdr.SectorSize;
-            uint sector=0, prevSector=0;
+            uint prevSector=0;
 
             //calc offset of stream . If mini stream then find mini stream container stream
             //long offset = 0;
@@ -41,10 +41,10 @@ namespace ExcelToolKit.BinaryFormat {
             Stream file=hdr.FileStream;
             using (var ms=new MemoryStream(sizeOfSector*m_sectors_for_fat)) {
                 lock (file) {
-                    for (int i=0; i<sectors.Count; i++) {
-                        sector=sectors[i];
-                        if (prevSector==0||(sector-prevSector)!=1)
-                            file.Seek((sector+1)*sizeOfSector, SeekOrigin.Begin);
+                    foreach (uint sector in sectors){
+                        if (prevSector==0||(sector-prevSector)!=1){
+                            file.Seek((sector+1)*sizeOfSector, SeekOrigin.Begin);                            
+                        }
                         prevSector=sector;
                         file.Read(buff, 0, sizeOfSector);
                         ms.Write(buff, 0, sizeOfSector);
