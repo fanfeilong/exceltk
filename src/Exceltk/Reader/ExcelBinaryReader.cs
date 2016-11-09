@@ -721,7 +721,7 @@ namespace ExcelToolKit {
                         }
                     } else {
                         for (int i=0; i<m_maxCol; i++) {
-                            table.Columns.Add(null, typeof(Object));
+                            table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
                         }
                     }
 
@@ -761,7 +761,7 @@ namespace ExcelToolKit {
                         }
                     } else {
                         for (int i=0; i<m_maxCol; i++) {
-                            table.Columns.Add(null, typeof(Object));
+                            table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
                         }
                     }
 
