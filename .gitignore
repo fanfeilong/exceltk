@@ -9,3 +9,5 @@
 /src/exceltk.suo
 /src/ExcelToolKit/ExcelToolKit.csproj.user
 /src/test/*.md
+/.DS_Store
+/src/project.lock.json
