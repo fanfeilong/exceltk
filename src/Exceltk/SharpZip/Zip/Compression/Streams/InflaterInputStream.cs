@@ -43,9 +43,7 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-#if !NETCF_1_0
 
-#endif
 
 namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
     /// <summary>
@@ -158,12 +156,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
                 toRead-=count;
             }
 
-#if !NETCF_1_0
             if (cryptoTransform!=null) {
                 clearTextLength=cryptoTransform.TransformBlock(rawData, 0, rawLength, clearText, 0);
-            } else
-#endif
- {
+            } else{
                 clearTextLength=rawLength;
             }
 
@@ -282,7 +277,6 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
             return (uint)ReadLeInt()|((long)ReadLeInt()<<32);
         }
 
-#if !NETCF_1_0
         /// <summary>
         /// Get/set the <see cref="ICryptoTransform"/> to apply to any data.
         /// </summary>
@@ -308,7 +302,6 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
                 }
             }
         }
-#endif
 
         #region Instance Fields
 
@@ -317,15 +310,11 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 
         private int clearTextLength;
         private byte[] clearText;
-#if !NETCF_1_0
         private byte[] internalClearText;
-#endif
 
         private int available;
 
-#if !NETCF_1_0
         private ICryptoTransform cryptoTransform;
-#endif
         private readonly Stream inputStream;
 
         #endregion
@@ -477,9 +466,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         /// Clear any cryptographic state.
         /// </summary>		
         protected void StopDecrypting() {
-#if !NETCF_1_0
             inputBuffer.CryptoTransform=null;
-#endif
         }
 
         /// <summary>

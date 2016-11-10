@@ -33,10 +33,6 @@
 // obligated to do so.  If you do not wish to do so, delete this
 // exception statement from your version.
 
-// Suppress this in CF and 1.1, not needed. Static classes introduced in C# version 2.0
-
-#if !NETCF_2_0 && !NET_1_1
-
 using System;
 using System.IO;
 using ICSharpCode.SharpZipLib.Core;
@@ -99,5 +95,3 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
         }
     }
 }
-
-#endif

@@ -364,9 +364,7 @@ namespace ICSharpCode.SharpZipLib.BZip2 {
         /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected override void Dispose(bool disposing){
             try {
-#if !NET_1_0 && !NET_1_1 && !NETCF_1_0
                 base.Dispose(disposing);
-#endif
                 if (!disposed_) {
                     disposed_=true;
 

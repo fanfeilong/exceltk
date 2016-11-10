@@ -818,7 +818,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
         }
 
 
-#if !NET_1_1 && !NETCF_2_0
         /// <summary>
         /// For AES encrypted files returns or sets the number of bits of encryption (128, 192 or 256).
         /// When setting, only 0 (off), 128 or 256 is supported.
@@ -865,12 +864,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 return (byte)_aesEncryptionStrength;
             }
         }
-#else
-    /// <summary>
-    /// AES unsupported prior to .NET 2.0
-    /// </summary>
-		internal int AESKeySize;
-#endif
 
         /// <summary>
         /// Returns the length of the salt, in bytes 
@@ -985,7 +978,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
         // For AES the method in the entry is 99, and the real compression method is in the extradata
         //
         private void ProcessAESExtraData(ZipExtraData extraData) {
-#if !NET_1_1 && !NETCF_2_0
             if (extraData.Find(0x9901)) {
                 // Set version and flag for Zipfile.CreateAndInitDecryptionStream
                 versionToExtract=ZipConstants.VERSION_AES; // Ver 5.1 = AES see "Version" getter
@@ -1005,9 +997,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 method=(CompressionMethod)actualCompress;
             } else
                 throw new ZipException("AES Extra Data missing");
-#else
-				throw new ZipException("AES unsupported");
-#endif
         }
 
         /// <summary>
@@ -1036,11 +1025,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 // The full test is not possible here however as the code page to apply conversions with
                 // isnt available.
                 if ((value!=null)&&(value.Length>0xffff)) {
-#if NETCF_1_0
-					throw new ArgumentOutOfRangeException("value");
-#else
                     throw new ArgumentOutOfRangeException("value", "cannot exceed 65535");
-#endif
                 }
 
                 comment=value;
@@ -1188,10 +1173,8 @@ namespace ICSharpCode.SharpZipLib.Zip {
         private long offset; // used by ZipFile and ZipOutputStream
 
         private bool forceZip64_;
-#if !NET_1_1 && !NETCF_2_0
         private int _aesVer; // Version number (2 = AE-2 ?). Assigned but not used.
         private int _aesEncryptionStrength; // Encryption strength 1 = 128 2 = 192 3 = 256
-#endif
 
         #endregion
     }

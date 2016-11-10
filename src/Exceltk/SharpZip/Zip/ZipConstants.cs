@@ -45,10 +45,6 @@ using System.Globalization;
 using System.Text;
 using System.Threading;
 
-#if NETCF_1_0 || NETCF_2_0
-using System.Globalization;
-#endif
-
 namespace ICSharpCode.SharpZipLib.Zip {
 
     #region Enumerations
@@ -395,12 +391,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
 
         #endregion
 
-#if NETCF_1_0 || NETCF_2_0
-    // This isnt so great but is better than nothing.
-    // Trying to work out an appropriate OEM code page would be good.
-    // 850 is a good default for english speakers particularly in Europe.
-		static int defaultCodePage = CultureInfo.CurrentCulture.TextInfo.ANSICodePage;
-#else
 #if OS_WINDOWS
         /// <remarks>
         /// Get OEM codepage from NetFX, which parses the NLP file with culture info table etc etc.
@@ -419,7 +409,6 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 :Thread.CurrentThread.CurrentCulture.TextInfo.OEMCodePage;
 #else
         private static int defaultCodePage=ExcelToolKit.Extension.DefaultEncoding().CodePage;
-#endif
 #endif
 
         /// <summary>

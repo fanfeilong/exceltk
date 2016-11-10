@@ -145,13 +145,11 @@ namespace ICSharpCode.SharpZipLib.Zip {
             }
         }
 
-#if !NET_1_0 && !NET_1_1 && !NETCF_1_0
         public override bool CanTimeout {
             get {
                 return stream_.CanTimeout;
             }
         }
-#endif
 
         public override long Length {
             get {

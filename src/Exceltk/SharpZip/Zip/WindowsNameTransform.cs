@@ -70,11 +70,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
         /// Initialise static class information.
         /// </summary>
         static WindowsNameTransform() {
-#if NET_1_0 || NET_1_1 || NETCF_1_0
-			char[] invalidPathChars = Path.InvalidPathChars;
-#else
             char[] invalidPathChars = Path.GetInvalidPathChars();
-#endif
             int howMany=invalidPathChars.Length+3;
 
             InvalidEntryChars=new char[howMany];

@@ -43,9 +43,6 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using ICSharpCode.SharpZipLib.Encryption;
-#if !NETCF_1_0
-
-#endif
 
 namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
     /// <summary>
@@ -141,12 +138,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
                 if (len<=0) {
                     break;
                 }
-
-#if NETCF_1_0
-				if ( keys != null ) {
-#else
                 if (cryptoTransform_!=null) {
-#endif
                     EncryptBlock(buffer_, 0, len);
                 }
 
@@ -158,23 +150,14 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
             }
 
             baseOutputStream_.Flush();
-
-#if NETCF_1_0
-			if ( keys != null ) {
-				keys = null;
-			}
-#else
             if (cryptoTransform_!=null) {
-#if !NET_1_1 && !NETCF_2_0
                 var cryptoTransform = cryptoTransform_ as ZipAESTransform;
                 if (cryptoTransform != null){
                     AESAuthCode=cryptoTransform.GetAuthCode();
                 }
-#endif
                 cryptoTransform_.Dispose();
                 cryptoTransform_=null;
             }
-#endif
         }
 
         /// <summary>
@@ -205,16 +188,12 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 
         private string password;
 
-#if NETCF_1_0
-		uint[] keys;
-#else
         private ICryptoTransform cryptoTransform_;
 
         /// <summary>
         /// Returns the 10 byte AUTH CODE to be appended immediately following the AES data stream.
         /// </summary>
         protected byte[] AESAuthCode;
-#endif
 
         /// <summary>
         /// Get/set the password used for encryption.
@@ -246,15 +225,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         /// Number of bytes in buffer to encrypt
         /// </param>
         protected void EncryptBlock(byte[] buffer, int offset, int length) {
-#if NETCF_1_0
-			for (int i = offset; i < offset + length; ++i) {
-				byte oldbyte = buffer[i];
-				buffer[i] ^= EncryptByte();
-				UpdateKeys(oldbyte);
-			}
-#else
             cryptoTransform_.TransformBlock(buffer, 0, length, buffer, 0);
-#endif
         }
 
         /// <summary>
@@ -262,27 +233,11 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         /// </summary>
         /// <param name="password">The password.</param>
         protected void InitializePassword(string password) {
-#if NETCF_1_0
-			keys = new uint[] {
-				0x12345678,
-				0x23456789,
-				0x34567890
-			};
-			
-			byte[] rawPassword = ZipConstants.ConvertToArray(password);
-			
-			for (int i = 0; i < rawPassword.Length; ++i) {
-				UpdateKeys((byte)rawPassword[i]);
-			}
-			
-#else
             var pkManaged=new PkzipClassicManaged();
             byte[] key=PkzipClassic.GenerateKeys(ZipConstants.ConvertToArray(password));
             cryptoTransform_=pkManaged.CreateEncryptor(key, null);
-#endif
         }
 
-#if !NET_1_1 && !NETCF_2_0
         /// <summary>
         /// Initializes encryption keys based on given password.
         /// </summary>
@@ -298,33 +253,6 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
             cryptoTransform_=new ZipAESTransform(rawPassword, salt, blockSize, true);
             pwdVerifier=((ZipAESTransform)cryptoTransform_).PwdVerifier;
         }
-#endif
-
-#if NETCF_1_0
-		
-    /// <summary>
-    /// Encrypt a single byte 
-    /// </summary>
-    /// <returns>
-    /// The encrypted value
-    /// </returns>
-		protected byte EncryptByte()
-		{
-			uint temp = ((keys[2] & 0xFFFF) | 2);
-			return (byte)((temp * (temp ^ 1)) >> 8);
-		}
-
-		/// <summary>
-		/// Update encryption keys 
-		/// </summary>		
-		protected void UpdateKeys(byte ch)
-		{
-			keys[0] = Crc32.ComputeCrc32(keys[0], ch);
-			keys[1] = keys[1] + (byte)keys[0];
-			keys[1] = keys[1] * 134775813 + 1;
-			keys[2] = Crc32.ComputeCrc32(keys[2], (byte)(keys[1] >> 24));
-		}
-#endif
 
         #endregion
 
@@ -342,12 +270,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
                 if (deflateCount<=0) {
                     break;
                 }
-#if NETCF_1_0
-				if (keys != null) 
-#else
-                if (cryptoTransform_!=null)
-#endif
- {
+                if (cryptoTransform_!=null){
                     EncryptBlock(buffer_, 0, deflateCount);
                 }
 
@@ -511,15 +434,11 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 
                         try {
                             Finish();
-#if NETCF_1_0
-					keys=null;
-#else
                             if (cryptoTransform_!=null) {
                                 GetAuthCodeIfAES();
                                 cryptoTransform_.Dispose();
                                 cryptoTransform_=null;
                             }
-#endif
                         } finally {
                             if (isStreamOwner_) {
                                 baseOutputStream_.Dispose();
@@ -533,12 +452,10 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
         }
 
         private void GetAuthCodeIfAES(){
-#if !NET_1_1 && !NETCF_2_0
             var cryptoTransform = cryptoTransform_ as ZipAESTransform;
             if (cryptoTransform != null){
                 AESAuthCode=cryptoTransform.GetAuthCode();
             }
-#endif
         }
 
         /// <summary>
@@ -598,10 +515,8 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams {
 
         #region Static Fields
 
-#if !NET_1_1 && !NETCF_2_0
         // Static to help ensure that multiple files within a zip will get different random salt
         private static RandomNumberGenerator _aesRnd;
-#endif
 
         #endregion
     }

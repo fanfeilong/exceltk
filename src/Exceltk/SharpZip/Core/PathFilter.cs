@@ -205,11 +205,7 @@ namespace ICSharpCode.SharpZipLib.Core {
 
             set {
                 if (value>maxDate_) {
-#if NETCF_1_0
-					throw new ArgumentOutOfRangeException("value");
-#else
                     throw new ArgumentOutOfRangeException("value", "Exceeds MaxDate");
-#endif
                 }
 
                 minDate_=value;
@@ -227,11 +223,7 @@ namespace ICSharpCode.SharpZipLib.Core {
 
             set {
                 if (minDate_>value) {
-#if NETCF_1_0
-					throw new ArgumentOutOfRangeException("value");
-#else
                     throw new ArgumentOutOfRangeException("value", "Exceeds MinDate");
-#endif
                 }
 
                 maxDate_=value;

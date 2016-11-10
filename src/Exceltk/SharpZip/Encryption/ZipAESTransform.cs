@@ -35,7 +35,6 @@
 // exception statement from your version.
 //
 
-#if !NET_1_1 && !NETCF_2_0
 // Framework version 2.0 required for Rfc2898DeriveBytes 
 
 using System;
@@ -241,5 +240,3 @@ namespace ICSharpCode.SharpZipLib.Encryption {
         }
     }
 }
-
-#endif
