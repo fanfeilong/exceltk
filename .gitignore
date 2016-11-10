@@ -11,3 +11,6 @@
 /src/test/*.md
 /.DS_Store
 /src/project.lock.json
+.DS_Store
+Exceltk/.DS_Store
+Exceltk/SharpZip/.DS_Store
