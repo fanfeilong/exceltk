@@ -486,7 +486,6 @@ namespace ExcelToolKit {
                         }
                         return;
                     default:
-                        ////Console.WriteLine("UnKnown Id:{0}",rec.ID);
                         continue;
                 }
             }
@@ -563,10 +562,6 @@ namespace ExcelToolKit {
                 rowRecord=thisRec as XlsBiffRow;
             }
 
-            if (rowRecord!=null) {
-                ////Console.WriteLine("Got row {0}, rec: id={1},rowindex={2}, rowColumnStart={3}, rowColumnEnd={4}", rowRecord.Offset, rowRecord.ID, rowRecord.RowIndex, rowRecord.FirstDefinedColumn, rowRecord.LastDefinedColumn);
-            }
-
             row=rowRecord;
 
             if (dims!=null) {
@@ -611,8 +606,6 @@ namespace ExcelToolKit {
                 var hyperLink=thisRecord as XlsBiffHyperLink;
                 if (hyperLink!=null) {
                     hasFound=true;
-                    ////Console.WriteLine("Read HyperLink");
-                    //Console.WriteLine("Url:{0},{1}",hyperLink.Url,hyperLink.CellRangeAddress.ToString());
                     m_globals.AddHyperLink(hyperLink);
                 }
 
@@ -679,10 +672,8 @@ namespace ExcelToolKit {
             const bool triggerCreateColumns = true;
 
             if (idx!=null) {
-                //Console.WriteLine("Read WholeWorkSheetWithIndex");
                 readWholeWorkSheetWithIndex(idx, triggerCreateColumns, table);
             } else {
-                //Console.WriteLine("Read WholeWorkSheetWithoutIndex");
                 readWholeWorkSheetNoIndex(triggerCreateColumns, table);
             }
             table.EndLoadData();
@@ -818,7 +809,6 @@ namespace ExcelToolKit {
                 case BIFFRECORDTYPE.LABELSST:
                     string tmp=m_globals.SST.GetString(((XlsBiffLabelSSTCell)cell).SSTIndex);
                     //LogManager.Log(this).Debug("VALUE: {0}", tmp);
-                    ////Console.WriteLine("SST Index:{0}", ((XlsBiffLabelSSTCell)cell).SSTIndex);
                     m_cellsValues[cell.ColumnIndex]=new XlsCell(tmp);
                     break;
                 case BIFFRECORDTYPE.RK:
@@ -861,10 +851,8 @@ namespace ExcelToolKit {
 
                     break;
                 default:
-                    //Console.WriteLine("CellId:",cell.ID);
                     break;
             }
-            ////Console.WriteLine("CellId:{0},Value:{1}", cell.ID, m_cellsValues[cell.ColumnIndex]);
             XlsBiffHyperLink hyperLink=m_globals.GetHyperLink(cell.RowIndex, cell.ColumnIndex);
             if (hyperLink!=null) {
                 m_cellsValues[cell.ColumnIndex].SetHyperLink(hyperLink.Url);

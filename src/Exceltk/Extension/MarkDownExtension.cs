@@ -70,11 +70,6 @@ namespace ExcelToolKit{
 
             int i=0;
             foreach (DataRow row in table.Rows) {
-                //if (row.IsEmpty())
-                //{
-                //    continue;
-                //}
-
                 sb.Append("|");
                 foreach (object cell in row.ItemArray) {
                     string value=GetCellValue(cell);
@@ -110,7 +105,6 @@ namespace ExcelToolKit{
                 if (Regex.IsMatch(value, @"^(-?[0-9]{1,}[.][0-9]*)$")) {
                     var old=value;
                     value=string.Format(Config.DecimalFormat, Double.Parse(value));
-                    //Console.Write("{0}/{1} ",old,value);
                 }
             }
 

@@ -408,7 +408,6 @@ namespace ExcelToolKit {
 
         private bool ReadSheetRow(XlsxWorksheet sheet) {
             if (sheet.ColumnsCount < 0) {
-                //Console.WriteLine("Columons Count Can NOT BE Negative");
                 return false;
             }
             if (null == m_xmlReader)
@@ -440,7 +439,6 @@ namespace ExcelToolKit {
                     m_xmlReader.Read();
                 }
                 isRow = (m_xmlReader.NodeType == XmlNodeType.Element && m_xmlReader.LocalName == XlsxWorksheet.N_row);
-                //Console.WriteLine("isRow:{0}/{1}/{2}", isRow,m_xmlReader.NodeType, m_xmlReader.LocalName);
             }
 
             if (isRow) {
@@ -480,7 +478,7 @@ namespace ExcelToolKit {
                         } else if (m_xmlReader.LocalName == XlsxWorksheet.N_v || m_xmlReader.LocalName == XlsxWorksheet.N_t) {
                             hasValue = true;
                         } else {
-                            //Console.WriteLine("Error");
+                            // Ignore
                         }
                     }
 
@@ -522,19 +520,9 @@ namespace ExcelToolKit {
                         #endregion
 
                         if (col - 1 < m_cellsValues.Length) {
-                            //Console.WriteLine(o);
-                            if (string.IsNullOrEmpty(o.ToString())) {
-                                //Console.WriteLine("Error");
-                            }
                             m_cellsValues[col - 1] = o;
-                        } else {
-                            //Console.WriteLine("Error");
-                        }
-                    } else {
-                        if (m_xmlReader.LocalName == XlsxWorksheet.N_v) {
-                            //Console.WriteLine("No Value");
-                        }
-                    }
+                        } 
+                    } 
                 }
 
                 if (m_emptyRowCount > 0) {
@@ -545,7 +533,6 @@ namespace ExcelToolKit {
 
                 return true;
             } else {
-                //Console.WriteLine(m_xmlReader.LocalName.ToString());
                 return false;
             }
         }
@@ -553,20 +540,15 @@ namespace ExcelToolKit {
         private bool ReadHyperLinks(XlsxWorksheet sheet, DataTable table) {
             // ReadTo HyperLinks Node
             if (m_xmlReader == null) {
-                //Console.WriteLine("m_xmlReader is null");
                 return false;
             }
 
-            //Console.WriteLine(m_xmlReader.Depth.ToString());
-
             m_xmlReader.ReadToFollowing(XlsxWorksheet.N_hyperlinks);
             if (m_xmlReader.IsEmptyElement) {
-                //Console.WriteLine("not find hyperlink");
                 return false;
             }
 
             // Read Realtionship Table
-            //Console.WriteLine("sheetrel:{0}", sheet.Path);
             Stream sheetRelStream = m_zipWorker.GetWorksheetRelsStream(sheet.Path);
             var hyperDict = new Dictionary<string, string>();
             if (sheetRelStream != null) {
@@ -592,9 +574,6 @@ namespace ExcelToolKit {
                 string aref = m_xmlReader.GetAttribute(XlsxWorksheet.A_ref);
                 string display = m_xmlReader.GetAttribute(XlsxWorksheet.A_display);
                 string rid = m_xmlReader.GetAttribute(XlsxWorksheet.A_rid);
-                ////Console.WriteLine("{0}:{1}", aref.Substring(1), display);
-
-                //Console.WriteLine("hyperlink:{0}",hyperDict[rid]);
                 string hyperlink = display;
                 Debug.Assert(rid!=null);
                 if (hyperDict.ContainsKey(rid)) {
@@ -604,7 +583,6 @@ namespace ExcelToolKit {
                 int col = -1;
                 int row = -1;
                 XlsxDimension.XlsxDim(aref, out col, out row);
-                //Console.WriteLine("{0}:[{1},{2}]",aref, row, col);
                 if (col >= 1 && row >= 1) {
                     row = row - 1;
                     col = col - 1;
@@ -618,7 +596,6 @@ namespace ExcelToolKit {
                         object value = table.Rows[row][col];
                         var cell = new XlsCell(value);
                         cell.SetHyperLink(hyperlink);
-                        //Console.WriteLine(cell.MarkDownText);
                         table.Rows[row][col] = cell;
                     }
                 }
@@ -716,16 +693,13 @@ namespace ExcelToolKit {
                 m_emptyRowCount = 0;
 
                 // Reada Columns
-                //Console.WriteLine("Read Columns");
                 if (!m_isFirstRowAsColumnNames) {
                     // No Sheet Columns
-                    //Console.WriteLine("SheetName:{0}, ColumnCount:{1}", sheet.Name, sheet.ColumnsCount);
                     for (int i = 0; i < sheet.ColumnsCount; i++) {
                         table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
                     }
                 } else if (ReadSheetRow(sheet)) {
                     // Read Sheet Columns
-                    //Console.WriteLine("Read Sheet Columns");
                     Debug.Assert(m_cellsValues!=null);
                     for (int index = 0; index < m_cellsValues.Length; index++) {
                         if (m_cellsValues[index] != null && m_cellsValues[index].ToString().Length > 0) {
@@ -739,13 +713,8 @@ namespace ExcelToolKit {
                 }
 
                 // Read Sheet Rows
-                //Console.WriteLine("Read Sheet Rows");
                 table.BeginLoadData();
-                //Console.WriteLine("SheetIndex Is:{0},Name:{1}",sheetIndex,sheet.Name);
                 while (ReadSheetRow(sheet)) {
-                    if(m_cellsValues==null){
-                        Console.WriteLine("null cell values");
-                    }
                     table.Rows.Add(m_cellsValues);
                 }
                 if (table.Rows.Count > 0) {
@@ -753,7 +722,6 @@ namespace ExcelToolKit {
                 }
 
                 // Read HyperLinks
-                //Console.WriteLine("Read Sheet HyperLinks:{0}",table.Rows.Count);
                 ReadHyperLinks(sheet, table);
 
                 table.EndLoadData();

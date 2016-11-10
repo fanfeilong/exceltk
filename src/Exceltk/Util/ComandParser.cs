@@ -48,7 +48,6 @@ namespace ExcelToolKit {
                     case 2:
                         // The last parameter is still waiting. 
                         // With no value, set it to true.
-                        // //Console.WriteLine(Parts.Aggregate((a,b)=>a+b));
                         if (Parameter!=null) {
                             if (!Parameters.ContainsKey(Parameter)) {
                                 Parameters.Add(Parameter, "true");
