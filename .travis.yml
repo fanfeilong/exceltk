@@ -1,7 +1,5 @@
 language: csharp
 solution: ./src/exceltk.sln
-mono: none
-dotnet: 1.0.0-preview2-003121
 
 matrix:
   include:
@@ -19,7 +17,6 @@ matrix:
       osx_image: xcode7.2
       dotnet: 1.0.0-preview2-003121
       mono: none
-
 
 script:
   - dotnet restore -f src
