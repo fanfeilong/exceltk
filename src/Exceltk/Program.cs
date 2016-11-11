@@ -73,6 +73,9 @@ namespace ExcelToolKit {
 
                         string xls = cmd["xls"];
                         string sheet = cmd["sheet"];
+                        string root = Directory.GetCurrentDirectory();
+                        xls = Path.Combine(root, xls);
+
                         string dirName = Path.GetDirectoryName(xls);
                         string fileName = Path.GetFileNameWithoutExtension(xls);
                         if(dirName!=null&&fileName!=null){

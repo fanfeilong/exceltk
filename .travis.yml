@@ -18,14 +18,14 @@ matrix:
 
 script:
   - dotnet restore -f src
-  - dotnet run --project src/project.json -t md -xls test/test1.xlsx
-  - dotnet run --project src/project.json -t md -xls test/test2.xlsx
-  - dotnet run --project src/project.json -t md -xls test/test3.xlsx
-  - dotnet run --project src/project.json -t md -xls test/test4.xlsx
-  - dotnet run --project src/project.json -t md -xls test/test5.xlsx
-  - dotnet run --project src/project.json -t md -xls test/test6_crossline.xlsx
-  - dotnet run --project src/project.json -t md -xls test/test7_large_tail_empty_columns.xlsx
-  - dotnet run --project src/project.json -t md -xls test/test8.xls
+  - dotnet run --project src/project.json -t md -xls src/test/test1.xlsx
+  - dotnet run --project src/project.json -t md -xls src/test/test2.xlsx
+  - dotnet run --project src/project.json -t md -xls src/test/test3.xlsx
+  - dotnet run --project src/project.json -t md -xls src/test/test4.xlsx
+  - dotnet run --project src/project.json -t md -xls src/test/test5.xlsx
+  - dotnet run --project src/project.json -t md -xls src/test/test6_crossline.xlsx
+  - dotnet run --project src/project.json -t md -xls src/test/test7_large_tail_empty_columns.xlsx
+  - dotnet run --project src/project.json -t md -xls src/test/test8.xls
 
 notifications:
   email:
