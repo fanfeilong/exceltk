@@ -4,11 +4,6 @@ solution: ./src/exceltk.sln
 matrix:
   include:
     - os: linux # Ubuntu 14.04
-      dist: precise
-      sudo: required
-      dotnet: 1.0.0-preview2-003121
-      mono: none
-    - os: linux # Ubuntu 14.04
       dist: trusty
       sudo: required
       dotnet: 1.0.0-preview2-003121

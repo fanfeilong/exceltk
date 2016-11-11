@@ -1,4 +1,4 @@
-Excel toolkit.
+Excel toolkit. [![Build Status](https://travis-ci.org/fanfeilong/exceltk.svg?branch=master)](https://travis-ci.org/fanfeilong/exceltk)
 Table SHOULD be edited by advanced GUI applications, BUT converted to any other format. 
 
 # Features
