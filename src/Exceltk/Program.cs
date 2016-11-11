@@ -25,11 +25,13 @@ namespace ExcelToolKit {
         [STAThread]
         private static void Main(string[] args) {
             var cmd=new CommandParser(args);
-            InitConfig(cmd);
-            Xls2MarkDown(cmd);
+            var r = InitConfig(cmd);
+            if (r) {
+                Xls2MarkDown(cmd);
+            }
         }
 
-        private static void InitConfig(CommandParser cmd) {
+        private static bool InitConfig(CommandParser cmd) {
             // default
             Config.DecimalPrecision = 0;
             if (cmd["t"]!=null){
@@ -37,12 +39,17 @@ namespace ExcelToolKit {
                     if (cmd["p"]!=null) {
                         int precision = 0;
                         Int32.TryParse(cmd["p"],out precision);
+                        if (precision > 10) {
+                            Console.WriteLine("presision too larger:"+precision);
+                            return false;
+                        }
                         if(precision>0){
                             Config.DecimalPrecision=precision;                            
                         }
                     }
                 }
             }
+            return true;
         }
 
         private static void Xls2MarkDown(CommandParser cmd) {
