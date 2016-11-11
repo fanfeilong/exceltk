@@ -1,4 +1,5 @@
 #!/bin/bash
+dotnet restore
 dotnet run -t md -xls test/test1.xlsx
 dotnet run -t md -xls test/test2.xlsx
 dotnet run -t md -xls test/test3.xlsx
