@@ -21,3 +21,8 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - http://fanfeilong.github.io/exceltk0.0.7.7z
   - http://files.cnblogs.com/files/math/exceltk0.0.7.7z
 
+# 3rd projects
+
+ExcelTk integrated the following projects
+- [Excel Data Reader](https://github.com/ExcelDataReader/ExcelDataReader)
+- [SharpZip](https://github.com/icsharpcode/SharpZipLib)
