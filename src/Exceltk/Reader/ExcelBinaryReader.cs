@@ -773,16 +773,22 @@ namespace ExcelToolKit {
 
         private void pushCellValue(XlsBiffBlankCell cell) {
             double _dValue;
-            //LogManager.Log(this).Debug("pushCellValue {0}", cell.ID);
 
+            bool hasValue = true;
             switch (cell.ID) {
                 case BIFFRECORDTYPE.BOOLERR:
-                    if (cell.ReadByte(7)==0)
-                        m_cellsValues[cell.ColumnIndex]=new XlsCell(cell.ReadByte(6)!=0);
+                    if (cell.ReadByte(7) == 0) {
+                        m_cellsValues[cell.ColumnIndex] = new XlsCell(cell.ReadByte(6) != 0);
+                    } else {
+                        hasValue = false;
+                    }
                     break;
                 case BIFFRECORDTYPE.BOOLERR_OLD:
-                    if (cell.ReadByte(8)==0)
-                        m_cellsValues[cell.ColumnIndex]=new XlsCell(cell.ReadByte(7)!=0);
+                    if (cell.ReadByte(8) == 0) {
+                        m_cellsValues[cell.ColumnIndex] = new XlsCell(cell.ReadByte(7) != 0);
+                    } else {
+                        hasValue = false;
+                    }
                     break;
                 case BIFFRECORDTYPE.INTEGER:
                 case BIFFRECORDTYPE.INTEGER_OLD:
@@ -790,72 +796,60 @@ namespace ExcelToolKit {
                     break;
                 case BIFFRECORDTYPE.NUMBER:
                 case BIFFRECORDTYPE.NUMBER_OLD:
-
                     _dValue=((XlsBiffNumberCell)cell).Value;
-
                     m_cellsValues[cell.ColumnIndex]=
                         new XlsCell(!ConvertOaDate?_dValue:tryConvertOADateTime(_dValue, cell.XFormat));
-
-                    //LogManager.Log(this).Debug("VALUE: {0}", _dValue);
                     break;
                 case BIFFRECORDTYPE.LABEL:
                 case BIFFRECORDTYPE.LABEL_OLD:
                 case BIFFRECORDTYPE.RSTRING:
-
                     m_cellsValues[cell.ColumnIndex]=new XlsCell(((XlsBiffLabelCell)cell).Value);
-
-                    //LogManager.Log(this).Debug("VALUE: {0}", m_cellsValues[cell.ColumnIndex]);
                     break;
                 case BIFFRECORDTYPE.LABELSST:
                     string tmp=m_globals.SST.GetString(((XlsBiffLabelSSTCell)cell).SSTIndex);
-                    //LogManager.Log(this).Debug("VALUE: {0}", tmp);
                     m_cellsValues[cell.ColumnIndex]=new XlsCell(tmp);
                     break;
                 case BIFFRECORDTYPE.RK:
-
                     _dValue=((XlsBiffRKCell)cell).Value;
-
-                    m_cellsValues[cell.ColumnIndex]=new XlsCell(!ConvertOaDate
-                                                                      ?_dValue
-                                                                      :tryConvertOADateTime(_dValue, cell.XFormat));
-
-                    //LogManager.Log(this).Debug("VALUE: {0}", _dValue);
+                    m_cellsValues[cell.ColumnIndex]=new XlsCell(!ConvertOaDate?_dValue:tryConvertOADateTime(_dValue, cell.XFormat));
                     break;
                 case BIFFRECORDTYPE.MULRK:
-
                     var _rkCell=(XlsBiffMulRKCell)cell;
+                    bool hasSet = false;
                     for (ushort j=cell.ColumnIndex; j<=_rkCell.LastColumnIndex; j++) {
                         _dValue=_rkCell.GetValue(j);
-                        //LogManager.Log(this).Debug("VALUE[{1}]: {0}", _dValue, j);
-                        m_cellsValues[j]=
-                            new XlsCell(!ConvertOaDate?_dValue:tryConvertOADateTime(_dValue, _rkCell.GetXF(j)));
+                        m_cellsValues[j]=new XlsCell(!ConvertOaDate?_dValue:tryConvertOADateTime(_dValue, _rkCell.GetXF(j)));
+                        hasSet = true;
                     }
+                    hasValue = hasSet;
 
                     break;
                 case BIFFRECORDTYPE.BLANK:
                 case BIFFRECORDTYPE.BLANK_OLD:
                 case BIFFRECORDTYPE.MULBLANK:
                     // Skip blank cells
-
+                    hasValue = false;
                     break;
                 case BIFFRECORDTYPE.FORMULA:
                 case BIFFRECORDTYPE.FORMULA_OLD:
-
                     object _oValue=((XlsBiffFormulaCell)cell).Value;
-
                     if (!(_oValue is FORMULAERROR)) {
-                        m_cellsValues[cell.ColumnIndex]=
-                        new XlsCell(!ConvertOaDate?_oValue:tryConvertOADateTime(_oValue, (cell.XFormat)));
-                        //date time offset
+                        m_cellsValues[cell.ColumnIndex] =
+                        new XlsCell(!ConvertOaDate ? _oValue : tryConvertOADateTime(_oValue, (cell.XFormat)));
+                    } else {
+                        hasValue = false;
                     }
-
                     break;
                 default:
+                    hasValue = false;
                     break;
             }
-            XlsBiffHyperLink hyperLink=m_globals.GetHyperLink(cell.RowIndex, cell.ColumnIndex);
-            if (hyperLink!=null) {
-                m_cellsValues[cell.ColumnIndex].SetHyperLink(hyperLink.Url);
+
+            if (hasValue) {
+                XlsBiffHyperLink hyperLink = m_globals.GetHyperLink(cell.RowIndex, cell.ColumnIndex);
+                if (hyperLink != null) {
+                    m_cellsValues[cell.ColumnIndex].SetHyperLink(hyperLink.Url);
+                }
             }
         }
 
