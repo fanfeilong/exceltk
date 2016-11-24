@@ -19,6 +19,7 @@ script:
   - dotnet run --project src/project.json -t md -xls src/test/test6_crossline.xlsx
   - dotnet run --project src/project.json -t md -xls src/test/test7_large_tail_empty_columns.xlsx
   - dotnet run --project src/project.json -t md -xls src/test/test8.xls
+  - dotnet run --project src/project.json -t md -bhead -xls src/test/test9_formula.xlsx 
   - dotnet run --project src/project.json -t md -bhead -xls src/test/test10_bodyhead.xlsx 
 
 

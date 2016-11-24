@@ -582,7 +582,13 @@ namespace ExcelToolKit {
 
                 int col = -1;
                 int row = -1;
+                if (aref == "IV8") {
+                    Console.WriteLine("...");
+                }
                 XlsxDimension.XlsxDim(aref, out col, out row);
+                if (col == 256) {
+                    Console.WriteLine("...");
+                }
                 if (col >= 1 && row >= 1) {
                     row = row - 1;
                     col = col - 1;
@@ -593,10 +599,14 @@ namespace ExcelToolKit {
                         cell.SetHyperLink(hyperlink);
                         table.Columns[col].DefaultValue = cell;
                     } else {
-                        object value = table.Rows[row][col];
-                        var cell = new XlsCell(value);
-                        cell.SetHyperLink(hyperlink);
-                        table.Rows[row][col] = cell;
+                        if (row < table.Rows.Count) {
+                            if (col < table.Rows[row].Count) {
+                                object value = table.Rows[row][col];
+                                var cell = new XlsCell(value);
+                                cell.SetHyperLink(hyperlink);
+                                table.Rows[row][col] = cell;
+                            }
+                        }
                     }
                 }
             }
