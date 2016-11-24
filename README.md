@@ -15,6 +15,8 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - `exceltk.exe -t md -xls example.xlsx` 
   - `exceltk.exe -t md -xls example.xlsx -sheet sheetname`
   - `exceltk.exe -t md -p 2 -xls example.xls`, where `-p 2` setting the decimal precision to 2
+  - `exceltk.exe -t md -bhead -xls example.xls`, which will use the first row to replace table header, and keep the head empty, so that 
+  the table will auto response in small screen device, this is just a simply solution.
   - `exceltk.exe -t cm`, Now you can copy sheet from excel, then paster to any editor, which will be Markdown table.
 
 # Download:
