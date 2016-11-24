@@ -36,6 +36,12 @@ namespace ExcelToolKit {
             Config.DecimalPrecision = 0;
             if (cmd["t"]!=null){
                 if (cmd["t"] == "md"){
+                    if (cmd["bhead"]!=null) {
+                        Config.BodyHead = true;
+                    } else {
+                        Config.BodyHead = false;
+                    }
+
                     if (cmd["p"]!=null) {
                         int precision = 0;
                         Int32.TryParse(cmd["p"],out precision);

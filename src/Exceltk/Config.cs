@@ -9,5 +9,9 @@
                 return string.Format("{{0:N{0}}}", DecimalPrecision);
             }
         }
+        public static bool BodyHead {
+            get;
+            set;
+        }
     }
 }

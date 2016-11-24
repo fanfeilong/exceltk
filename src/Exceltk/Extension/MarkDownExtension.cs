@@ -70,20 +70,44 @@ namespace ExcelToolKit{
 
             int i=0;
             foreach (DataRow row in table.Rows) {
+                if (Config.BodyHead) {
+                    if (i == 0 && insertHeader) {
+                        sb.Append("|");
+                        foreach (DataColumn col in table.Columns) {
+                            sb.Append("|");
+                        }
+                        sb.Append("\r\n");
+
+                        sb.Append("|");
+                        foreach (DataColumn col in table.Columns) {
+                            sb.Append(":--|");
+                        }
+                        sb.Append("\r\n");
+                    }
+                }
+
                 sb.Append("|");
                 foreach (object cell in row.ItemArray) {
                     string value=GetCellValue(cell);
-                    sb.Append(value).Append("|");
+                    if (i == 0 && Config.BodyHead) {
+                        sb.AppendFormat("**{0}**",value).Append("|");
+                    } else {
+                        sb.Append(value).Append("|");
+                    }
                 }
 
                 sb.Append("\r\n");
-                if (i==0&&insertHeader) {
-                    sb.Append("|");
-                    foreach (DataColumn col in table.Columns) {
-                        sb.Append(":--|");
+
+                if (!Config.BodyHead) {
+                    if (i == 0 && insertHeader) {
+                        sb.Append("|");
+                        foreach (DataColumn col in table.Columns) {
+                            sb.Append(":--|");
+                        }
+                        sb.Append("\r\n");
                     }
-                    sb.Append("\r\n");
                 }
+                
                 i++;
             }
             return sb.ToString();
