@@ -520,12 +520,6 @@ namespace ExcelToolKit {
                 idx=m_stream.Read() as XlsBiffIndex;
             }
 
-            //if (null == idx)
-            //{
-            //	// There is a record before the index! Chech his type and see the MS Biff Documentation
-            //	return false;
-            //}
-
             if (idx!=null) {
                 idx.IsV8=isV8();
             }
@@ -566,7 +560,6 @@ namespace ExcelToolKit {
 
             if (dims!=null) {
                 dims.IsV8=isV8();
-                ////LogManager.Log(this).Debug("dims IsV8={0}", dims.IsV8);
                 m_maxCol=dims.LastColumn-1;
 
                 //handle case where sheet reports last column is 1 but there are actually more
@@ -623,7 +616,6 @@ namespace ExcelToolKit {
 
             do {
                 rec=m_stream.Read();
-                //LogManager.Log(this).Debug(rec.ID.ToString());
             } while (rec!=null&&m_stream.Position<m_stream.Size);
 
             m_stream.Seek(startPos, SeekOrigin.Begin);
@@ -856,7 +848,6 @@ namespace ExcelToolKit {
         private bool moveToNextRecord() {
             //if sheet has no index
             if (m_noIndex) {
-                //LogManager.Log(this).Debug("No index");
                 return moveToNextRecordNoIndex();
             }
 
@@ -901,7 +892,6 @@ namespace ExcelToolKit {
             }
 
             m_currentRowRecord=rowRecord;
-            //m_depth = m_currentRowRecord.RowIndex;
 
             //we have now found the row record for the new row, the we need to seek forward to the first cell record
             XlsBiffBlankCell cell=null;
@@ -924,18 +914,6 @@ namespace ExcelToolKit {
 
             m_cellOffset=cell.Offset;
             m_canRead=readWorkSheetRow();
-
-
-            //read last row
-            //if (!m_canRead && m_depth > 0) m_canRead = true;
-
-            //if (!m_canRead && m_dbCellAddrsIndex < (m_dbCellAddrs.Length - 1))
-            //{
-            //	m_dbCellAddrsIndex++;
-            //	m_cellOffset = findFirstDataCellOffset((int)m_dbCellAddrs[m_dbCellAddrsIndex]);
-
-            //	m_canRead = readWorkSheetRow();
-            //}
 
             return m_canRead;
         }
