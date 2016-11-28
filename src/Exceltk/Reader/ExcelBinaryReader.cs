@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using ExcelToolKit.BinaryFormat;
+using ExcelToolKit.Format.Binary;
 
 namespace ExcelToolKit {
     /// <summary>

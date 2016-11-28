@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Xml;
-using ExcelToolKit.OpenXmlFormat;
+using ExcelToolKit.Format.Xml;
 
 namespace ExcelToolKit {
     public class ExcelOpenXmlReader : IExcelDataReader {
