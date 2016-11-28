@@ -19,12 +19,9 @@ namespace ExcelToolKit {
         private string m_exceptionMessage;
         private string m_instanceId = Guid.NewGuid().ToString();
         private bool m_isClosed;
-        private bool m_isFirstRead;
-        private bool m_isFirstRowAsColumnNames;
         private bool m_isValid;
 
         private string m_namespaceUri;
-        private int m_resultIndex;
         private object[] m_savedCellsValues;
         private Stream m_sheetStream;
         private XlsxWorkbook m_workbook;
@@ -33,18 +30,20 @@ namespace ExcelToolKit {
 
         #endregion
 
+        #region ctor
         internal ExcelOpenXmlReader() {
             m_isValid = true;
-            m_isFirstRead = true;
+            //m_isFirstRead = true;
 
             m_defaultDateTimeStyles = new List<int>(new[]{
                 14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47
             });
         }
+        #endregion
 
         #region IExcelDataReader Members
 
-        public void Initialize(Stream fileStream) {
+        public void Open(Stream fileStream) {
             m_zipWorker = new ZipWorker();
             m_zipWorker.Extract(fileStream);
 
@@ -59,10 +58,6 @@ namespace ExcelToolKit {
         }
 
         public DataSet AsDataSet() {
-            return AsDataSet(true);
-        }
-
-        public DataSet AsDataSet(bool convertOADateTime) {
             if (!m_isValid) {
                 return null;
             } else {
@@ -70,32 +65,9 @@ namespace ExcelToolKit {
             }
         }
 
-        public bool NextResult() {
-            if (m_resultIndex < (ResultsCount - 1)) {
-                m_resultIndex++;
-                m_isFirstRead = true;
-                m_savedCellsValues = null;
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        public bool Read() {
-            if (!m_isValid) {
-                return false;
-            }
-
-            if (m_isFirstRead && !InitializeSheetRead()) {
-                return false;
-            }
-
-            return ReadSheetRow(m_workbook.Sheets[m_resultIndex]);
-        }
-
         public void Close() {
 
-            if (IsClosed) {
+            if (m_isClosed) {
                 return;
             }
             m_isClosed = true;
@@ -116,155 +88,6 @@ namespace ExcelToolKit {
             }
         }
 
-        public bool IsFirstRowAsColumnNames {
-            get {
-                return m_isFirstRowAsColumnNames;
-            }
-            set {
-                m_isFirstRowAsColumnNames = value;
-            }
-        }
-
-        public bool IsValid {
-            get {
-                return m_isValid;
-            }
-        }
-
-        public string ExceptionMessage {
-            get {
-                return m_exceptionMessage;
-            }
-        }
-
-        public string Name {
-            get {
-                return (m_resultIndex >= 0 && m_resultIndex < ResultsCount)
-                     ? m_workbook.Sheets[m_resultIndex].Name
-                     : null;
-            }
-        }
-
-        public int Depth {
-            get {
-                return m_depth;
-            }
-        }
-
-        public int ResultsCount {
-            get {
-                return m_workbook == null ? -1 : m_workbook.Sheets.Count;
-            }
-        }
-
-        public bool IsClosed {
-            get {
-                return m_isClosed;
-            }
-        }
-
-        public int FieldCount {
-            get {
-                return (m_resultIndex >= 0 && m_resultIndex < ResultsCount)
-                           ? m_workbook.Sheets[m_resultIndex].ColumnsCount
-                           : -1;
-            }
-        }
-
-        public bool GetBoolean(int i) {
-            if (IsDBNull(i)) {
-                return false;
-            } else {
-                return Boolean.Parse(m_cellsValues[i].ToString());
-            }
-        }
-
-        public DateTime GetDateTime(int i) {
-            if (IsDBNull(i)) {
-                return DateTime.MinValue;
-            } else {
-                try {
-                    return (DateTime)m_cellsValues[i];
-                } catch (InvalidCastException) {
-                    return DateTime.MinValue;
-                }
-            }
-        }
-
-        public decimal GetDecimal(int i) {
-            if (IsDBNull(i)) {
-                return decimal.MinValue;
-            } else {
-                return decimal.Parse(m_cellsValues[i].ToString());
-            }
-        }
-
-        public double GetDouble(int i) {
-            if (IsDBNull(i)) {
-                return double.MinValue;
-            } else {
-                return double.Parse(m_cellsValues[i].ToString());
-            }
-        }
-
-        public float GetFloat(int i) {
-            if (IsDBNull(i)) {
-                return float.MinValue;
-            } else {
-                return float.Parse(m_cellsValues[i].ToString());
-            }
-        }
-
-        public short GetInt16(int i) {
-            if (IsDBNull(i)) {
-                return short.MinValue;
-            } else {
-                return short.Parse(m_cellsValues[i].ToString());
-            }
-        }
-
-        public int GetInt32(int i) {
-            if (IsDBNull(i)) {
-                return int.MinValue;
-            } else {
-                return int.Parse(m_cellsValues[i].ToString());
-            }
-        }
-
-        public long GetInt64(int i) {
-            if (IsDBNull(i)) {
-                return long.MinValue;
-            } else {
-                return long.Parse(m_cellsValues[i].ToString());
-            }
-        }
-
-        public string GetString(int i) {
-            if (IsDBNull(i)) {
-                return null;
-            } else {
-                return m_cellsValues[i].ToString();
-            }
-        }
-
-        public object GetValue(int i) {
-            return m_cellsValues[i];
-        }
-
-        public bool IsDBNull(int i) {
-#if OS_WINDOWS
-            return (null == m_cellsValues[i])   
-                || (DBNull.Value == m_cellsValues[i]);
-#else
-            return (null == m_cellsValues[i]);
-#endif
-        }
-
-        public object this[int i] {
-            get {
-                return m_cellsValues[i];
-            }
-        }
         #endregion
 
         #region Implement
@@ -280,20 +103,23 @@ namespace ExcelToolKit {
         }
 
         private void CheckDateTimeNumFmts(List<XlsxNumFmt> list) {
-            if (list.Count == 0)
+            if (list.Count == 0) {
                 return;
+            }
 
             foreach (XlsxNumFmt numFmt in list) {
-                if (string.IsNullOrEmpty(numFmt.FormatCode))
+                if (string.IsNullOrEmpty(numFmt.FormatCode)) {
                     continue;
+                }
                 string fc = numFmt.FormatCode.ToLower();
 
                 int pos;
                 while ((pos = fc.IndexOf('"')) > 0) {
                     int endPos = fc.IndexOf('"', pos + 1);
 
-                    if (endPos > 0)
+                    if (endPos > 0) {
                         fc = fc.Remove(pos, endPos - pos + 1);
+                    }
                 }
 
                 //it should only detect it as a date if it contains
@@ -410,8 +236,10 @@ namespace ExcelToolKit {
             if (sheet.ColumnsCount < 0) {
                 return false;
             }
-            if (null == m_xmlReader)
+
+            if (null == m_xmlReader) {
                 return false;
+            }
 
             if (m_emptyRowCount != 0) {
                 m_cellsValues = new object[sheet.ColumnsCount];
@@ -567,14 +395,19 @@ namespace ExcelToolKit {
 
             // Read All HyperLink Node
             while (m_xmlReader.Read()) {
-                if (m_xmlReader.NodeType != XmlNodeType.Element)
+                if (m_xmlReader.NodeType != XmlNodeType.Element) {
                     break;
-                if (m_xmlReader.LocalName != XlsxWorksheet.N_hyperlink)
+                }
+
+                if (m_xmlReader.LocalName != XlsxWorksheet.N_hyperlink) {
                     break;
+                }
+
                 string aref = m_xmlReader.GetAttribute(XlsxWorksheet.A_ref);
                 string display = m_xmlReader.GetAttribute(XlsxWorksheet.A_display);
                 string rid = m_xmlReader.GetAttribute(XlsxWorksheet.A_rid);
                 string hyperlink = display;
+
                 Debug.Assert(rid!=null);
                 if (hyperDict.ContainsKey(rid)) {
                     hyperlink = hyperDict[rid];
@@ -586,20 +419,12 @@ namespace ExcelToolKit {
                 if (col >= 1 && row >= 1) {
                     row = row - 1;
                     col = col - 1;
-                    if (row == 0 && m_isFirstRowAsColumnNames) {
-                        // TODO(fanfeilong):
-                        string value = table.Columns[col].ColumnName;
-                        var cell = new XlsCell(value);
-                        cell.SetHyperLink(hyperlink);
-                        table.Columns[col].DefaultValue = cell;
-                    } else {
-                        if (row < table.Rows.Count) {
-                            if (col < table.Rows[row].Count) {
-                                object value = table.Rows[row][col];
-                                var cell = new XlsCell(value);
-                                cell.SetHyperLink(hyperlink);
-                                table.Rows[row][col] = cell;
-                            }
+                    if (row < table.Rows.Count) {
+                        if (col < table.Rows[row].Count) {
+                            object value = table.Rows[row][col];
+                            var cell = new XlsCell(value);
+                            cell.SetHyperLink(hyperlink);
+                            table.Rows[row][col] = cell;
                         }
                     }
                 }
@@ -610,23 +435,6 @@ namespace ExcelToolKit {
             if (m_sheetStream != null) {
                 m_sheetStream.Close();
             }
-
-            return true;
-        }
-
-        private bool InitializeSheetRead() {
-            if (ResultsCount <= 0)
-                return false;
-
-            ReadSheetGlobals(m_workbook.Sheets[m_resultIndex]);
-
-            if (m_workbook.Sheets[m_resultIndex].Dimension == null)
-                return false;
-
-            m_isFirstRead = false;
-
-            m_depth = 0;
-            m_emptyRowCount = 0;
 
             return true;
         }
@@ -697,23 +505,8 @@ namespace ExcelToolKit {
                 m_emptyRowCount = 0;
 
                 // Reada Columns
-                if (!m_isFirstRowAsColumnNames) {
-                    // No Sheet Columns
-                    for (int i = 0; i < sheet.ColumnsCount; i++) {
-                        table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
-                    }
-                } else if (ReadSheetRow(sheet)) {
-                    // Read Sheet Columns
-                    Debug.Assert(m_cellsValues!=null);
-                    for (int index = 0; index < m_cellsValues.Length; index++) {
-                        if (m_cellsValues[index] != null && m_cellsValues[index].ToString().Length > 0) {
-                            table.AddColumnHandleDuplicate(m_cellsValues[index].ToString());
-                        } else {
-                            table.AddColumnHandleDuplicate(string.Concat(COLUMN, index));
-                        }
-                    }
-                } else {
-                    continue;
+                for (int i = 0; i < sheet.ColumnsCount; i++) {
+                    table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
                 }
 
                 // Read Sheet Rows
@@ -721,6 +514,7 @@ namespace ExcelToolKit {
                 while (ReadSheetRow(sheet)) {
                     table.Rows.Add(m_cellsValues);
                 }
+
                 if (table.Rows.Count > 0) {
                     dataset.Tables.Add(table);
                 }

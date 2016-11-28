@@ -8,6 +8,16 @@ using ExcelToolKit.BinaryFormat;
 
 namespace ExcelToolKit {
     /// <summary>
+    /// Strict is as normal, Loose is more forgiving and will not cause an exception 
+    /// if a record size takes it beyond the end of the file. 
+    /// It will be trunacted in this case (SQL Reporting Services)
+    /// </summary>
+    public enum ReadOption {
+        Strict,
+        Loose
+    }
+
+    /// <summary>
     /// ExcelDataReader Class
     /// </summary>
     public class ExcelBinaryReader : IExcelDataReader {
@@ -16,10 +26,9 @@ namespace ExcelToolKit {
         private const string WORKBOOK="Workbook";
         private const string BOOK="Book";
         private const string COLUMN="Column";
-        private readonly Encoding m_Default_Encoding=Encoding.UTF8;
         private readonly ReadOption m_ReadOption=ReadOption.Strict;
-        private bool _isFirstRowAsColumnNames;
-        private bool disposed;
+
+        private bool m_disposed;
         private bool m_IsFirstRead;
         private int m_SheetIndex;
         private bool m_canRead;
@@ -46,8 +55,10 @@ namespace ExcelToolKit {
 
         #endregion
 
+        #region ctor
+
         internal ExcelBinaryReader() {
-            m_encoding=m_Default_Encoding;
+            m_encoding=Extension.DefaultEncoding();
             m_version=0x0600;
             m_isValid=true;
             m_SheetIndex=-1;
@@ -59,26 +70,17 @@ namespace ExcelToolKit {
             m_ReadOption=readOption;
         }
 
-        public bool ConvertOaDate {
-            get;
-            set;
-        }
-
         public ReadOption ReadOption {
             get {
                 return m_ReadOption;
             }
         }
+        
+        #endregion
 
         #region IExcelDataReader Members
 
-        public void Dispose() {
-            Dispose(true);
-
-            GC.SuppressFinalize(this);
-        }
-
-        public void Initialize(Stream fileStream) {
+        public void Open(Stream fileStream) {
             m_file=fileStream;
 
             readWorkBookGlobals();
@@ -91,25 +93,23 @@ namespace ExcelToolKit {
         }
 
         public DataSet AsDataSet() {
-            return AsDataSet(false);
-        }
-
-        public DataSet AsDataSet(bool convertOADateTime) {
-            if (!m_isValid)
+            if (!m_isValid) {
                 return null;
+            }
 
-            if (m_isClosed)
+            if (m_isClosed) {
                 return m_workbookData;
+            }
 
-            ConvertOaDate=convertOADateTime;
-            m_workbookData=new DataSet();
+            m_workbookData =new DataSet();
 
 
             for (int index=0; index<ResultsCount; index++) {
                 DataTable table=readWholeWorkSheet(m_sheets[index]);
 
-                if (null!=table)
+                if (null != table) {
                     m_workbookData.Tables.Add(table);
+                }
             }
 
             m_file.Dispose();
@@ -120,224 +120,45 @@ namespace ExcelToolKit {
             return m_workbookData;
         }
 
-        public string ExceptionMessage {
-            get {
-                return m_exceptionMessage;
-            }
-        }
-
-        public string Name {
-            get {
-                if (null!=m_sheets&&m_sheets.Count>0)
-                    return m_sheets[m_SheetIndex].Name;
-                else
-                    return null;
-            }
-        }
-
-        public bool IsValid {
-            get {
-                return m_isValid;
-            }
-        }
-
         public void Close() {
             m_file.Dispose();
-            m_isClosed=true;
+            m_isClosed = true;
         }
 
-        public int Depth {
-            get {
-                return m_depth;
-            }
-        }
+        #endregion
 
-        public int ResultsCount {
+
+        #region Private methods
+
+        private int ResultsCount {
             get {
                 return m_globals.Sheets.Count;
             }
         }
 
-        public bool IsClosed {
-            get {
-                return m_isClosed;
+        private bool Read() {
+            if (!m_isValid) {
+                return false;
             }
-        }
 
-        public bool NextResult() {
-            if (m_SheetIndex>=(ResultsCount-1))
-                return false;
-
-            m_SheetIndex++;
-
-            m_IsFirstRead=true;
-
-            return true;
-        }
-
-        public bool Read() {
-            if (!m_isValid)
-                return false;
-
-            if (m_IsFirstRead)
+            if (m_IsFirstRead) {
                 initializeSheetRead();
+            }
 
             return moveToNextRecord();
         }
-
-        public int FieldCount {
-            get {
-                return m_maxCol;
-            }
-        }
-
-        public bool GetBoolean(int i) {
-            if (IsDBNull(i))
-                return false;
-
-            return Boolean.Parse(m_cellsValues[i].ToString());
-        }
-
-        public DateTime GetDateTime(int i) {
-            if (IsDBNull(i))
-                return DateTime.MinValue;
-
-            // requested change: 3
-            object val=m_cellsValues[i].Value;
-
-            if (val is DateTime) {
-                // if the value is already a datetime.. return it without further conversion
-                return (DateTime)val;
-            }
-
-            // otherwise proceed with conversion attempts
-            string valString=val.ToString();
-            double dVal;
-
-            try {
-                dVal=double.Parse(valString);
-            } catch (FormatException) {
-                return DateTime.Parse(valString);
-            }
-
-            return dVal.FromOADate();
-        }
-
-        public decimal GetDecimal(int i) {
-            if (IsDBNull(i))
-                return decimal.MinValue;
-
-            return decimal.Parse(m_cellsValues[i].ToString());
-        }
-
-        public double GetDouble(int i) {
-            if (IsDBNull(i))
-                return double.MinValue;
-
-            return double.Parse(m_cellsValues[i].ToString());
-        }
-
-        public float GetFloat(int i) {
-            if (IsDBNull(i))
-                return float.MinValue;
-
-            return float.Parse(m_cellsValues[i].ToString());
-        }
-
-        public short GetInt16(int i) {
-            if (IsDBNull(i))
-                return short.MinValue;
-
-            return short.Parse(m_cellsValues[i].ToString());
-        }
-
-        public int GetInt32(int i) {
-            if (IsDBNull(i))
-                return int.MinValue;
-
-            return int.Parse(m_cellsValues[i].ToString());
-        }
-
-        public long GetInt64(int i) {
-            if (IsDBNull(i))
-                return long.MinValue;
-
-            return long.Parse(m_cellsValues[i].ToString());
-        }
-
-        public string GetString(int i) {
-            if (IsDBNull(i))
-                return null;
-
-            return m_cellsValues[i].ToString();
-        }
-
-        public object GetValue(int i) {
-            return m_cellsValues[i].Value;
-        }
-
-        public bool IsDBNull(int i) {
-#if OS_WINDOWS
-            return (null==m_cellsValues[i].Value)||(DBNull.Value==m_cellsValues[i].Value);
-#else
-            return (null==m_cellsValues[i].Value);
-#endif
-        }
-
-        public object this[int i] {
-            get {
-                return m_cellsValues[i];
-            }
-        }
-
-        public bool IsFirstRowAsColumnNames {
-            get {
-                return _isFirstRowAsColumnNames;
-            }
-            set {
-                _isFirstRowAsColumnNames=value;
-            }
-        }
-
-        #endregion
-
-        private void Dispose(bool disposing) {
-            // Check to see if Dispose has already been called.
-            if (!disposed) {
-                if (disposing) {
-                    if (m_workbookData!=null)
-                        m_workbookData.Dispose();
-
-                    if (m_sheets!=null)
-                        m_sheets.Clear();
-                }
-
-                m_workbookData=null;
-                m_sheets=null;
-                m_stream=null;
-                m_globals=null;
-                m_encoding=null;
-                m_hdr=null;
-
-                disposed=true;
-            }
-        }
-
-        ~ExcelBinaryReader() {
-            Dispose(false);
-        }
-
-        #region Private methods
 
         private int findFirstDataCellOffset(int startOffset) {
             //seek to the first dbcell record
             XlsBiffRecord record=m_stream.ReadAt(startOffset);
             while (!(record is XlsBiffDbCell)) {
-                if (m_stream.Position>=m_stream.Size)
+                if (m_stream.Position >= m_stream.Size) {
                     return -1;
+                }
 
-                if (record is XlsBiffEOF)
+                if (record is XlsBiffEOF) {
                     return -1;
+                }
 
                 try {
                     record=m_stream.Read();
@@ -384,8 +205,10 @@ namespace ExcelToolKit {
                 return;
             }
 
-            m_stream=new XlsBiffStream(m_hdr, workbookEntry.StreamFirstSector, workbookEntry.IsEntryMiniStream, dir,
-                                         this);
+            m_stream=new XlsBiffStream(m_hdr, 
+                workbookEntry.StreamFirstSector, 
+                workbookEntry.IsEntryMiniStream, 
+                dir,this);
 
             m_globals=new XlsWorkbookGlobals();
 
@@ -497,19 +320,13 @@ namespace ExcelToolKit {
 
             m_stream.Seek((int)sheet.DataOffset, SeekOrigin.Begin);
 
-            //
             // Read BOF
-            //
             var bof=m_stream.Read() as XlsBiffBOF;
             if (bof==null||bof.Type!=BIFFTYPE.Worksheet) {
                 return false;
             }
 
-            //DumpBiffRecords();
-
-            //
             // Read Index
-            //
             XlsBiffRecord rec=m_stream.Read();
             if (rec==null)
                 return false;
@@ -524,9 +341,7 @@ namespace ExcelToolKit {
                 idx.IsV8=isV8();
             }
 
-            //
             // Read Demension
-            //
             XlsBiffRecord trec;
             XlsBiffDimensions dims=null;
 
@@ -538,10 +353,9 @@ namespace ExcelToolKit {
                 }
             } while (trec.ID!=BIFFRECORDTYPE.ROW);
 
-            //
             // Read Row
-            //
-            //if we are already on row record then set that as the row, otherwise step forward till we get to a row record
+            // if we are already on row record then set that as the row, 
+            // otherwise step forward till we get to a row record
             if (trec.ID==BIFFRECORDTYPE.ROW)
                 row=(XlsBiffRow)trec;
 
@@ -583,9 +397,7 @@ namespace ExcelToolKit {
 
             m_depth=0;
 
-            //
             // Read Hyper Link
-            //
             bool hasFound=false;
             while (true) {
                 if (m_stream.Position>=m_stream.Size)
@@ -632,14 +444,17 @@ namespace ExcelToolKit {
                 if ((rec is XlsBiffDbCell)) {
                     break;
                 }
+
                 if (rec is XlsBiffEOF) {
                     return false;
                 }
 
                 var cell=rec as XlsBiffBlankCell;
 
-                if ((null==cell)||(cell.ColumnIndex>=m_maxCol))
+                if ((null == cell) || (cell.ColumnIndex >= m_maxCol)) {
                     continue;
+                }
+
                 if (cell.RowIndex!=m_depth) {
                     m_cellOffset-=rec.Size;
                     break;
@@ -656,8 +471,9 @@ namespace ExcelToolKit {
         private DataTable readWholeWorkSheet(XlsWorksheet sheet) {
             XlsBiffIndex idx;
 
-            if (!readWorkSheetGlobals(sheet, out idx, out m_currentRowRecord))
+            if (!readWorkSheetGlobals(sheet, out idx, out m_currentRowRecord)) {
                 return null;
+            }
 
             var table=new DataTable(sheet.Name);
 
@@ -668,13 +484,16 @@ namespace ExcelToolKit {
             } else {
                 readWholeWorkSheetNoIndex(triggerCreateColumns, table);
             }
+
             table.EndLoadData();
+
             return table;
         }
 
-        //TODO: quite a bit of duplication with the noindex version
         private bool readWholeWorkSheetWithIndex(XlsBiffIndex idx, bool triggerCreateColumns, DataTable table) {
-            m_dbCellAddrs=idx.DbCellAddresses;
+            //TODO: quite a bit of duplication with the noindex version
+
+            m_dbCellAddrs = idx.DbCellAddresses;
 
             foreach (uint dbCellAddress in m_dbCellAddrs){
                 if (m_depth==m_maxRow){
@@ -694,18 +513,8 @@ namespace ExcelToolKit {
 
                 //DataTable columns
                 if (triggerCreateColumns) {
-                    if (_isFirstRowAsColumnNames&&readWorkSheetRow()||(_isFirstRowAsColumnNames&&m_maxRow==1)) {
-                        for (int i=0; i<m_maxCol; i++) {
-                            if (m_cellsValues[i]!=null&&m_cellsValues[i].ToString().Length>0) {
-                                table.AddColumnHandleDuplicate(m_cellsValues[i].ToString());
-                            } else {
-                                table.AddColumnHandleDuplicate(string.Concat(COLUMN, i));
-                            }
-                        }
-                    } else {
-                        for (int i=0; i<m_maxCol; i++) {
-                            table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
-                        }
+                    for (int i = 0; i < m_maxCol; i++) {
+                        table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
                     }
 
                     triggerCreateColumns=false;
@@ -718,7 +527,7 @@ namespace ExcelToolKit {
                 }
 
                 //add the row
-                if (m_depth>0&&!(_isFirstRowAsColumnNames&&m_maxRow==1)) {
+                if (m_depth>0) {
                     table.Rows.Add(m_cellsValues);
                 }
             }
@@ -735,17 +544,8 @@ namespace ExcelToolKit {
                 bool justAddedColumns=false;
                 //DataTable columns
                 if (triggerCreateColumns) {
-                    if (_isFirstRowAsColumnNames||(_isFirstRowAsColumnNames&&m_maxRow==1)) {
-                        for (int i=0; i<m_maxCol; i++) {
-                            if (m_cellsValues[i]!=null&&m_cellsValues[i].ToString().Length>0)
-                                table.AddColumnHandleDuplicate(m_cellsValues[i].ToString());
-                            else
-                                table.AddColumnHandleDuplicate(string.Concat(COLUMN, i));
-                        }
-                    } else {
-                        for (int i=0; i<m_maxCol; i++) {
-                            table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
-                        }
+                    for (int i = 0; i < m_maxCol; i++) {
+                        table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
                     }
 
                     triggerCreateColumns=false;
@@ -753,12 +553,12 @@ namespace ExcelToolKit {
                     table.BeginLoadData();
                 }
 
-                if (!justAddedColumns&&m_depth>0&&!(_isFirstRowAsColumnNames&&m_maxRow==1)) {
+                if (!justAddedColumns&&m_depth>0) {
                     table.Rows.Add(m_cellsValues);
                 }
             }
 
-            if (m_depth>0&&!(_isFirstRowAsColumnNames&&m_maxRow==1)) {
+            if (m_depth>0) {
                 table.Rows.Add(m_cellsValues);
             }
         }
@@ -790,7 +590,7 @@ namespace ExcelToolKit {
                 case BIFFRECORDTYPE.NUMBER_OLD:
                     _dValue=((XlsBiffNumberCell)cell).Value;
                     m_cellsValues[cell.ColumnIndex]=
-                        new XlsCell(!ConvertOaDate?_dValue:tryConvertOADateTime(_dValue, cell.XFormat));
+                        new XlsCell(_dValue);
                     break;
                 case BIFFRECORDTYPE.LABEL:
                 case BIFFRECORDTYPE.LABEL_OLD:
@@ -803,14 +603,14 @@ namespace ExcelToolKit {
                     break;
                 case BIFFRECORDTYPE.RK:
                     _dValue=((XlsBiffRKCell)cell).Value;
-                    m_cellsValues[cell.ColumnIndex]=new XlsCell(!ConvertOaDate?_dValue:tryConvertOADateTime(_dValue, cell.XFormat));
+                    m_cellsValues[cell.ColumnIndex]=new XlsCell(_dValue);
                     break;
                 case BIFFRECORDTYPE.MULRK:
                     var _rkCell=(XlsBiffMulRKCell)cell;
                     bool hasSet = false;
                     for (ushort j=cell.ColumnIndex; j<=_rkCell.LastColumnIndex; j++) {
                         _dValue=_rkCell.GetValue(j);
-                        m_cellsValues[j]=new XlsCell(!ConvertOaDate?_dValue:tryConvertOADateTime(_dValue, _rkCell.GetXF(j)));
+                        m_cellsValues[j]=new XlsCell(_dValue);
                         hasSet = true;
                     }
                     hasValue = hasSet;
@@ -827,7 +627,7 @@ namespace ExcelToolKit {
                     object _oValue=((XlsBiffFormulaCell)cell).Value;
                     if (!(_oValue is FORMULAERROR)) {
                         m_cellsValues[cell.ColumnIndex] =
-                        new XlsCell(!ConvertOaDate ? _oValue : tryConvertOADateTime(_oValue, (cell.XFormat)));
+                        new XlsCell(_oValue);
                     } else {
                         hasValue = false;
                     }
@@ -845,6 +645,12 @@ namespace ExcelToolKit {
             }
         }
 
+        private bool sheetHasIndex() {
+            return (null == m_dbCellAddrs) ||
+                   (m_dbCellAddrsIndex == m_dbCellAddrs.Length) ||
+                   (m_depth == m_maxRow);
+        }
+
         private bool moveToNextRecord() {
             //if sheet has no index
             if (m_noIndex) {
@@ -852,19 +658,19 @@ namespace ExcelToolKit {
             }
 
             //if sheet has index
-            if (null==m_dbCellAddrs||
-                m_dbCellAddrsIndex==m_dbCellAddrs.Length||
-                m_depth==m_maxRow)
+            if (sheetHasIndex()) {
                 return false;
+            }
 
-            m_canRead=readWorkSheetRow()||m_depth>0;
+            m_canRead =readWorkSheetRow()||m_depth>0;
 
             if (!m_canRead&&m_dbCellAddrsIndex<(m_dbCellAddrs.Length-1)) {
                 m_dbCellAddrsIndex++;
                 m_cellOffset=findFirstDataCellOffset((int)m_dbCellAddrs[m_dbCellAddrsIndex]);
-                if (m_cellOffset<0)
+                if (m_cellOffset < 0) {
                     return false;
-                m_canRead=readWorkSheetRow();
+                }
+                m_canRead =readWorkSheetRow();
             }
 
             return m_canRead;
@@ -874,20 +680,23 @@ namespace ExcelToolKit {
             //seek from current row record to start of cell data where that cell relates to the next row record
             XlsBiffRow rowRecord=m_currentRowRecord;
 
-            if (rowRecord==null)
+            if (rowRecord == null) {
                 return false;
+            }
 
             if (rowRecord.RowIndex<m_depth) {
                 m_stream.Seek(rowRecord.Offset+rowRecord.Size, SeekOrigin.Begin);
                 do {
-                    if (m_stream.Position>=m_stream.Size)
+                    if (m_stream.Position >= m_stream.Size) {
                         return false;
+                    }
 
                     XlsBiffRecord record=m_stream.Read();
-                    if (record is XlsBiffEOF)
+                    if (record is XlsBiffEOF) {
                         return false;
+                    }
 
-                    rowRecord=record as XlsBiffRow;
+                    rowRecord =record as XlsBiffRow;
                 } while (rowRecord==null||rowRecord.RowIndex<m_depth);
             }
 
@@ -896,18 +705,21 @@ namespace ExcelToolKit {
             //we have now found the row record for the new row, the we need to seek forward to the first cell record
             XlsBiffBlankCell cell=null;
             do {
-                if (m_stream.Position>=m_stream.Size)
+                if (m_stream.Position >= m_stream.Size) {
                     return false;
+                }
 
                 XlsBiffRecord record=m_stream.Read();
-                if (record is XlsBiffEOF)
+                if (record is XlsBiffEOF) {
                     return false;
+                }
 
                 if (record.IsCell) {
                     var candidateCell=record as XlsBiffBlankCell;
                     if (candidateCell!=null) {
-                        if (candidateCell.RowIndex==m_currentRowRecord.RowIndex)
+                        if (candidateCell.RowIndex == m_currentRowRecord.RowIndex) {
                             cell=candidateCell;
+                        }
                     }
                 }
             } while (cell==null);
@@ -919,15 +731,17 @@ namespace ExcelToolKit {
         }
 
         private void initializeSheetRead() {
-            if (m_SheetIndex==ResultsCount)
+            if (m_SheetIndex == ResultsCount) {
                 return;
+            }
 
-            m_dbCellAddrs=null;
+            m_dbCellAddrs =null;
 
             m_IsFirstRead=false;
 
-            if (m_SheetIndex==-1)
+            if (m_SheetIndex == -1) {
                 m_SheetIndex=0;
+            }
 
             XlsBiffIndex idx;
 
@@ -951,7 +765,6 @@ namespace ExcelToolKit {
             }
         }
 
-
         private void fail(string message) {
             m_exceptionMessage=message;
             m_isValid=false;
@@ -967,34 +780,44 @@ namespace ExcelToolKit {
             m_hdr=null;
         }
 
+        public bool isV8() {
+            return m_version>=0x600;
+        }
+
+        #endregion
+
+        #region Convert OADateTime
         private object tryConvertOADateTime(double value, ushort XFormat) {
-            ushort format=0;
-            if (XFormat<m_globals.ExtendedFormats.Count) {
-                XlsBiffRecord rec=m_globals.ExtendedFormats[XFormat];
+            ushort format = 0;
+            if (XFormat < m_globals.ExtendedFormats.Count) {
+                XlsBiffRecord rec = m_globals.ExtendedFormats[XFormat];
                 switch (rec.ID) {
                     case BIFFRECORDTYPE.XF_V2:
-                        format=(ushort)(rec.ReadByte(2)&0x3F);
+                        format = (ushort)(rec.ReadByte(2) & 0x3F);
                         break;
                     case BIFFRECORDTYPE.XF_V3:
-                        if ((rec.ReadByte(3)&4)==0)
+                        if ((rec.ReadByte(3) & 4) == 0) {
                             return value;
-                        format=rec.ReadByte(1);
+                        }
+                        format = rec.ReadByte(1);
                         break;
                     case BIFFRECORDTYPE.XF_V4:
-                        if ((rec.ReadByte(5)&4)==0)
+                        if ((rec.ReadByte(5) & 4) == 0) {
                             return value;
-                        format=rec.ReadByte(1);
+                        }
+                        format = rec.ReadByte(1);
                         break;
 
                     default:
-                        if ((rec.ReadByte(m_globals.Sheets[m_globals.Sheets.Count-1].IsV8?9:7)&4)==0)
+                        if ((rec.ReadByte(m_globals.Sheets[m_globals.Sheets.Count - 1].IsV8 ? 9 : 7) & 4) == 0) {
                             return value;
+                        }
 
-                        format=rec.ReadUInt16(2);
+                        format = rec.ReadUInt16(2);
                         break;
                 }
             } else {
-                format=XFormat;
+                format = XFormat;
             }
 
 
@@ -1047,41 +870,61 @@ namespace ExcelToolKit {
                 default:
                     XlsBiffFormatString fmtString;
                     if (m_globals.Formats.TryGetValue(format, out fmtString)) {
-                        string fmt=fmtString.Value;
-                        var formatReader=new FormatReader {
-                            FormatString=fmt
+                        string fmt = fmtString.Value;
+                        var formatReader = new FormatReader {
+                            FormatString = fmt
                         };
-                        if (formatReader.IsDateFormatString())
+                        if (formatReader.IsDateFormatString()) {
                             return value.ConvertFromOATime();
+                        }
                     }
                     return value;
             }
         }
-
         private object tryConvertOADateTime(object value, ushort XFormat) {
             double _dValue;
-
-
-            if (double.TryParse(value.ToString(), out _dValue))
+            if (double.TryParse(value.ToString(), out _dValue)) {
                 return tryConvertOADateTime(_dValue, XFormat);
-
+            }
             return value;
         }
+        #endregion
 
-        public bool isV8() {
-            return m_version>=0x600;
+        #region Dispose
+        public void Dispose() {
+            Dispose(true);
+
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing) {
+            // Check to see if Dispose has already been called.
+            if (!m_disposed) {
+                if (disposing) {
+                    if (m_workbookData != null)
+                        m_workbookData.Dispose();
+
+                    if (m_sheets != null)
+                        m_sheets.Clear();
+                }
+
+                m_workbookData = null;
+                m_sheets = null;
+                m_stream = null;
+                m_globals = null;
+                m_encoding = null;
+                m_hdr = null;
+
+                m_disposed = true;
+            }
+        }
+
+        ~ExcelBinaryReader() {
+            Dispose(false);
         }
 
         #endregion
     }
 
-    /// <summary>
-    /// Strict is as normal, Loose is more forgiving and will not cause an exception 
-    /// if a record size takes it beyond the end of the file. 
-    /// It will be trunacted in this case (SQL Reporting Services)
-    /// </summary>
-    public enum ReadOption {
-        Strict,
-        Loose
-    }
+
 }

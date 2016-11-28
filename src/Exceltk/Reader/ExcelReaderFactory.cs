@@ -8,11 +8,11 @@ namespace ExcelToolKit {
             switch (excelFileType) {
                 case ExcelFileType.Binary:
                     reader=new ExcelBinaryReader();
-                    reader.Initialize(fileStream);
+                    reader.Open(fileStream);
                     break;
                 case ExcelFileType.OpenXml:
                     reader=new ExcelOpenXmlReader();
-                    reader.Initialize(fileStream);
+                    reader.Open(fileStream);
                     break;
                 default:
                     break;
@@ -23,35 +23,21 @@ namespace ExcelToolKit {
 
         public static IExcelDataReader CreateBinaryReader(Stream fileStream) {
             IExcelDataReader reader=new ExcelBinaryReader();
-            reader.Initialize(fileStream);
+            reader.Open(fileStream);
 
             return reader;
         }
 
         public static IExcelDataReader CreateBinaryReader(Stream fileStream, ReadOption option) {
             IExcelDataReader reader=new ExcelBinaryReader(option);
-            reader.Initialize(fileStream);
-
-            return reader;
-        }
-
-        public static IExcelDataReader CreateBinaryReader(Stream fileStream, bool convertOADate) {
-            IExcelDataReader reader=CreateBinaryReader(fileStream);
-            ((ExcelBinaryReader)reader).ConvertOaDate=convertOADate;
-
-            return reader;
-        }
-
-        public static IExcelDataReader CreateBinaryReader(Stream fileStream, bool convertOADate, ReadOption readOption) {
-            IExcelDataReader reader=CreateBinaryReader(fileStream, readOption);
-            ((ExcelBinaryReader)reader).ConvertOaDate=convertOADate;
+            reader.Open(fileStream);
 
             return reader;
         }
 
         public static IExcelDataReader CreateOpenXmlReader(Stream fileStream) {
             IExcelDataReader reader=new ExcelOpenXmlReader();
-            reader.Initialize(fileStream);
+            reader.Open(fileStream);
 
             return reader;
         }
