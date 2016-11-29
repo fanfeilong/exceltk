@@ -1,4 +1,4 @@
-﻿namespace ExcelToolKit {
+﻿namespace Exceltk {
     public static class Config {
         public static int DecimalPrecision{
             get;

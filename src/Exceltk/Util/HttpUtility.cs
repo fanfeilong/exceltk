@@ -38,7 +38,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace ExcelToolKit.Util {
+namespace Exceltk.Util {
     public sealed class HttpUtility {
         public sealed class HttpQSCollection : Dictionary<string,string>{
             public override string ToString() {

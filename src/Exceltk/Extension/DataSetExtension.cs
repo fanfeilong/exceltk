@@ -4,7 +4,9 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ExcelToolKit{
+using Exceltk.Reader;
+
+namespace Exceltk{
     public static class DataSetExtension{
         public static DataTable Shrink(this DataTable dataTable) {
             int columnCount=dataTable.Columns.Count;
@@ -60,7 +62,7 @@ namespace ExcelToolKit{
 
         public static DataTable RemoveColumnsByRow(this DataTable dataTable, int rowIndex, Func<XlsCell, bool> filter) {
             if (rowIndex>=dataTable.Rows.Count) {
-                throw new ArgumentOutOfRangeException(string.Format("ÐÐÏÂ±ê³¬³ö·¶Î§£¬×î´óÐÐÊýÎª£º {0}", dataTable.Rows.Count));
+                throw new ArgumentOutOfRangeException(string.Format("ï¿½ï¿½ï¿½Â±ê³¬ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ {0}", dataTable.Rows.Count));
             }
             DataRow row=dataTable.Rows[rowIndex];
             int index=0;

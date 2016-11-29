@@ -486,7 +486,7 @@ namespace ICSharpCode.SharpZipLib.Tar {
                 if (value!=null) {
                     userName=value.Substring(0, Math.Min(UNAMELEN, value.Length));
                 } else {
-                    string currentUser = ExcelToolKit.Extension.GetUserName();
+                    string currentUser = Exceltk.Extension.GetUserName();
                     if (currentUser.Length>UNAMELEN) {
                         currentUser=currentUser.Substring(0, UNAMELEN);
                     }

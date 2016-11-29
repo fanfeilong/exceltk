@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace ExcelToolKit {
+namespace Exceltk.Reader {
     public static class ExcelReaderFactory {
         public static IExcelDataReader CreateReader(Stream fileStream, ExcelFileType excelFileType) {
             IExcelDataReader reader=null;

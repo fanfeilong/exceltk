@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 
 #if OS_WINDOWS
-using exceltk.Clipborad;
+using Exceltk.Clipborad;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 #endif
 
-namespace ExcelToolKit {
+using Exceltk.Util;
+
+namespace Exceltk {
     internal class Program {
         
         #if OS_WINDOWS
@@ -64,70 +66,85 @@ namespace ExcelToolKit {
             var allocConsole = false;
             #endif
             do {
-                if (cmd["t"]!=null) {
-                    if (cmd["t"] == "md") {
-                        #if OS_WINDOWS
-                        if (!AttachConsole(-1)) {
-                            AllocConsole();
-                            allocConsole = true;
-                        }
-                        #endif
+                // check target
+                if (cmd["t"]==null) {
+                    Console.WriteLine("ERROR:target not found");
+                    break;
+                }
 
-                        if (cmd["xls"] == null) {
-                            break;
-                        }
+                // run gui
+                if (cmd["t"] == "cm") {
+                    #if OS_WINDOWS
+                    Application.Run(new ClipboradMonitor());
+                    #endif
+                    ret = 0;
+                    break;
+                } 
 
-                        string xls = cmd["xls"];
-                        string sheet = cmd["sheet"];
-                        string root = Directory.GetCurrentDirectory();
-                        xls = Path.Combine(root, xls);
+                // run console
+                #if OS_WINDOWS
+                if (!AttachConsole(-1)) {
+                    AllocConsole();
+                    allocConsole = true;
+                }
+                #endif
 
-                        string dirName = Path.GetDirectoryName(xls);
-                        string fileName = Path.GetFileNameWithoutExtension(xls);
-                        if(dirName!=null&&fileName!=null){
-                            string output=Path.Combine(dirName, fileName);
+                // check xls arg 
+                if (cmd["xls"] == null) {
+                    Console.WriteLine("ERROR:xls not found");
+                    break;
+                }
 
-                            if (!File.Exists(xls)) {
-                                Console.WriteLine("xls file is not exist:{0}", xls);
-                                break;
-                            }
+                // check xls exist
+                string xls = cmd["xls"];
+                string sheet = cmd["sheet"];
+                string root = Directory.GetCurrentDirectory();
+                xls = Path.Combine(root, xls);
+                if (!File.Exists(xls)) {
+                    Console.WriteLine("ERROR:xls file is not exist:{0}", xls);
+                    break;
+                }
 
-                            if (sheet!=null) {
-                                MarkDownTable table=xls.ToMd(sheet);
-                                string tableFile=output+table.Name+".md";
-                                File.WriteAllText(tableFile, table.Value);
-                                Console.WriteLine("Output File: {0}", tableFile);
-                            } else {
-                                IEnumerable<MarkDownTable> tables=xls.ToMd();
-                                foreach (MarkDownTable table in tables) {
-                                    string tableFile=output+table.Name+".md";
-                                    File.WriteAllText(tableFile, table.Value);
-                                    Console.WriteLine("Output File: {0}", tableFile);
-                                }
-                            }
-                            ret=0;
-                            Console.WriteLine("Done!");                            
-                        }else{
-                            Console.WriteLine("ERROR: xls path is valid:{0}",xls);
-                        }
+                // check xls path
+                string dirName = Path.GetDirectoryName(xls);
+                string fileName = Path.GetFileNameWithoutExtension(xls);
+                if(dirName==null||fileName==null){
+                    Console.WriteLine("ERROR: xls path is valid:{0}",xls);
+                    break;
+                }
 
-                    } else if (cmd["t"] == "cm") {
-                        #if OS_WINDOWS
-                        Application.Run(new ClipboradMonitor());
-                        #endif
-                        ret = 0;
-                    } else {
-                        // Ignore
+                // check md or json target
+                if(cmd["t"]!="md"&&cmd["t"]!="json"){
+                    Console.WriteLine("ERROR: target not support",cmd["t"]);
+                    break;
+                }
+                
+                // output
+                var output=Path.Combine(dirName, fileName);
+                if (sheet!=null) {
+                    var table=xls.ToSimpleTable(sheet,cmd["t"]);
+                    string tableFile=output+table.Name+"."+cmd["t"];
+                    File.WriteAllText(tableFile, table.Value);
+                    Console.WriteLine("Output File: {0}", tableFile);
+                } else {
+                    var tables=xls.ToSimpleTable(cmd["t"]);
+                    foreach (var table in tables) {
+                        string tableFile=output+table.Name+"."+cmd["t"];
+                        File.WriteAllText(tableFile, table.Value);
+                        Console.WriteLine("Output File: {0}", tableFile);
                     }
                 }
+                ret=0;
+                Console.WriteLine("Done!");  
+                
 
             } while (false);
 
             if (ret!=0) {
                 Console.WriteLine();
                 Console.WriteLine("Usecase:");
-                Console.WriteLine("1. Convert xls to markdown: exceltk -t md -xls xlsfile [-sheet sheetname]");
-                Console.WriteLine("2. Monitor and convert clipboard to markdown: exceltk -t cm");
+                Console.WriteLine("1. Convert xls to markdown: Exceltk -t md -xls xlsfile [-sheet sheetname]");
+                Console.WriteLine("2. Monitor and convert clipboard to markdown: Exceltk -t cm");
             }
 
             #if OS_WINDOWS

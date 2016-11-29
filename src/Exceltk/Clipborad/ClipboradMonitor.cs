@@ -7,9 +7,9 @@ using System.Windows.Forms;
 using System.IO;
 using System.Drawing;
 using System.Reflection;
-using ExcelToolKit;
+using Exceltk;
 
-namespace exceltk.Clipborad {
+namespace Exceltk.Clipborad {
     public class ClipboradMonitor : System.Windows.Forms.Form {
         [DllImport("User32.dll")]
         protected static extern int SetClipboardViewer(int hWndNewViewer);
@@ -125,8 +125,8 @@ namespace exceltk.Clipborad {
             AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             ClientSize = new System.Drawing.Size(w, h);
             Controls.Add(tableLayout);
-            Name = "exceltk";
-            Text = "exceltk - github.com/fanfeilong";
+            Name = "Exceltk";
+            Text = "Exceltk - github.com/fanfeilong";
 
             Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
 

@@ -408,7 +408,7 @@ namespace ICSharpCode.SharpZipLib.Zip {
                 ?437 // The default OEM encoding in a console in a default Windows installation, as a fallback.
                 :Thread.CurrentThread.CurrentCulture.TextInfo.OEMCodePage;
 #else
-        private static int defaultCodePage=ExcelToolKit.Extension.DefaultEncoding().CodePage;
+        private static int defaultCodePage=Exceltk.Extension.DefaultEncoding().CodePage;
 #endif
 
         /// <summary>

@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using ExcelToolKit.Format.Binary;
+using Exceltk.Reader.Binary;
 
-namespace ExcelToolKit {
+namespace Exceltk.Reader {
     /// <summary>
     /// Strict is as normal, Loose is more forgiving and will not cause an exception 
     /// if a record size takes it beyond the end of the file. 

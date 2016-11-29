@@ -4,20 +4,11 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ExcelToolKit{
-    public class MarkDownTable {
-        public string Name {
-            get;
-            set;
-        }
-        public string Value {
-            get;
-            set;
-        }
-    }
+using Exceltk.Reader;
 
+namespace Exceltk{
     public static class MarkDownExtension {
-        public static MarkDownTable ToMd(this string xls, string sheet) {
+        public static SimpleTable ToMd(this string xls, string sheet) {
             FileStream stream=File.Open(xls, FileMode.Open, FileAccess.Read);
             IExcelDataReader excelReader=null;
             if (Path.GetExtension(xls)==".xls") {
@@ -30,7 +21,7 @@ namespace ExcelToolKit{
             DataSet dataSet=excelReader.AsDataSet();
             DataTable dataTable=dataSet.Tables[sheet];
 
-            var table=new MarkDownTable {
+            var table=new SimpleTable {
                     Name=dataTable.TableName,
                     Value=dataTable.ToMd()
             };
@@ -39,7 +30,7 @@ namespace ExcelToolKit{
 
             return table;
         }
-        public static IEnumerable<MarkDownTable> ToMd(this string xls) {
+        public static IEnumerable<SimpleTable> ToMd(this string xls) {
             FileStream stream=File.Open(xls, FileMode.Open, FileAccess.Read);
             IExcelDataReader excelReader=null;
             if (Path.GetExtension(xls)==".xls") {
@@ -52,7 +43,7 @@ namespace ExcelToolKit{
             DataSet dataSet=excelReader.AsDataSet();
 
             foreach (DataTable dataTable in dataSet.Tables) {
-                var table=new MarkDownTable {
+                var table=new SimpleTable {
                         Name=dataTable.TableName,
                         Value=dataTable.ToMd()
                 };

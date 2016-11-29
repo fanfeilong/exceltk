@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ExcelToolKit {
+namespace Exceltk.Reader {
     public class DataSet : IDisposable {
         public DataTableCollection Tables {
             get;

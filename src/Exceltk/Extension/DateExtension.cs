@@ -1,6 +1,6 @@
 using System;
 
-namespace ExcelToolKit{
+namespace Exceltk{
     public static class DateExtension{
         // Number of 100ns ticks per time unit
         private const long TicksPerMillisecond=10000;

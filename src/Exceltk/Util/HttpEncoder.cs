@@ -38,7 +38,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace ExcelToolKit.Util {
+namespace Exceltk.Util {
     public
     class HttpEncoder {
         public static readonly CultureInfo InvariantCulture=CultureInfo.InvariantCulture;

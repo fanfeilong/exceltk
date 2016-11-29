@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExcelToolKit {
+namespace Exceltk.Reader {
     public class FormatReader {
         private const char escapeChar='\\';
         public string FormatString {

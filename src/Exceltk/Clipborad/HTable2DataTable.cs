@@ -7,9 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using ExcelToolKit;
+using Exceltk;
 
-namespace exceltk.Clipborad {
+namespace Exceltk.Clipborad {
     /// <summary>
     /// http://blog.hypercomplex.co.uk/index.php/2010/05/parsing-html-tables-into-system-data-datatable/
     /// HtmlTableParser parses the contents of an html string into a System.Data DataSet or DataTable.

@@ -5,7 +5,7 @@ using System.Globalization;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip;
 
-namespace ExcelToolKit {
+namespace Exceltk.Reader {
     public class ZipWorker : IDisposable {
         #region Members and Properties
 

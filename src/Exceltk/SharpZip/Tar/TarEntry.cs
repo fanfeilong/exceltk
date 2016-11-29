@@ -37,7 +37,7 @@ using System;
 using System.IO;
 
 #if !OS_WINDOWS 
-using ExcelToolKit;
+using Exceltk;
 #endif
 
 namespace ICSharpCode.SharpZipLib.Tar {

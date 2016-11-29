@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Xml;
-using ExcelToolKit.Format.Xml;
+using Exceltk.Reader.Xml;
 
-namespace ExcelToolKit {
+namespace Exceltk.Reader {
     public class ExcelOpenXmlReader : IExcelDataReader {
         #region Members
 
@@ -454,7 +454,7 @@ namespace ExcelToolKit {
                     m_depth = 0;
                     m_emptyRowCount = 0;
 
-                    // 检测100行
+                    // 锟斤拷锟斤拷100锟斤拷
                     int detectRows = Math.Min(sheet.Dimension.LastRow, 100);
                     int maxColumnCount = 0;
                     while (detectRows > 0) {
@@ -463,7 +463,7 @@ namespace ExcelToolKit {
                         detectRows--;
                     }
 
-                    // 如果实际检测出来的列个数小于元数据里的列数，
+                    // 锟斤拷锟斤拷实锟绞硷拷锟斤拷锟斤拷锟斤拷锟斤拷锟叫革拷锟斤拷小锟斤拷元锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷
                     if (maxColumnCount < sheet.Dimension.LastCol) {
                         dict[sheetIndex] = new XlsxDimension(sheet.Dimension.LastRow, maxColumnCount);
                     } else {

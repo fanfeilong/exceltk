@@ -2,7 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ExcelToolKit {
+namespace Exceltk.Util {
     /// <summary>
     /// Command Parser
     /// </summary>

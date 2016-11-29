@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace ExcelToolKit {
+namespace Exceltk.Reader {
     public interface IExcelDataReader {
         void Open(Stream fileStream);
         DataSet AsDataSet();

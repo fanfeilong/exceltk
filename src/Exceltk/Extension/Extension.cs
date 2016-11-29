@@ -1,13 +1,38 @@
 ﻿using System;
 using System.Text;
+using System.Collections.Generic;
 
 #if !OS_WINDOWS
 using System.Xml;
 using System.IO;
 #endif
 
-namespace ExcelToolKit {
+namespace Exceltk {
+    public class SimpleTable{
+        public string Name{get;set;}
+        public string Value{get;set;}
+    }
+
     public static class Extension {
+        public static IEnumerable<SimpleTable> ToSimpleTable(this string xls,string ext){
+            if(ext=="md"){
+                return xls.ToMd();
+            }else if(ext=="json"){
+                return xls.ToJson();
+            }else{
+                return null;
+            }
+        }
+
+        public static SimpleTable ToSimpleTable(this string xls,string sheet,string ext){
+            if(ext=="md"){
+                return xls.ToMd(sheet);
+            }else if(ext=="json"){
+                return xls.ToJson(sheet);
+            }else{
+                return null;
+            }
+        }
 
         #if !OS_WINDOWS
         public static void Close(this XmlReader xmlReader) {
