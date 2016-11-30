@@ -19,7 +19,9 @@ namespace Exceltk {
                 return xls.ToMd();
             }else if(ext=="json"){
                 return xls.ToJson();
-            }else{
+            } else if (ext == "tex") {
+                return xls.ToTex();
+            } else {
                 return null;
             }
         }
@@ -29,7 +31,9 @@ namespace Exceltk {
                 return xls.ToMd(sheet);
             }else if(ext=="json"){
                 return xls.ToJson(sheet);
-            }else{
+            } else if (ext == "tex") {
+                return xls.ToTex(sheet);
+            } else {
                 return null;
             }
         }

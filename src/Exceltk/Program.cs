@@ -46,14 +46,38 @@ namespace Exceltk {
 
                     if (cmd["p"]!=null) {
                         int precision = 0;
-                        Int32.TryParse(cmd["p"],out precision);
-                        if (precision > 10) {
-                            Console.WriteLine("presision too larger:"+precision);
-                            return false;
+                        var ret = Int32.TryParse(cmd["p"],out precision);
+                        if (ret) {
+                            if (precision > 10) {
+                                Console.WriteLine("presision too larger:" + precision);
+                                return false;
+                            }
+                            if (precision > 0) {
+                                Config.DecimalPrecision = precision;
+                            }
                         }
-                        if(precision>0){
-                            Config.DecimalPrecision=precision;                            
+                        
+                    }
+                }
+
+                if (cmd["t"] == "tex") {
+                    if (cmd["sn"] != null) {
+                        Config.SplitNumber = true;
+                    } else {
+                        Config.SplitNumber = false;
+                    }
+
+                    if (cmd["st"] != null) {
+                        Config.SplitTable = true;
+                        int rows = 0;
+                        bool ret = Int32.TryParse(cmd["st"], out rows);
+                        if (ret) {
+                            Config.SplitTableRow = rows;
+                        } else {
+                            Config.SplitTable = false;
                         }
+                    } else {
+                        Config.SplitTable = false;
                     }
                 }
             }
@@ -114,22 +138,23 @@ namespace Exceltk {
                 }
 
                 // check md or json target
-                if(cmd["t"]!="md"&&cmd["t"]!="json"){
-                    Console.WriteLine("ERROR: target not support",cmd["t"]);
+                var target = cmd["t"];
+                if(target!="md"&&target!="json"&&target!="tex"){
+                    Console.WriteLine("ERROR: target not support",target);
                     break;
                 }
                 
                 // output
                 var output=Path.Combine(dirName, fileName);
                 if (sheet!=null) {
-                    var table=xls.ToSimpleTable(sheet,cmd["t"]);
-                    string tableFile=output+table.Name+"."+cmd["t"];
+                    var table=xls.ToSimpleTable(sheet, target);
+                    string tableFile=output+table.Name+"."+ target;
                     File.WriteAllText(tableFile, table.Value);
                     Console.WriteLine("Output File: {0}", tableFile);
                 } else {
-                    var tables=xls.ToSimpleTable(cmd["t"]);
+                    var tables=xls.ToSimpleTable(target);
                     foreach (var table in tables) {
-                        string tableFile=output+table.Name+"."+cmd["t"];
+                        string tableFile=output+table.Name+"."+ target;
                         File.WriteAllText(tableFile, table.Value);
                         Console.WriteLine("Output File: {0}", tableFile);
                     }

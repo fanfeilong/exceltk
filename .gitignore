@@ -10,6 +10,8 @@
 /src/ExcelToolKit/ExcelToolKit.csproj.user
 /src/test/*.md
 /src/test/*.json
+/src/test/*.html
+/src/test/*.tex
 /.DS_Store
 /src/project.lock.json
 .DS_Store

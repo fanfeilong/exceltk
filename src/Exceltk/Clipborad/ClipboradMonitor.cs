@@ -8,6 +8,7 @@ using System.IO;
 using System.Drawing;
 using System.Reflection;
 using Exceltk;
+using Exceltk.Reader;
 
 namespace Exceltk.Clipborad {
     public class ClipboradMonitor : System.Windows.Forms.Form {

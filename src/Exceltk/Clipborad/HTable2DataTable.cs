@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Exceltk;
+using Exceltk.Reader;
 
 namespace Exceltk.Clipborad {
     /// <summary>

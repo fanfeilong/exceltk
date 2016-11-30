@@ -11,4 +11,7 @@ Exceltk\bin\Debug\exceltk.exe -t md -bhead -xls test\test10_bodyhead.xlsx
 Exceltk\bin\Debug\exceltk.exe -t md -bhead -xls test\test9_formula.xlsx
 Exceltk\bin\Debug\exceltk.exe -t md -bhead -xls test\test11_form.xls
 
+Exceltk\bin\Debug\exceltk.exe -t json -xls test\test3.xlsx
+Exceltk\bin\Debug\exceltk.exe -t tex -xls test\test3.xlsx
+
 pause
