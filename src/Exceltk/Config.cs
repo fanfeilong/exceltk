@@ -12,12 +12,13 @@
                 return string.Format("{{0:N{0}}}", DecimalPrecision);
             }
         }
-        
+
         // for md mode
         public static bool BodyHead {
             get;
             set;
         }
+
 
         // for tex mode
         public static bool SplitNumber {
@@ -34,6 +35,25 @@
         public static int SplitTableRow {
             get;
             set;
+        }
+
+        // for md mode
+        public static string TableAligin{
+
+            get;
+            set;
+        }
+
+        // for md mode
+        public static string TableAliginFormat{
+            get{
+                switch (TableAligin){
+                    case "l": return ":--";
+                    case "r": return "--:";
+                    case "c": return ":--:";
+                    default: return ":--";
+                }
+            }
         }
     }
 }

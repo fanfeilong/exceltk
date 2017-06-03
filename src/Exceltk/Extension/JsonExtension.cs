@@ -67,7 +67,7 @@ namespace Exceltk
             sb.AppendFormat("\t'rows':[\n");
             var columns = new Dictionary<int,string>();
             foreach (DataRow row in table.Rows) {
-                
+
                 if(i==0){
                     int j=0;
                     foreach (object cell in row.ItemArray) {

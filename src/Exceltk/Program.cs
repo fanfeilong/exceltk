@@ -12,7 +12,7 @@ using Exceltk.Util;
 
 namespace Exceltk {
     internal class Program {
-        
+
         #if OS_WINDOWS
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern bool AllocConsole();
@@ -56,7 +56,13 @@ namespace Exceltk {
                                 Config.DecimalPrecision = precision;
                             }
                         }
-                        
+                    }
+
+                    if(cmd["a"]!=null){
+                        var align = cmd["a"];
+                        Config.TableAligin = align;
+                    }else{
+                        Config.TableAligin = "l";
                     }
                 }
 
@@ -103,7 +109,7 @@ namespace Exceltk {
                     #endif
                     ret = 0;
                     break;
-                } 
+                }
 
                 // run console
                 #if OS_WINDOWS
@@ -113,7 +119,7 @@ namespace Exceltk {
                 }
                 #endif
 
-                // check xls arg 
+                // check xls arg
                 if (cmd["xls"] == null) {
                     Console.WriteLine("ERROR:xls not found");
                     break;
@@ -143,7 +149,7 @@ namespace Exceltk {
                     Console.WriteLine("ERROR: target not support",target);
                     break;
                 }
-                
+
                 // output
                 var output=Path.Combine(dirName, fileName);
                 if (sheet!=null) {
@@ -160,8 +166,8 @@ namespace Exceltk {
                     }
                 }
                 ret=0;
-                Console.WriteLine("Done!");  
-                
+                Console.WriteLine("Done!");
+
 
             } while (false);
 

@@ -71,7 +71,7 @@ namespace Exceltk{
 
                         sb.Append("|");
                         foreach (DataColumn col in table.Columns) {
-                            sb.Append(":--|");
+                            sb.Append(Config.TableAliginFormat).Append("|");
                         }
                         sb.Append("\r\n");
                     }
@@ -93,12 +93,12 @@ namespace Exceltk{
                     if (i == 0 && insertHeader) {
                         sb.Append("|");
                         foreach (DataColumn col in table.Columns) {
-                            sb.Append(":--|");
+                            sb.Append(Config.TableAliginFormat).Append("|");
                         }
                         sb.Append("\r\n");
                     }
                 }
-                
+
                 i++;
             }
             return sb.ToString();
@@ -122,6 +122,8 @@ namespace Exceltk{
                     value=string.Format(Config.DecimalFormat, Double.Parse(value));
                 }
             }
+
+            value = Regex.Replace(value, @"\r\n?|\n", "<br/>");
 
             return value;
         }
