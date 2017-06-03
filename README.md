@@ -8,6 +8,8 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Empty columns on the right side will be **trimed**, which is **detected** by the first 100 rows. 
   - Support parse sheet to markdown inner clipboard directly.
   - Support set the precision of decimal
+  - Support to set markdown table aligin
+  - Convert newline in cell text into `<br/>`
 
 ### Useage:
   - `exceltk.exe -t md -xls example.xls` 
@@ -18,6 +20,10 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - `exceltk.exe -t md -bhead -xls example.xls`, which will use the first row to replace table header, and keep the head empty, so that 
   the table will auto response in small screen device, this is just a simply solution.
   - `exceltk.exe -t cm`, Now you can copy sheet from excel, then paster to any editor, which will be Markdown table.
+  - `exceltk -t md -a r -xls example.xlsx`, where the `-a` option can be followd by a aligin character
+    - `-a l`: aligin left
+    - `-a r`: aligin right
+    - `-a c`: aligin center
 
 # Convert Excel to Json 
   chagne the `-t` option to `json`
