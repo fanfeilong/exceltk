@@ -80,7 +80,7 @@ namespace Exceltk.Reader.Xml {
                                 var formatId=int.Parse(formatIdText);
                                 var formatCode=reader.GetAttribute(XlsxNumFmt.A_formatCode);
                                 var numberFormat=new XlsxNumFmt(formatId, formatCode);
-                                _Styles.NumFmts.Add(numberFormat);                                    
+                                _Styles.NumFmts.Add(numberFormat);
                             }
                         }
 

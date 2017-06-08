@@ -2,27 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 
-#if OS_WINDOWS
-using Exceltk.Clipborad;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
-#endif
-
 using Exceltk.Util;
 
 namespace Exceltk {
     internal class Program {
-
-        #if OS_WINDOWS
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool AllocConsole();
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool FreeConsole();
-
-        [DllImport("kernel32", SetLastError = true)]
-        static extern bool AttachConsole(int dwProcessId);
-        #endif
 
         [STAThread]
         private static void Main(string[] args) {
@@ -92,32 +75,12 @@ namespace Exceltk {
 
         private static void Xls2MarkDown(CommandParser cmd) {
             int ret=1;
-            #if OS_WINDOWS
-            var allocConsole = false;
-            #endif
             do {
                 // check target
                 if (cmd["t"]==null) {
                     Console.WriteLine("ERROR:target not found");
                     break;
                 }
-
-                // run gui
-                if (cmd["t"] == "cm") {
-                    #if OS_WINDOWS
-                    Application.Run(new ClipboradMonitor());
-                    #endif
-                    ret = 0;
-                    break;
-                }
-
-                // run console
-                #if OS_WINDOWS
-                if (!AttachConsole(-1)) {
-                    AllocConsole();
-                    allocConsole = true;
-                }
-                #endif
 
                 // check xls arg
                 if (cmd["xls"] == null) {
@@ -177,15 +140,6 @@ namespace Exceltk {
                 Console.WriteLine("1. Convert xls to markdown: Exceltk -t md -xls xlsfile [-sheet sheetname]");
                 Console.WriteLine("2. Monitor and convert clipboard to markdown: Exceltk -t cm");
             }
-
-            #if OS_WINDOWS
-            SendKeys.SendWait("{ENTER}");
-            if (allocConsole) {
-                FreeConsole();
-            }
-
-            System.Environment.Exit(0);
-            #endif
         }
     }
 }

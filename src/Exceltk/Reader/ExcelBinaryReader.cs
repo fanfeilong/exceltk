@@ -8,8 +8,8 @@ using Exceltk.Reader.Binary;
 
 namespace Exceltk.Reader {
     /// <summary>
-    /// Strict is as normal, Loose is more forgiving and will not cause an exception 
-    /// if a record size takes it beyond the end of the file. 
+    /// Strict is as normal, Loose is more forgiving and will not cause an exception
+    /// if a record size takes it beyond the end of the file.
     /// It will be trunacted in this case (SQL Reporting Services)
     /// </summary>
     public enum ReadOption {
@@ -75,7 +75,7 @@ namespace Exceltk.Reader {
                 return m_ReadOption;
             }
         }
-        
+
         #endregion
 
         #region IExcelDataReader Members
@@ -85,9 +85,9 @@ namespace Exceltk.Reader {
 
             readWorkBookGlobals();
 
-            // set the sheet index to the index of the first sheet.. 
-            // this is so that properties such as Name which use m_sheetIndex 
-            // reflect the first sheet in the file without having to 
+            // set the sheet index to the index of the first sheet..
+            // this is so that properties such as Name which use m_sheetIndex
+            // reflect the first sheet in the file without having to
             // perform a read() operation
             m_SheetIndex=0;
         }
@@ -175,7 +175,7 @@ namespace Exceltk.Reader {
             do {
                 row=m_stream.ReadAt(offs) as XlsBiffRow;
                 if (row==null){
-                    break;                    
+                    break;
                 }
                 offs+=row.Size;
             } while (true);
@@ -205,9 +205,9 @@ namespace Exceltk.Reader {
                 return;
             }
 
-            m_stream=new XlsBiffStream(m_hdr, 
-                workbookEntry.StreamFirstSector, 
-                workbookEntry.IsEntryMiniStream, 
+            m_stream=new XlsBiffStream(m_hdr,
+                workbookEntry.StreamFirstSector,
+                workbookEntry.IsEntryMiniStream,
                 dir,this);
 
             m_globals=new XlsWorkbookGlobals();
@@ -354,7 +354,7 @@ namespace Exceltk.Reader {
             } while (trec.ID!=BIFFRECORDTYPE.ROW);
 
             // Read Row
-            // if we are already on row record then set that as the row, 
+            // if we are already on row record then set that as the row,
             // otherwise step forward till we get to a row record
             if (trec.ID==BIFFRECORDTYPE.ROW)
                 row=(XlsBiffRow)trec;
@@ -538,7 +538,7 @@ namespace Exceltk.Reader {
         private void readWholeWorkSheetNoIndex(bool triggerCreateColumns, DataTable table) {
             while (Read()) {
                 if (m_depth==m_maxRow){
-                    break;                    
+                    break;
                 }
 
                 bool justAddedColumns=false;

@@ -7,14 +7,14 @@ namespace Exceltk.Reader {
         public DataTableCollection Tables {
             get;
             set;
-        } 
+        }
 
         public void AcceptChanges(){
-            
+
         }
 
         public void FixDataTypes(){
-            
+
         }
 
         public DataSet(){
@@ -53,16 +53,16 @@ namespace Exceltk.Reader {
         }
 
         public void BeginLoadData(){
-            
+
         }
 
         public void EndLoadData(){
-            
+
         }
 
         public DataTable Clone(){
             var v= new DataTable(TableName){
-                Columns = Columns.Clone(), 
+                Columns = Columns.Clone(),
                 Rows = Rows.Clone()
             };
             return v;
@@ -83,7 +83,7 @@ namespace Exceltk.Reader {
         private Dictionary<string, int> Indexs{
             get;
             set;
-        }  
+        }
 
         public DataTable this[int index]{
             get{
@@ -176,21 +176,21 @@ namespace Exceltk.Reader {
         private List<string> Indexs{
             get;
             set;
-        } 
+        }
 
         public DataColumn this[string index] {
             get{
                 return Values[index];
             }set{
                 Values[index]=value;
-            }   
+            }
         }
 
         public DataColumn this[int index]{
             get{
                 return Values[Indexs[index]];
             }set{
-                Values[Indexs[index]]=value;                
+                Values[Indexs[index]]=value;
             }
         }
 
@@ -278,7 +278,7 @@ namespace Exceltk.Reader {
         }
 
         public DataRow(){
-            
+
         }
 
         public DataRow Clone(){

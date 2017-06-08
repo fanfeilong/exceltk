@@ -15,7 +15,7 @@ namespace ICSharpCode.SharpZipLib.Encryption {
         #if OS_WINDOWS
         public static new Rijndael2 Create() {
         #else
-        public static Rijndael2 Create() {
+        public static new Rijndael2 Create() {
         #endif
             return new RijndaelImplementation();
         }

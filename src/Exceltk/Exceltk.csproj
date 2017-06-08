@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <OutputPath>../bin</OutputPath>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>exceltk</RootNamespace>
+    <AssemblyName>exceltk</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ApplicationIcon>table.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="table.ico" />
+  </ItemGroup>
+
+</Project>

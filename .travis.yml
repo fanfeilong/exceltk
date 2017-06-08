@@ -6,22 +6,22 @@ matrix:
     - os: linux # Ubuntu 14.04
       dist: trusty
       sudo: required
-      dotnet: 1.0.0-preview2-003121
+      dotnet: 2.0.0-preview1-005977
       mono: none
 
 script:
   - dotnet restore -f src
-  - dotnet run --project src/project.json -t md -xls src/test/test1.xlsx
-  - dotnet run --project src/project.json -t md -xls src/test/test2.xlsx
-  - dotnet run --project src/project.json -t md -xls src/test/test3.xlsx
-  - dotnet run --project src/project.json -t md -xls src/test/test4.xlsx
-  - dotnet run --project src/project.json -t md -xls src/test/test5.xlsx
-  - dotnet run --project src/project.json -t md -xls src/test/test6_crossline.xlsx
-  - dotnet run --project src/project.json -t md -xls src/test/test7_large_tail_empty_columns.xlsx
-  - dotnet run --project src/project.json -t md -xls src/test/test8.xls
-  - dotnet run --project src/project.json -t md -bhead -xls src/test/test9_formula.xlsx 
-  - dotnet run --project src/project.json -t md -bhead -xls src/test/test10_bodyhead.xlsx 
-  - dotnet run --project src/project.json -t md -bhead -xls src/test/test11_form.xls
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test1.xlsx
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test2.xlsx
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test3.xlsx
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test4.xlsx
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test5.xlsx
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test6_crossline.xlsx
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test7_large_tail_empty_columns.xlsx
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test8.xls
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -bhead -xls src/test/test9_formula.xlsx 
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -bhead -xls src/test/test10_bodyhead.xlsx 
+  - dotnet run --project src/Exceltk/Exceltk.csproj -t md -bhead -xls src/test/test11_form.xls
 
 
 notifications:
