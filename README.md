@@ -37,7 +37,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
 # Download:
 
 ## 0.1.0
-  - mac: 
+  - mac: https://github.com/fanfeilong/exceltk/blob/master/pub/exceltk.0.1.0.pkg
   - windows: http://files.cnblogs.com/files/math/exceltk.0.1.0.zip
 
 ## 0.0.9 for windows
