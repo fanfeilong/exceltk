@@ -43,3 +43,36 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
 ExcelTk integrated the following projects
 - [Excel Data Reader](https://github.com/ExcelDataReader/ExcelDataReader)
 - [SharpZip](https://github.com/icsharpcode/SharpZipLib)
+
+# How to build
+
+## Build on MacOS
+1. install .NET Core SDK 2.0.0-preview1-005977 
+2. cd to the project dir
+3. run the following script step by step.
+  - `dotnet restore src/exceltk.sln`
+  - `dotnet build src/exceltk.sln` 
+  - `dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test1.xlsx`
+4. the `dotnet restore`, this will take long time to install nupack files for publish target runtime, you can comment the following config in `src/Exceltk/Exceltk.csproj` to ignore it.
+```
+  <PropertyGroup>
+    <RuntimeIdentifiers>win-x86;osx.10.10-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+```
+5. run the following script to publish 
+```
+dotnet publish -r osx.10.10-x64 src/exceltk.sln -c Release
+```
+
+## Build on Windows
+1. you can also build for windows with the .NET Core SDK, and publish it
+```
+dotnet publish -r win-x86 src/exceltk.sln -c Release
+```
+2. you can also build with the visual studio by load the `src/exceltk_vs.sln`
+
+
+
+
+
+
