@@ -35,8 +35,15 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - using `-sn` option to adjust number, for example, `1234656` will be split into `1 2 3 4 5 6`, it the table width is too large, this is useful
 
 # Download:
+
+## 0.1.0
+  - mac: 
+  - windows: http://files.cnblogs.com/files/math/exceltk.0.1.0.zip
+
+## 0.0.9 for windows
   - http://fanfeilong.github.io/exceltk0.0.9.7z
   - http://files.cnblogs.com/files/math/exceltk0.0.9.7z
+
 
 # 3rd projects
 
