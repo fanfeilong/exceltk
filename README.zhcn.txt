@@ -10,6 +10,7 @@
 
 ## 常规用例，文件转换
 
+Mac OS 版本请在命令行下直接使用`exceltk`，不用带exe后缀，MacOS的安装包自动配置好环境变量
 
 - 整个表格
     - `exceltk.exe -t md -xls xxx.xls`

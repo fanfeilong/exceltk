@@ -7,6 +7,9 @@
   - Convert newline in cell text into `<br/>`
 
 ### Useage:
+  
+  if in MacOS, just replace the `exceltk.exe` with `exceltk`
+
   - `exceltk.exe -t md -xls example.xls` 
   - `exceltk.exe -t md -xls example.xls -sheet sheetname`
   - `exceltk.exe -t md -xls example.xlsx` 
