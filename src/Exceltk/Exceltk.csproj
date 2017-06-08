@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <OutputPath>../bin</OutputPath>
+    <!--<TargetFramework>netcoreapp2.0</TargetFramework>-->
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>exceltk</RootNamespace>
@@ -11,6 +12,10 @@
 
   <PropertyGroup>
     <ApplicationIcon>table.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RuntimeIdentifiers>win-x86;osx.10.10-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>

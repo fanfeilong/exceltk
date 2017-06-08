@@ -1,7 +1,3 @@
-Excel toolkit. [![Build Status](https://travis-ci.org/fanfeilong/exceltk.svg?branch=master)](https://travis-ci.org/fanfeilong/exceltk)
-Table SHOULD be edited by advanced GUI applications, BUT converted to any other format. 
-
-
 # Convert Excel sheet to MarkDown Table
   - HyperLink cell in Excel sheet will be **retained** as `[text](url)` format 
   - CrossLine cell in Excel sheet will be **expanded** to multirow
@@ -33,13 +29,3 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - `exceltk.exe -t tex -xls example.xls`
   - using `-st n` option to split table into multitable
   - using `-sn` option to adjust number, for example, `1234656` will be split into `1 2 3 4 5 6`, it the table width is too large, this is useful
-
-# Download:
-  - http://fanfeilong.github.io/exceltk0.0.9.7z
-  - http://files.cnblogs.com/files/math/exceltk0.0.9.7z
-
-# 3rd projects
-
-ExcelTk integrated the following projects
-- [Excel Data Reader](https://github.com/ExcelDataReader/ExcelDataReader)
-- [SharpZip](https://github.com/icsharpcode/SharpZipLib)
