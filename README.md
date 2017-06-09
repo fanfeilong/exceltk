@@ -10,7 +10,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Support to set markdown table aligin
   - Convert newline in cell text into `<br/>`
 
-### Useage:
+### Usage:
   - `exceltk.exe -t md -xls example.xls` 
   - `exceltk.exe -t md -xls example.xls -sheet sheetname`
   - `exceltk.exe -t md -xls example.xlsx` 
