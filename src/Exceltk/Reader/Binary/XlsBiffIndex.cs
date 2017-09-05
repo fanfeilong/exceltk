@@ -48,11 +48,16 @@ namespace Exceltk.Reader.Binary {
             get {
                 int size=RecordSize;
                 int firstIdx=(isV8)?16:12;
-                if (size<=firstIdx)
+                
+                if (size<=firstIdx){
                     return new uint[0];
+                }
+                
                 var cells=new List<uint>((size-firstIdx)/4);
-                for (int i=firstIdx; i<size; i+=4)
+                for (int i=firstIdx; i<size; i+=4){
                     cells.Add(base.ReadUInt32(i));
+                }
+                
                 return cells.ToArray();
             }
         }

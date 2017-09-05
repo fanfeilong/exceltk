@@ -55,12 +55,16 @@ namespace Exceltk.Reader.Binary {
                     m_offset=m_size-offset;
                     break;
             }
-            if (m_offset<0)
-                throw new ArgumentOutOfRangeException(string.Format("{0} On offset={1}", Errors.ErrorBIFFIlegalBefore,
-                                                                    offset));
-            if (m_offset>m_size)
-                throw new ArgumentOutOfRangeException(string.Format("{0} On offset={1}", Errors.ErrorBIFFIlegalAfter,
-                                                                    offset));
+            
+            if (m_offset<0){
+                string message = string.Format("{0} On offset={1}", Errors.ErrorBIFFIlegalBefore, offset);
+                throw new ArgumentOutOfRangeException(message);
+            }
+
+            if (m_offset>m_size){
+                string message = string.Format("{0} On offset={1}", Errors.ErrorBIFFIlegalAfter,offset);
+                throw new ArgumentOutOfRangeException(message);
+            }
         }
 
         /// <summary>
@@ -68,13 +72,17 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         /// <returns></returns>
         public XlsBiffRecord Read() {
-            if ((uint)m_offset>=bytes.Length)
+            if ((uint)m_offset>=bytes.Length){
                 return null;
+            }
 
             XlsBiffRecord rec=XlsBiffRecord.GetRecord(bytes, (uint)m_offset, reader);
             m_offset+=rec.Size;
-            if (m_offset>m_size)
+            
+            if (m_offset>m_size){
                 return null;
+            }
+
             return rec;
         }
 
@@ -84,15 +92,17 @@ namespace Exceltk.Reader.Binary {
         /// <param name="offset"></param>
         /// <returns></returns>
         public XlsBiffRecord ReadAt(int offset) {
-            if ((uint)offset>=bytes.Length)
+            if ((uint)offset>=bytes.Length){
                 return null;
+            }
 
             XlsBiffRecord rec=XlsBiffRecord.GetRecord(bytes, (uint)offset, reader);
 
             //choose ReadOption.Loose to skip this check (e.g. sql reporting services)
             if (reader.ReadOption==ReadOption.Strict) {
-                if (offset+rec.Size>m_size)
+                if (offset+rec.Size>m_size){
                     return null;
+                }
             }
 
             return rec;

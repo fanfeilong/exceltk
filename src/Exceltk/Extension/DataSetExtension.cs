@@ -62,7 +62,7 @@ namespace Exceltk{
 
         public static DataTable RemoveColumnsByRow(this DataTable dataTable, int rowIndex, Func<XlsCell, bool> filter) {
             if (rowIndex>=dataTable.Rows.Count) {
-                throw new ArgumentOutOfRangeException(string.Format("���±곬����Χ����������Ϊ�� {0}", dataTable.Rows.Count));
+                throw new ArgumentOutOfRangeException(string.Format("row index overflow: {0}", dataTable.Rows.Count));
             }
             DataRow row=dataTable.Rows[rowIndex];
             int index=0;

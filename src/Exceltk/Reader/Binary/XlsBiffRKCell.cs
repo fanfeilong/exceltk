@@ -23,6 +23,7 @@ namespace Exceltk.Reader.Binary {
         /// <returns></returns>
         public static double NumFromRK(uint rk) {
             double num;
+            
             if ((rk&0x2)==0x2) {
                 num=(int)(rk>>2|((rk&0x80000000)==0?0:0xC0000000));
             } else {
@@ -30,8 +31,10 @@ namespace Exceltk.Reader.Binary {
                 long v=((long)(rk&0xfffffffc)<<32);
                 num=v.Int64BitsToDouble();
             }
-            if ((rk&0x1)==0x1)
+
+            if ((rk&0x1)==0x1){
                 num/=100; // divide by 100
+            }
 
             return num;
         }

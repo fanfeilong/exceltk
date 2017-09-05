@@ -53,13 +53,20 @@ namespace Exceltk.Reader.Binary {
                             int offset=m_readoffset+5;
                             byte flags=ReadByte(3);
                             m_UseEncoding=(flags&0x01)==0x01?Encoding.Unicode:Exceltk.Extension.DefaultEncoding();
-                            if ((flags&0x04)==0x01) // asian phonetic block size
+
+                            // asian phonetic block size
+                            if ((flags&0x04)==0x01){ 
                                 offset+=4;
-                            if ((flags&0x08)==0x01) // number of rtf blocks
+                            }
+
+                            // number of rtf blocks
+                            if ((flags&0x08)==0x01){ 
                                 offset+=2;
+                            }
+                            
                             m_value=m_UseEncoding.IsSingleByte
-                                          ?m_UseEncoding.GetString(m_bytes, offset, Length)
-                                          :m_UseEncoding.GetString(m_bytes, offset, Length*2);
+                                  ? m_UseEncoding.GetString(m_bytes, offset, Length)
+                                  : m_UseEncoding.GetString(m_bytes, offset, Length*2);
 
                             break;
                     }

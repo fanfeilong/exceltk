@@ -23,8 +23,9 @@ namespace Exceltk.Reader.Binary {
         /// <returns>Format</returns>
         public ushort GetXF(ushort ColumnIdx) {
             int ofs=4+6*(ColumnIdx-ColumnIndex);
-            if (ofs>RecordSize-2)
+            if (ofs>RecordSize-2){
                 return 0;
+            }
             return base.ReadUInt16(ofs);
         }
     }

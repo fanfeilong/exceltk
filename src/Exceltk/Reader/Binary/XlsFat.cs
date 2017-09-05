@@ -50,12 +50,16 @@ namespace Exceltk.Reader.Binary {
                         ms.Write(buff, 0, sizeOfSector);
                     }
                 }
+
                 ms.Seek(0, SeekOrigin.Begin);
                 var rd=new BinaryReader(ms);
                 m_sectors=(int)ms.Length/4;
+                
                 m_fat=new List<uint>(m_sectors);
-                for (int i=0; i<m_sectors; i++)
+                for (int i=0; i<m_sectors; i++){
                     m_fat.Add(rd.ReadUInt32());
+                }
+
                 rd.Close();
                 ms.Close();
             }
@@ -94,11 +98,15 @@ namespace Exceltk.Reader.Binary {
         /// <param name="sector">Current data sector</param>
         /// <returns>Next data sector</returns>
         public uint GetNextSector(uint sector) {
-            if (m_fat.Count<=sector)
+            if (m_fat.Count<=sector){
                 throw new ArgumentException(Errors.ErrorFATBadSector);
+            }
+
             uint value=m_fat[(int)sector];
-            if (value==(uint)FATMARKERS.FAT_FatSector||value==(uint)FATMARKERS.FAT_DifSector)
+            if (value==(uint)FATMARKERS.FAT_FatSector||value==(uint)FATMARKERS.FAT_DifSector){
                 throw new InvalidOperationException(Errors.ErrorFATRead);
+            }
+            
             return value;
         }
     }

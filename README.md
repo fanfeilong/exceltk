@@ -9,6 +9,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Support set the precision of decimal
   - Support to set markdown table aligin
   - Convert newline in cell text into `<br/>`
+  - Cross sheet Hyperlink formula support, link formula like `HYPERLINK(test_sheet!C9,...)` will be extract as `[text](url)` format automatic
 
 ### Usage:
   - `exceltk.exe -t md -xls example.xls` 

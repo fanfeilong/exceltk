@@ -175,44 +175,57 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public XlsFat FAT {
             get {
-                if (m_fat!=null)
+                if (m_fat!=null){
                     return m_fat;
+                }
 
                 uint value;
                 int sectorSize=SectorSize;
                 var sectors=new List<uint>(FatSectorCount);
                 for (int i=0x4C; i<sectorSize; i+=4) {
                     value=BitConverter.ToUInt32(m_bytes, i);
-                    if (value==(uint)FATMARKERS.FAT_FreeSpace)
+                    if (value==(uint)FATMARKERS.FAT_FreeSpace){
                         goto XlsHeader_Fat_Ready;
+                    }
                     sectors.Add(value);
                 }
                 int difCount;
-                if ((difCount=DifSectorCount)==0)
+                if ((difCount=DifSectorCount)==0){
                     goto XlsHeader_Fat_Ready;
+                }
                 lock (m_file) {
                     uint difSector=DifFirstSector;
                     var buff=new byte[sectorSize];
                     uint prevSector=0;
                     while (difCount>0) {
                         sectors.Capacity+=128;
-                        if (prevSector==0||(difSector-prevSector)!=1)
+                        
+                        if (prevSector==0||(difSector-prevSector)!=1){
                             m_file.Seek((difSector+1)*sectorSize, SeekOrigin.Begin);
+                        }
+
                         prevSector=difSector;
                         m_file.Read(buff, 0, sectorSize);
                         for (int i=0; i<508; i+=4) {
                             value=BitConverter.ToUInt32(buff, i);
-                            if (value==(uint)FATMARKERS.FAT_FreeSpace)
+
+                            if (value==(uint)FATMARKERS.FAT_FreeSpace){
                                 goto XlsHeader_Fat_Ready;
+                            }
+
                             sectors.Add(value);
                         }
                         value=BitConverter.ToUInt32(buff, 508);
-                        if (value==(uint)FATMARKERS.FAT_FreeSpace)
+                        
+                        if (value==(uint)FATMARKERS.FAT_FreeSpace){
                             break;
-                        if ((difCount--)>1)
+                        }
+
+                        if ((difCount--)>1){
                             difSector=value;
-                        else
+                        } else {
                             sectors.Add(value);
+                        }
                     }
                 }
             XlsHeader_Fat_Ready:
@@ -225,12 +238,14 @@ namespace Exceltk.Reader.Binary {
         /// Returns mini FAT table
         /// </summary>
         public XlsFat GetMiniFAT(XlsRootDirectory rootDir) {
-            if (m_minifat!=null)
+            if (m_minifat!=null){
                 return m_minifat;
+            }
 
             //if no minifat then return null
-            if (MiniFatSectorCount==0) //TODO(fanfeilong): ||MiniSectorSize==0xFFFFFFFE
+            if (MiniFatSectorCount==0){ //TODO(fanfeilong): ||MiniSectorSize==0xFFFFFFFE
                 return null;
+            }
 
             var sectors=new List<uint>(MiniFatSectorCount);
 
@@ -269,10 +284,15 @@ namespace Exceltk.Reader.Binary {
                 file.Seek(0, SeekOrigin.Begin);
                 file.Read(hdr.m_bytes, 0, 512);
             }
-            if (!hdr.IsSignatureValid)
+            
+            if (!hdr.IsSignatureValid){
                 throw new ArgumentException(Errors.ErrorHeaderSignature);
-            if (hdr.ByteOrder!=0xFFFE)
+            }
+
+            if (hdr.ByteOrder!=0xFFFE){
                 throw new FormatException(Errors.ErrorHeaderOrder);
+            }
+            
             return hdr;
         }
     }

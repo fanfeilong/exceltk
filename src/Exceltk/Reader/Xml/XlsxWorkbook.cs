@@ -8,6 +8,7 @@ namespace Exceltk.Reader.Xml {
     internal class XlsxWorkbook {
         public const string N_sheet="sheet";
         public const string N_t="t";
+        public const string N_rPh = "rPh";
         public const string N_si="si";
         public const string N_cellXfs="cellXfs";
         public const string N_numFmts="numFmts";
@@ -122,9 +123,11 @@ namespace Exceltk.Reader.Xml {
             using (XmlReader reader=XmlReader.Create(xmlFileStream)) {
                 // There are multiple <t> in a <si>. Concatenate <t> within an <si>.
                 bool bAddStringItem=false;
+                bool bSetStringItem=false;
                 string sStringItem="";
 
                 while (reader.Read()) {
+                    //DumpNode(reader);
                     // There are multiple <t> in a <si>. Concatenate <t> within an <si>.
                     if (reader.NodeType==XmlNodeType.Element&&reader.LocalName==N_si) {
                         // Do not add the string item until the next string item is read.
@@ -138,11 +141,17 @@ namespace Exceltk.Reader.Xml {
 
                         // Reset the string item.
                         sStringItem="";
+                        bSetStringItem = false;
                     }
 
                     if (reader.NodeType==XmlNodeType.Element&&reader.LocalName==N_t) {
                         // Append to the string item.
-                        sStringItem+=reader.ReadElementContentAsString();
+                        string contineText = reader.ReadElementContentAsString();
+                        if(!bSetStringItem){
+                            //Console.WriteLine(contineText);
+                            sStringItem = contineText;
+                            bSetStringItem = true;
+                        }
                     }
                 }
                 // Do not add the last string item unless we have read previous string items.
@@ -153,6 +162,43 @@ namespace Exceltk.Reader.Xml {
 
                 xmlFileStream.Close();
             }
+        }
+
+        private void DumpNode(XmlReader reader){
+            switch (reader.NodeType) {
+              case XmlNodeType.Element:
+                  Console.Write("<{0}>", reader.Name);
+                  break;
+              case XmlNodeType.Text:
+                  Console.Write(reader.Value);
+                  break;
+               case XmlNodeType.CDATA:
+                   Console.Write("<![CDATA[{0}]]>", reader.Value);
+                   break;
+               case XmlNodeType.ProcessingInstruction:
+                   Console.Write("<?{0} {1}?>", reader.Name, reader.Value);
+                   break;
+               case XmlNodeType.Comment:
+                   Console.Write("<!--{0}-->", reader.Value);
+                   break;
+               case XmlNodeType.XmlDeclaration:
+                   Console.Write("<?xml version='1.0'?>");
+                   break;
+               case XmlNodeType.Document:
+                   break;
+               case XmlNodeType.DocumentType:
+                   Console.Write("<!DOCTYPE {0} [{1}]", reader.Name, reader.Value);
+                   break;
+               case XmlNodeType.EntityReference:
+                   Console.Write(reader.Name);
+                   break;
+               case XmlNodeType.EndElement:
+                   Console.Write("</{0}>", reader.Name);
+                   break;
+               default:
+                    Console.Write("==={0}", reader.Name);
+                    break;
+           } 
         }
 
 

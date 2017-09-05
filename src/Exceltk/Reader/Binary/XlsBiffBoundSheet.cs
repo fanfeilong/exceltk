@@ -72,8 +72,9 @@ namespace Exceltk.Reader.Binary {
                     if (base.ReadByte(0x7)==0) {
                         return Exceltk.Extension.DefaultEncoding().GetString(m_bytes, m_readoffset+start, len);
                     } else {
-                        return m_UseEncoding.GetString(m_bytes, m_readoffset+start,
-                                                       m_UseEncoding.IsSingleByteEncoding()?len:len*2);
+                        return m_UseEncoding.GetString(
+                                m_bytes, m_readoffset+start,
+                                m_UseEncoding.IsSingleByteEncoding()?len:len*2);
                     }
                 } else {
                     return Exceltk.Extension.DefaultEncoding().GetString(m_bytes, m_readoffset+start-1, len);

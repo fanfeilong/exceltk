@@ -60,27 +60,67 @@ namespace Exceltk.Reader.Binary {
                     Buffer.BlockCopy(m_bytes, (int)offset, buff, 0, (int)(last-offset));
                     if (encoding==0&&str.IsMultiByte) {
                         len-=(last-prefix-offset)/2;
-                        string temp=Exceltk.Extension.DefaultEncoding().GetString(m_bytes, (int)contoffset+5, (int)len);
+                        
+                        string temp=Exceltk.Extension.DefaultEncoding().GetString(
+                            m_bytes, 
+                            (int)contoffset+5, 
+                            (int)len);
+
                         byte[] tempbytes=Encoding.Unicode.GetBytes(temp);
-                        Buffer.BlockCopy(tempbytes, 0, buff, (int)(last-offset), tempbytes.Length);
-                        Buffer.BlockCopy(m_bytes, (int)(contoffset+5+len), buff, (int)(last-offset+len+len),
-                                         (int)postfix);
+                        
+                        Buffer.BlockCopy(
+                            tempbytes, 
+                            0, 
+                            buff, 
+                            (int)(last-offset), 
+                            tempbytes.Length);
+
+                        Buffer.BlockCopy(
+                            m_bytes, 
+                            (int)(contoffset+5+len), 
+                            buff, 
+                            (int)(last-offset+len+len),
+                            (int)postfix);
+
                         offset=contoffset+5+len+postfix;
+
                     } else if (encoding==1&&str.IsMultiByte==false) {
                         len-=(last-offset-prefix);
-                        string temp=Encoding.Unicode.GetString(m_bytes,
-                                                                 (int)contoffset+5,
-                                                                 (int)(len+len));
+                        
+                        string temp=Encoding.Unicode.GetString(
+                            m_bytes,
+                            (int)contoffset+5,
+                            (int)(len+len));
+
                         byte[] tempbytes=Exceltk.Extension.DefaultEncoding().GetBytes(temp);
-                        Buffer.BlockCopy(tempbytes, 0, buff, (int)(last-offset), tempbytes.Length);
-                        Buffer.BlockCopy(m_bytes, (int)(contoffset+5+len+len), buff, (int)(last-offset+len),
-                                         (int)postfix);
+
+                        Buffer.BlockCopy(
+                            tempbytes, 
+                            0, 
+                            buff, 
+                            (int)(last-offset), 
+                            tempbytes.Length);
+
+                        Buffer.BlockCopy(
+                            m_bytes, 
+                            (int)(contoffset+5+len+len), 
+                            buff, 
+                            (int)(last-offset+len),
+                            (int)postfix);
+
                         offset=contoffset+5+len+len+postfix;
+
                     } else {
-                        Buffer.BlockCopy(m_bytes, (int)contoffset+5, buff, (int)(last-offset),
-                                         (int)(size-last+offset));
+                        Buffer.BlockCopy(
+                            m_bytes, 
+                            (int)contoffset+5, 
+                            buff, 
+                            (int)(last-offset),
+                            (int)(size-last+offset));
+
                         offset=contoffset+5+size-last+offset;
                     }
+                    
                     last=contoffset+4+BitConverter.ToUInt16(m_bytes, (int)contoffset+2);
                     lastcontinue++;
 

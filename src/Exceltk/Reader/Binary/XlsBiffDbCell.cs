@@ -26,8 +26,9 @@ namespace Exceltk.Reader.Binary {
                 int a=RowAddress-20; // 20 assumed to be row structure size
 
                 var tmp=new List<uint>();
-                for (int i=0x4; i<RecordSize; i+=4)
+                for (int i=0x4; i<RecordSize; i+=4){
                     tmp.Add((uint)a+base.ReadUInt16(i));
+                }
                 return tmp.ToArray();
             }
         }

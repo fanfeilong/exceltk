@@ -72,8 +72,9 @@ namespace Exceltk.Reader.Binary {
                             m_fileStream.Seek(adjustedSector*sectorSize+offset, SeekOrigin.Begin);
                         }
 
-                        if (prevSector!=0&&prevSector==sector)
+                        if (prevSector!=0&&prevSector==sector){
                             throw new InvalidOperationException("The excel file may be corrupt. We appear to be stuck");
+                        }
 
                         prevSector=sector;
                         m_fileStream.Read(buff, 0, sectorSize);
@@ -81,8 +82,10 @@ namespace Exceltk.Reader.Binary {
 
                         sector=fat.GetNextSector(sector);
 
-                        if (sector==0)
+                        if (sector==0){
                             throw new InvalidOperationException("Next sector cannot be 0. Possibly corrupt excel file");
+                        }
+                        
                     } while (sector!=(uint)FATMARKERS.FAT_EndOfChain);
                 }
 

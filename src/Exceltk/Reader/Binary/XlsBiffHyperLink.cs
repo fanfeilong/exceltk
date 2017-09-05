@@ -76,13 +76,10 @@ namespace Exceltk.Reader.Binary {
                 }
 
                 var urlSize=(int)BitConverter.ToUInt32(m_bytes, offset);
-                //Console.WriteLine(urlSize);
                 offset+=4;
 
-                //byte[] bytes = new byte[ urlSize*2];
-
                 string value=Encoding.Unicode.GetString(m_bytes, offset, 2*(urlSize-1));
-                ////Console.WriteLine("{0}**",value.Replace("\t").TrimEnd());
+                
                 return value;
             }
         }

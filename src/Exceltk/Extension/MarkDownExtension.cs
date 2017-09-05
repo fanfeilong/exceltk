@@ -23,7 +23,7 @@ namespace Exceltk{
 
             var table=new SimpleTable {
                     Name=dataTable.TableName,
-                    Value=dataTable.ToMd()
+                    Value=dataTable.ToMd(dataSet)
             };
 
             excelReader.Close();
@@ -45,7 +45,7 @@ namespace Exceltk{
             foreach (DataTable dataTable in dataSet.Tables) {
                 var table=new SimpleTable {
                         Name=dataTable.TableName,
-                        Value=dataTable.ToMd()
+                        Value=dataTable.ToMd(dataSet)
                 };
 
                 yield return table;
@@ -54,7 +54,7 @@ namespace Exceltk{
             excelReader.Close();
         }
 
-        public static string ToMd(this DataTable table, bool insertHeader=true) {
+        public static string ToMd(this DataTable table, DataSet dataSet, bool insertHeader=true) {
             table.Shrink();
             //table.RemoveColumnsByRow(0, string.IsNullOrEmpty);
             var sb=new StringBuilder();
@@ -79,7 +79,7 @@ namespace Exceltk{
 
                 sb.Append("|");
                 foreach (object cell in row.ItemArray) {
-                    string value=GetCellValue(cell);
+                    string value=GetCellValue(dataSet, cell);
                     if (i == 0 && Config.BodyHead) {
                         sb.AppendFormat("**{0}**",value).Append("|");
                     } else {
@@ -103,14 +103,14 @@ namespace Exceltk{
             }
             return sb.ToString();
         }
-        private static string GetCellValue(object cell) {
+        private static string GetCellValue(DataSet dataSet, object cell) {
             if (cell==null) {
                 return "";
             }
             string value;
             var xlsCell=cell as XlsCell;
             if (xlsCell!=null) {
-                value=xlsCell.MarkDownText;
+                value=xlsCell.GetMarkDownText(dataSet);
             } else {
                 value=cell.ToString();
             }

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using System.Text;
 using Exceltk.Reader.Xml;
 
 namespace Exceltk.Reader {
@@ -232,6 +233,34 @@ namespace Exceltk.Reader {
             return true;
         }
 
+        private HyperLinkIndex ReadHyperLinkFormula(string formula){
+            var sb = new StringBuilder();
+            var f = formula.Substring(10);
+            for(var i=0;i<f.Length;i++){
+                var c = f[i];
+                
+                if(c==','){
+                    var link = sb.ToString();
+                    var pos = link.IndexOf("!");
+                    var sheetName = link.Substring(0, pos);
+                    var cellName = link.Substring(pos+1);
+
+                    int col = 0;
+                    int row = 0;
+                    XlsxDimension.XlsxDim(cellName, out col, out row);
+
+                    return new HyperLinkIndex(){
+                        Sheet = sheetName,
+                        Col = col,
+                        Row = row
+                    };
+                }
+
+                sb.Append(c);
+            }
+            return null;
+        }
+
         private bool ReadSheetRow(XlsxWorksheet sheet) {
             if (sheet.ColumnsCount < 0) {
                 return false;
@@ -284,9 +313,12 @@ namespace Exceltk.Reader {
                 }
 
                 bool hasValue = false;
+                bool hasFormula = false;
+                HyperLinkIndex hyperlinkIndex = null;
                 string a_s = String.Empty;
                 string a_t = String.Empty;
                 string a_r = String.Empty;
+                string f = String.Empty;
                 int col = 0;
                 int row = 0;
 
@@ -303,17 +335,30 @@ namespace Exceltk.Reader {
                             a_t = m_xmlReader.GetAttribute(XlsxWorksheet.A_t);
                             a_r = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
                             XlsxDimension.XlsxDim(a_r, out col, out row);
+                        } else if(m_xmlReader.LocalName == XlsxWorksheet.N_f){
+                            hasFormula = true;
                         } else if (m_xmlReader.LocalName == XlsxWorksheet.N_v || m_xmlReader.LocalName == XlsxWorksheet.N_t) {
                             hasValue = true;
+                            hasFormula = false;
                         } else {
                             // Ignore
                         }
                     }
 
+                    bool hasHyperLinkFormula = false;
+                    if(m_xmlReader.NodeType == XmlNodeType.Text && hasFormula){
+                        string formula = m_xmlReader.Value.ToString();
+                        if(formula.StartsWith("HYPERLINK(")){
+                            hyperlinkIndex = this.ReadHyperLinkFormula(formula);
+                        }
+                    }
+                    
+
                     if (m_xmlReader.NodeType == XmlNodeType.Text && hasValue) {
                         double number;
                         object o = m_xmlReader.Value;
 
+                        //Console.WriteLine("O:{0}", o);
 
                         #region Read Cell Value
 
@@ -347,8 +392,17 @@ namespace Exceltk.Reader {
 
                         #endregion
 
+                        //Console.WriteLine(o);
                         if (col - 1 < m_cellsValues.Length) {
-                            m_cellsValues[col - 1] = o;
+
+                            if(hyperlinkIndex!=null){
+                                var co = new XlsCell(o);
+                                co.HyperLinkIndex = hyperlinkIndex;
+                                m_cellsValues[col - 1] = co;
+                                hyperlinkIndex = null;
+                            }else{
+                                m_cellsValues[col - 1] = o;
+                            }
                         } 
                     } 
                 }
@@ -408,6 +462,7 @@ namespace Exceltk.Reader {
                 string rid = m_xmlReader.GetAttribute(XlsxWorksheet.A_rid);
                 string hyperlink = display;
 
+
                 Debug.Assert(rid!=null);
                 if (hyperDict.ContainsKey(rid)) {
                     hyperlink = hyperDict[rid];
@@ -422,7 +477,11 @@ namespace Exceltk.Reader {
                     if (row < table.Rows.Count) {
                         if (col < table.Rows[row].Count) {
                             object value = table.Rows[row][col];
-                            var cell = new XlsCell(value);
+                            var cell = value as XlsCell;
+                            if(cell==null){
+                                cell = new XlsCell(value);
+                            }
+                            //Console.WriteLine("H:{0}", hyperlink);
                             cell.SetHyperLink(hyperlink);
                             table.Rows[row][col] = cell;
                         }
@@ -454,7 +513,7 @@ namespace Exceltk.Reader {
                     m_depth = 0;
                     m_emptyRowCount = 0;
 
-                    // ����100��
+                    // 
                     int detectRows = Math.Min(sheet.Dimension.LastRow, 100);
                     int maxColumnCount = 0;
                     while (detectRows > 0) {
@@ -463,7 +522,7 @@ namespace Exceltk.Reader {
                         detectRows--;
                     }
 
-                    // ����ʵ�ʼ����������и���С��Ԫ��������������
+                    // 
                     if (maxColumnCount < sheet.Dimension.LastCol) {
                         dict[sheetIndex] = new XlsxDimension(sheet.Dimension.LastRow, maxColumnCount);
                     } else {

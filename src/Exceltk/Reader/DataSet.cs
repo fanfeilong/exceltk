@@ -103,6 +103,16 @@ namespace Exceltk.Reader {
             }
         }
 
+        public void DumpTableNames(){
+            foreach (var dataTable in Values){
+                Console.Write("{0},",dataTable.TableName);
+            }
+        }
+
+        public bool ContainsTable(string tableName){
+            return Indexs.ContainsKey(tableName);
+        }
+
         public void Add(DataTable table){
             int index = Values.Count;
             Values.Add(table);

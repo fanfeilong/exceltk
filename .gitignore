@@ -16,3 +16,6 @@ src/test/*.html
 src/test/*.json
 src/test/*.md
 src/test/*.tex
+
+src/excels/
+

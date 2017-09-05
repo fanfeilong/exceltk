@@ -23,8 +23,10 @@ namespace Exceltk.Reader.Binary {
         /// <param name="bytes">byte array representing current object</param>
         /// <param name="header"></param>
         public XlsDirectoryEntry(byte[] bytes, XlsHeader header) {
-            if (bytes.Length<Length)
+            if (bytes.Length<Length){
                 throw new ArgumentException(Errors.ErrorDirectoryEntryArray);
+            }
+
             m_bytes=bytes;
             m_header=header;
         }
@@ -83,8 +85,9 @@ namespace Exceltk.Reader.Binary {
                 return m_leftSibling;
             }
             set {
-                if (m_leftSibling==null)
+                if (m_leftSibling==null){
                     m_leftSibling=value;
+                }
             }
         }
 
@@ -106,8 +109,9 @@ namespace Exceltk.Reader.Binary {
                 return m_rightSibling;
             }
             set {
-                if (m_rightSibling==null)
+                if (m_rightSibling==null){
                     m_rightSibling=value;
+                }
             }
         }
 
@@ -129,8 +133,9 @@ namespace Exceltk.Reader.Binary {
                 return m_child;
             }
             set {
-                if (m_child==null)
+                if (m_child==null){
                     m_child=value;
+                }
             }
         }
 

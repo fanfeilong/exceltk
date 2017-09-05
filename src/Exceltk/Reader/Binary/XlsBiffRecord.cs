@@ -12,16 +12,19 @@ namespace Exceltk.Reader.Binary {
         protected int m_readoffset;
 
         protected XlsBiffRecord(byte[] bytes, uint offset, ExcelBinaryReader reader) {
-            if (bytes.Length-offset<4)
+            if (bytes.Length-offset<4){
                 throw new ArgumentException(Errors.ErrorBIFFRecordSize);
+            }
+
             m_bytes=bytes;
             this.reader=reader;
             m_readoffset=(int)(4+offset);
 
             //Set readOption to loose to not cause exception here (sql reporting services)
             if (reader.ReadOption==ReadOption.Strict) {
-                if (bytes.Length<offset+Size)
+                if (bytes.Length<offset+Size){
                     throw new ArgumentException(Errors.ErrorBIFFBufferSize);
+                }
             }
         }
 

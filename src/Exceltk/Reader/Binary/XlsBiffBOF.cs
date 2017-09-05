@@ -55,8 +55,9 @@ namespace Exceltk.Reader.Binary {
         /// <remarks>Not used before BIFF8</remarks>
         public uint HistoryFlag {
             get {
-                if (RecordSize<12)
+                if (RecordSize<12){
                     return 0;
+                }
                 return ReadUInt32(0x8);
             }
         }
@@ -67,8 +68,9 @@ namespace Exceltk.Reader.Binary {
         /// <remarks>Not used before BIFF8</remarks>
         public uint MinVersionToOpen {
             get {
-                if (RecordSize<16)
+                if (RecordSize<16){
                     return 0;
+                }
                 return ReadUInt32(0xC);
             }
         }

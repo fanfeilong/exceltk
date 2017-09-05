@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelToolKit", "Exceltk\ExcelToolKit.csproj", "{5ED8AB19-A352-47AD-97BF-AB49EBCD9C41}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelToolKit", "Exceltk\Exceltk_vs.csproj", "{5ED8AB19-A352-47AD-97BF-AB49EBCD9C41}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

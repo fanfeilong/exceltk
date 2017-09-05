@@ -24,7 +24,7 @@ namespace Exceltk
 
             var table=new SimpleTable {
                     Name=dataTable.TableName,
-                    Value=dataTable.ToTex()
+                    Value=dataTable.ToTex(dataSet)
             };
 
             excelReader.Close();
@@ -47,7 +47,7 @@ namespace Exceltk
             foreach (DataTable dataTable in dataSet.Tables) {
                 var table=new SimpleTable {
                         Name=dataTable.TableName,
-                        Value=dataTable.ToTex()
+                        Value=dataTable.ToTex(dataSet)
                 };
 
                 yield return table;
@@ -56,7 +56,7 @@ namespace Exceltk
             excelReader.Close();
         }
 
-        public static string ToTex(this DataTable table, bool insertHeader = true) {
+        public static string ToTex(this DataTable table, DataSet dataSet, bool insertHeader = true) {
             table.Shrink();
             //table.RemoveColumnsByRow(0, string.IsNullOrEmpty);
             var sb = new StringBuilder();
@@ -80,8 +80,8 @@ namespace Exceltk
                         sb.Append("\t\\end{tabular}\n");
                     }
                 }
-                
-                
+
+
                 if(i==0){
 
                     if (row.ItemArray.Length > 4) {
@@ -89,13 +89,13 @@ namespace Exceltk
                     }
 
                     sb.AddTableHeader(row);
-                    
-                } 
+
+                }
 
                 int j=0;
                 sb.Append("\t\t");
                 foreach (object cell in row.ItemArray) {
-                    string value=GetCellValue(cell, islongTable);
+                    string value=GetCellValue(dataSet, cell, islongTable);
                     if (j > 0) {
                         sb.Append(" & ");
                     }
@@ -103,7 +103,7 @@ namespace Exceltk
                     j++;
                 }
                 sb.Append(@"\\ \hline").Append("\n");
-                
+
                 i++;
             }
             sb.Append("\t\\end{tabular}\n");
@@ -126,14 +126,14 @@ namespace Exceltk
             sb.Append("\t\t\\hline\n");
         }
 
-        private static string GetCellValue(object cell,bool islongTable) {
+        private static string GetCellValue(DataSet dataSet, object cell,bool islongTable) {
             if (cell==null) {
                 return "";
             }
             string value;
             var xlsCell=cell as XlsCell;
             if (xlsCell!=null) {
-                value=xlsCell.MarkDownText;
+                value=xlsCell.GetMarkDownText(dataSet);
             } else {
                 value=cell.ToString();
             }
@@ -148,12 +148,6 @@ namespace Exceltk
                     value = ToVerticalableNumber(value);
                 }
             }
-
-
-            //value = value.Replace("\r\n","\\newline");
-            //value = value.Replace("\r","\\newline");
-            //value = value.Replace("\n", "\\newline");
-            //value = value.Replace("\t", "\\tab");
 
             return value.ToTexEscape();
         }

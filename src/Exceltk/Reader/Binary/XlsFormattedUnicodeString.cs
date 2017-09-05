@@ -142,8 +142,8 @@ namespace Exceltk.Reader.Binary {
         public string Value {
             get {
                 return IsMultiByte
-                           ?Encoding.Unicode.GetString(m_bytes, (int)(m_offset+HeadSize), (int)ByteCount)
-                           :Exceltk.Extension.DefaultEncoding().GetString(m_bytes, (int)(m_offset+HeadSize), (int)ByteCount);
+                     ? Encoding.Unicode.GetString(m_bytes, (int)(m_offset+HeadSize), (int)ByteCount)
+                     : Exceltk.Extension.DefaultEncoding().GetString(m_bytes, (int)(m_offset+HeadSize), (int)ByteCount);
             }
         }
     }

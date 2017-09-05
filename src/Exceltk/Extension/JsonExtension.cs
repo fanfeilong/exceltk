@@ -24,7 +24,7 @@ namespace Exceltk
 
             var table=new SimpleTable {
                     Name=dataTable.TableName,
-                    Value=dataTable.ToJson()
+                    Value=dataTable.ToJson(dataSet)
             };
 
             excelReader.Close();
@@ -47,7 +47,7 @@ namespace Exceltk
             foreach (DataTable dataTable in dataSet.Tables) {
                 var table=new SimpleTable {
                         Name=dataTable.TableName,
-                        Value=dataTable.ToJson()
+                        Value=dataTable.ToJson(dataSet)
                 };
 
                 yield return table;
@@ -56,7 +56,7 @@ namespace Exceltk
             excelReader.Close();
         }
 
-        public static string ToJson(this DataTable table, bool insertHeader=true) {
+        public static string ToJson(this DataTable table, DataSet dataSet, bool insertHeader=true) {
             table.Shrink();
             //table.RemoveColumnsByRow(0, string.IsNullOrEmpty);
             var sb=new StringBuilder();
@@ -71,7 +71,7 @@ namespace Exceltk
                 if(i==0){
                     int j=0;
                     foreach (object cell in row.ItemArray) {
-                        string value=GetCellValue(cell);
+                        string value=GetCellValue(dataSet, cell);
                         columns[j] = value;
                         j++;
                     }
@@ -79,7 +79,7 @@ namespace Exceltk
                     sb.Append("\t\t{\n");
                     int j=0;
                     foreach (object cell in row.ItemArray) {
-                        string value=GetCellValue(cell);
+                        string value=GetCellValue(dataSet, cell);
                         sb.AppendFormat("\t\t\t'{0}':'{1}'",columns[j],value);
                         if(j<row.ItemArray.Length-1){
                             sb.Append(",\n");
@@ -99,14 +99,14 @@ namespace Exceltk
             return sb.ToString();
         }
 
-        private static string GetCellValue(object cell) {
+        private static string GetCellValue(DataSet dataSet, object cell) {
             if (cell==null) {
                 return "";
             }
             string value;
             var xlsCell=cell as XlsCell;
             if (xlsCell!=null) {
-                value=xlsCell.MarkDownText;
+                value=xlsCell.GetMarkDownText(dataSet);
             } else {
                 value=cell.ToString();
             }

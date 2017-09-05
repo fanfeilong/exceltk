@@ -1,7 +1,17 @@
 ﻿using System.Text.RegularExpressions;
 using Exceltk.Util;
 
+using System;
+using System.IO;
+
 namespace Exceltk.Reader {
+
+    public class HyperLinkIndex{
+        public string Sheet{get;set;}
+        public int Col{get;set;}
+        public int Row{get;set;}
+    }
+
     public class XlsCell {
         private readonly object m_object;
         private string m_hyperLink;
@@ -31,8 +41,49 @@ namespace Exceltk.Reader {
             }
         }
 
-        public string MarkDownText {
-            get {
+        private HyperLinkIndex m_hyperLinkIndex = null;
+        public HyperLinkIndex HyperLinkIndex{
+            set{
+                m_hyperLinkIndex = value;
+            }
+            get{
+                return m_hyperLinkIndex;
+            }
+        }
+
+        public string GetMarkDownText(DataSet dataSet){
+            if(m_isHyperLink){
+                if(prepareMarkDown!=null){
+                    return prepareMarkDown;
+                }else{
+                    return string.Format("[{0}]({1})", m_object, HttpUtility.UrlPathEncode(m_hyperLink));
+                }
+            }else{
+                if(m_hyperLinkIndex==null){
+                    return m_object.ToString();
+                }
+
+                var table = dataSet.Tables[m_hyperLinkIndex.Sheet];
+                //Console.WriteLine("{0}: <{1},{2}>, <{3},{4}>",table.TableName, m_hyperLinkIndex.Row, m_hyperLinkIndex.Col, table.Rows.Count, table.Columns.Count);
+
+                string url = null;
+                try{
+                    var ro = table.Rows[m_hyperLinkIndex.Row-1].ItemArray[m_hyperLinkIndex.Col-1];
+
+                    var rc = ro as XlsCell;
+                    if(rc==null){
+                        url = ro.ToString();
+                    }else{
+                        url = rc.HyperLink;
+                    }
+                }catch{
+                    //Console.WriteLine("ERROR:{0}: <{1},{2}>, <{3},{4}>",table.TableName, m_hyperLinkIndex.Row, m_hyperLinkIndex.Col, table.Rows.Count, table.Columns.Count);
+                }
+                
+                if(url!=null){
+                    this.SetHyperLink(url);
+                }
+
                 if(m_isHyperLink){
                     if(prepareMarkDown!=null){
                         return prepareMarkDown;
