@@ -10,6 +10,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Support to set markdown table aligin
   - Convert newline in cell text into `<br/>`
   - Cross sheet Hyperlink formula support, link formula like `HYPERLINK(test_sheet!C9,...)` will be extract as `[text](url)` format automatic
+  - Hyperlink formula support, link formula like `HYPERLINK(C9,...)` will be extract as `[text](url)` format automatic
 
 ### Usage:
   - `exceltk.exe -t md -xls example.xls` 
@@ -37,9 +38,9 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
 
 # Download:
 
-## 0.1.1
-  - mac: https://github.com/fanfeilong/exceltk/blob/master/pub/exceltk.0.1.1.pkg
-  - windows: http://files.cnblogs.com/files/math/exceltk.0.1.1.zip
+## 0.1.2
+  - mac: https://github.com/fanfeilong/exceltk/blob/master/pub/exceltk.0.1.2.pkg
+  - windows: http://files.cnblogs.com/files/math/exceltk.0.1.2.zip
 
 ## 0.0.9 for windows
   - http://fanfeilong.github.io/exceltk0.0.9.7z

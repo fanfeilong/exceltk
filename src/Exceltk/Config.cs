@@ -6,6 +6,16 @@
             set;
         }
 
+        private static bool _hasDecimalPrecision = false;
+        public static bool HasDecimalPrecision{
+            get{
+                return _hasDecimalPrecision;
+            }
+            set{
+                _hasDecimalPrecision = value;
+            }
+        }
+
         // all mode
         public static string DecimalFormat{
             get{

@@ -233,7 +233,7 @@ namespace Exceltk.Reader {
             return true;
         }
 
-        private HyperLinkIndex ReadHyperLinkFormula(string formula){
+        private HyperLinkIndex ReadHyperLinkFormula(string thisSheetName, string formula){
             var sb = new StringBuilder();
             var f = formula.Substring(10);
             for(var i=0;i<f.Length;i++){
@@ -242,12 +242,20 @@ namespace Exceltk.Reader {
                 if(c==','){
                     var link = sb.ToString();
                     var pos = link.IndexOf("!");
-                    var sheetName = link.Substring(0, pos);
-                    var cellName = link.Substring(pos+1);
 
+                    var sheetName = "";
                     int col = 0;
                     int row = 0;
-                    XlsxDimension.XlsxDim(cellName, out col, out row);
+                    if(pos>=0){
+                        sheetName = link.Substring(0, pos);
+                        var cellName = link.Substring(pos+1);
+                        XlsxDimension.XlsxDim(cellName, out col, out row);
+                    }else{
+                        sheetName = thisSheetName;
+                        var cellName = link.ToString();
+                        //Console.WriteLine(cellName);
+                        XlsxDimension.XlsxDim(cellName, out col, out row);
+                    }
 
                     return new HyperLinkIndex(){
                         Sheet = sheetName,
@@ -349,7 +357,7 @@ namespace Exceltk.Reader {
                     if(m_xmlReader.NodeType == XmlNodeType.Text && hasFormula){
                         string formula = m_xmlReader.Value.ToString();
                         if(formula.StartsWith("HYPERLINK(")){
-                            hyperlinkIndex = this.ReadHyperLinkFormula(formula);
+                            hyperlinkIndex = this.ReadHyperLinkFormula(sheet.Name, formula);
                         }
                     }
                     

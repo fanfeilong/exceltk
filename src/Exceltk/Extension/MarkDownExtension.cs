@@ -116,10 +116,14 @@ namespace Exceltk{
             }
 
             // Decimal precision
-            if (Config.DecimalPrecision>0) {
+            if (Config.HasDecimalPrecision) {
                 if (Regex.IsMatch(value, @"^(-?[0-9]{1,}[.][0-9]*)$")) {
                     var old=value;
-                    value=string.Format(Config.DecimalFormat, Double.Parse(value));
+                    if(Config.DecimalPrecision>0){
+                        value = string.Format(Config.DecimalFormat, Double.Parse(value));
+                    }else{
+                        value = ((int)Double.Parse(value)).ToString();
+                    }
                 }
             }
 

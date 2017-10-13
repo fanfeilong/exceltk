@@ -35,8 +35,9 @@ namespace Exceltk {
                                 Console.WriteLine("presision too larger:" + precision);
                                 return false;
                             }
-                            if (precision > 0) {
+                            if (precision >= 0) {
                                 Config.DecimalPrecision = precision;
+                                Config.HasDecimalPrecision = true;
                             }
                         }
                     }

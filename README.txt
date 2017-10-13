@@ -6,6 +6,7 @@
   - Support to set markdown table aligin
   - Convert newline in cell text into `<br/>`
   - Cross sheet Hyperlink formula support, link formula like `HYPERLINK(test_sheet!C9,...)` will be extract as `[text](url)` format automatic
+  - Hyperlink formula support, link formula like `HYPERLINK(C9,...)` will be extract as `[text](url)` format automatic
 
 ### Useage:
   
