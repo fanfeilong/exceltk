@@ -115,6 +115,8 @@ namespace Exceltk{
                 value=cell.ToString();
             }
 
+            //Console.WriteLine(value);
+
             // Decimal precision
             if (Config.HasDecimalPrecision) {
                 if (Regex.IsMatch(value, @"^(-?[0-9]{1,}[.][0-9]*)$")) {
@@ -128,6 +130,7 @@ namespace Exceltk{
             }
 
             value = Regex.Replace(value, @"\r\n?|\n", "<br/>");
+            value = value.Replace("|", "\\|");
 
             return value;
         }

@@ -123,7 +123,7 @@ namespace Exceltk.Reader.Xml {
             using (XmlReader reader=XmlReader.Create(xmlFileStream)) {
                 // There are multiple <t> in a <si>. Concatenate <t> within an <si>.
                 bool bAddStringItem=false;
-                bool bSetStringItem=false;
+                //bool bSetStringItem=false;
                 string sStringItem="";
 
                 while (reader.Read()) {
@@ -141,17 +141,17 @@ namespace Exceltk.Reader.Xml {
 
                         // Reset the string item.
                         sStringItem="";
-                        bSetStringItem = false;
+                        //bSetStringItem = false;
                     }
 
                     if (reader.NodeType==XmlNodeType.Element&&reader.LocalName==N_t) {
                         // Append to the string item.
                         string contineText = reader.ReadElementContentAsString();
-                        if(!bSetStringItem){
+                        //if(!bSetStringItem){
                             //Console.WriteLine(contineText);
-                            sStringItem = contineText;
-                            bSetStringItem = true;
-                        }
+                        sStringItem += contineText;
+                        //    bSetStringItem = true;
+                        //}
                     }
                 }
                 // Do not add the last string item unless we have read previous string items.

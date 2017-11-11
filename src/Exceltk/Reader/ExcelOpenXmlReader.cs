@@ -301,130 +301,138 @@ namespace Exceltk.Reader {
                 isRow = m_xmlReader.ReadToFollowing(XlsxWorksheet.N_row, m_namespaceUri);
             } else {
                 if (m_xmlReader.LocalName == XlsxWorksheet.N_row && m_xmlReader.NodeType == XmlNodeType.EndElement) {
+                    //Console.WriteLine("read");
                     m_xmlReader.Read();
                 }
                 isRow = (m_xmlReader.NodeType == XmlNodeType.Element && m_xmlReader.LocalName == XlsxWorksheet.N_row);
             }
 
-            if (isRow) {
-                m_cellsValues = new object[sheet.ColumnsCount];
-                if (sheet.ColumnsCount > 13) {
-                    int i = sheet.ColumnsCount;
-                }
-
-                var rowIndexText = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
-                Debug.Assert(rowIndexText!=null);
-                int rowIndex=int.Parse(rowIndexText);
-
-                if (rowIndex != (m_depth + 1)) {
-                    m_emptyRowCount = rowIndex - m_depth - 1;
-                }
-
-                bool hasValue = false;
-                bool hasFormula = false;
-                HyperLinkIndex hyperlinkIndex = null;
-                string a_s = String.Empty;
-                string a_t = String.Empty;
-                string a_r = String.Empty;
-                string f = String.Empty;
-                int col = 0;
-                int row = 0;
-
-                while (m_xmlReader.Read()) {
-                    if (m_xmlReader.Depth == 2) {
-                        break;
-                    }
-
-                    if (m_xmlReader.NodeType == XmlNodeType.Element) {
-                        hasValue = false;
-
-                        if (m_xmlReader.LocalName == XlsxWorksheet.N_c) {
-                            a_s = m_xmlReader.GetAttribute(XlsxWorksheet.A_s);
-                            a_t = m_xmlReader.GetAttribute(XlsxWorksheet.A_t);
-                            a_r = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
-                            XlsxDimension.XlsxDim(a_r, out col, out row);
-                        } else if(m_xmlReader.LocalName == XlsxWorksheet.N_f){
-                            hasFormula = true;
-                        } else if (m_xmlReader.LocalName == XlsxWorksheet.N_v || m_xmlReader.LocalName == XlsxWorksheet.N_t) {
-                            hasValue = true;
-                            hasFormula = false;
-                        } else {
-                            // Ignore
-                        }
-                    }
-
-                    bool hasHyperLinkFormula = false;
-                    if(m_xmlReader.NodeType == XmlNodeType.Text && hasFormula){
-                        string formula = m_xmlReader.Value.ToString();
-                        if(formula.StartsWith("HYPERLINK(")){
-                            hyperlinkIndex = this.ReadHyperLinkFormula(sheet.Name, formula);
-                        }
-                    }
-                    
-
-                    if (m_xmlReader.NodeType == XmlNodeType.Text && hasValue) {
-                        double number;
-                        object o = m_xmlReader.Value;
-
-                        //Console.WriteLine("O:{0}", o);
-
-                        #region Read Cell Value
-
-                        if (double.TryParse(o.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out number)) {
-                            // numeric
-                            o=number;
-                        }
-
-                        if (null!=a_t&&a_t==XlsxWorksheet.A_s) {
-                            // string
-                            o=m_workbook.SST[int.Parse(o.ToString())].ConvertEscapeChars();
-                        } else if (null!=a_t&&a_t==XlsxWorksheet.N_inlineStr) {
-                            // string inline
-                            o=o.ToString().ConvertEscapeChars();
-                        } else if (a_t=="b") {
-                            // boolean
-                            o=m_xmlReader.Value=="1";
-                        } else if (a_t=="str") {
-                            // string
-                            o=m_xmlReader.Value;
-                        } else if (null!=a_s) {
-                            //something else
-                            XlsxXf xf=m_workbook.Styles.CellXfs[int.Parse(a_s)];
-                            if (xf.ApplyNumberFormat&&o!=null&&o.ToString()!=string.Empty&&
-                                IsDateTimeStyle(xf.NumFmtId)) {
-                                o=number.ConvertFromOATime();
-                            } else if (xf.NumFmtId==49) {
-                                o=o.ToString();
-                            }
-                        }
-
-                        #endregion
-
-                        //Console.WriteLine(o);
-                        if (col - 1 < m_cellsValues.Length) {
-
-                            if(hyperlinkIndex!=null){
-                                var co = new XlsCell(o);
-                                co.HyperLinkIndex = hyperlinkIndex;
-                                m_cellsValues[col - 1] = co;
-                                hyperlinkIndex = null;
-                            }else{
-                                m_cellsValues[col - 1] = o;
-                            }
-                        } 
-                    } 
-                }
-
-                if (m_emptyRowCount > 0) {
-                    m_savedCellsValues = m_cellsValues;
-                    return ReadSheetRow(sheet);
-                }
-                m_depth++;
-
-                return true;
-            } else {
+            if (!isRow) {
                 return false;
             }
+
+            //Console.WriteLine("New Row");
+
+            m_cellsValues = new object[sheet.ColumnsCount];
+            if (sheet.ColumnsCount > 13) {
+                int i = sheet.ColumnsCount;
+            }
+
+            var rowIndexText = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
+            Debug.Assert(rowIndexText!=null);
+            int rowIndex=int.Parse(rowIndexText);
+
+            if (rowIndex != (m_depth + 1)) {
+                m_emptyRowCount = rowIndex - m_depth - 1;
+            }
+
+            bool hasValue = false;
+            bool hasFormula = false;
+            HyperLinkIndex hyperlinkIndex = null;
+            string a_s = String.Empty;
+            string a_t = String.Empty;
+            string a_r = String.Empty;
+            string f = String.Empty;
+            int col = 0;
+            int row = 0;
+
+            while (m_xmlReader.Read()) {
+
+                //Console.WriteLine("m_xmlReader.LocalName:{0}",m_xmlReader.LocalName);
+                //Console.WriteLine("m_xmlReader.Value:{0}",m_xmlReader.Value);
+                if (m_xmlReader.Depth == 2) {
+                    break;
+                }
+
+                if (m_xmlReader.NodeType == XmlNodeType.Element) {
+                    hasValue = false;
+
+                    if (m_xmlReader.LocalName == XlsxWorksheet.N_c) {
+                        a_s = m_xmlReader.GetAttribute(XlsxWorksheet.A_s);
+                        a_t = m_xmlReader.GetAttribute(XlsxWorksheet.A_t);
+                        a_r = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
+                        XlsxDimension.XlsxDim(a_r, out col, out row);
+                    } else if(m_xmlReader.LocalName == XlsxWorksheet.N_f){
+                        hasFormula = true;
+                    } else if (m_xmlReader.LocalName == XlsxWorksheet.N_v || m_xmlReader.LocalName == XlsxWorksheet.N_t) {
+                        hasValue = true;
+                        hasFormula = false;
+                    } else {
+                        //Console.WriteLine("m_xmlReader.LocalName:{0}",m_xmlReader.LocalName);
+                        // Ignore
+                    }
+                }
+
+                bool hasHyperLinkFormula = false;
+                if(m_xmlReader.NodeType == XmlNodeType.Text && hasFormula){
+                    string formula = m_xmlReader.Value.ToString();
+                    if(formula.StartsWith("HYPERLINK(")){
+                        hyperlinkIndex = this.ReadHyperLinkFormula(sheet.Name, formula);
+                    }
+                }
+                
+
+                if (m_xmlReader.NodeType == XmlNodeType.Text && hasValue) {
+                    double number;
+                    object o = m_xmlReader.Value;
+
+                    //Console.WriteLine("O:{0}", o);
+
+                    if (double.TryParse(o.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out number)) {
+                        // numeric
+                        o=number;
+                    }
+
+                    if (null!=a_t&&a_t==XlsxWorksheet.A_s) {
+                        // string
+                        var sstStr = m_workbook.SST[int.Parse(o.ToString())];
+                        //Console.WriteLine(sstStr);
+                        o=sstStr.ConvertEscapeChars();
+                    } else if (null!=a_t&&a_t==XlsxWorksheet.N_inlineStr) {
+                        // string inline
+                        o=o.ToString().ConvertEscapeChars();
+                    } else if (a_t=="b") {
+                        // boolean
+                        o=m_xmlReader.Value=="1";
+                    } else if (a_t=="str") {
+                        // string
+                        o=m_xmlReader.Value;
+                    } else if (null!=a_s) {
+                        //something else
+                        XlsxXf xf=m_workbook.Styles.CellXfs[int.Parse(a_s)];
+                        if (xf.ApplyNumberFormat&&o!=null&&o.ToString()!=string.Empty&&
+                            IsDateTimeStyle(xf.NumFmtId)) {
+                            o=number.ConvertFromOATime();
+                        } else if (xf.NumFmtId==49) {
+                            o=o.ToString();
+                        }
+                    }
+
+                    //Console.WriteLine(o);
+
+                    if (col - 1 < m_cellsValues.Length) {
+                        if(hyperlinkIndex!=null){
+                            var co = new XlsCell(o);
+                            co.HyperLinkIndex = hyperlinkIndex;
+                            m_cellsValues[col - 1] = co;
+                            hyperlinkIndex = null;
+                        }else{
+                            m_cellsValues[col - 1] = o;
+                        }
+                    } 
+                }else{
+                    //Console.WriteLine(m_xmlReader.Value.ToString());
+                } 
+            }
+
+            if (m_emptyRowCount > 0) {
+                //Console.WriteLine("Again");
+                m_savedCellsValues = m_cellsValues;
+                return ReadSheetRow(sheet);
+            }
+            m_depth++;
+
+            return true;
         }
 
         private bool ReadHyperLinks(XlsxWorksheet sheet, DataTable table) {
