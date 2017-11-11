@@ -236,6 +236,19 @@ namespace Exceltk.Reader {
         private HyperLinkIndex ReadHyperLinkFormula(string thisSheetName, string formula){
             var sb = new StringBuilder();
             var f = formula.Substring(10);
+
+            //HYPERLINK(#REF!,RIGHT(#REF!,3))
+            //HYPERLINK(#REF!,SUBSTITUTE(#REF!,"https://coding.net/u/",""))
+            //Console.WriteLine(formula);
+            if(formula.StartsWith("HYPERLINK(#REF!")){
+                //var begin = formula.IndexOf("\"");
+                //var rest = formula.Substring(begin);
+                //var end = rest.IndexOf("\"");
+                //var h = rest.Substring(0,end);
+                //Console.WriteLine(h);
+                return null;
+            }
+
             for(var i=0;i<f.Length;i++){
                 var c = f[i];
                 
@@ -247,9 +260,12 @@ namespace Exceltk.Reader {
                     int col = 0;
                     int row = 0;
                     if(pos>=0){
+                        Console.WriteLine(pos);
+                        Console.WriteLine(link);
                         sheetName = link.Substring(0, pos);
                         var cellName = link.Substring(pos+1);
                         XlsxDimension.XlsxDim(cellName, out col, out row);
+
                     }else{
                         sheetName = thisSheetName;
                         var cellName = link.ToString();
