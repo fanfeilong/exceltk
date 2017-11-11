@@ -38,9 +38,9 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
 
 # Download:
 
-## 0.1.2
-  - mac: https://github.com/fanfeilong/exceltk/blob/master/pub/exceltk.0.1.2.pkg
-  - windows: http://files.cnblogs.com/files/math/exceltk.0.1.2.zip
+## 0.1.3
+  - mac: https://github.com/fanfeilong/exceltk/blob/master/pub/exceltk.0.1.3.pkg
+  - windows: http://files.cnblogs.com/files/math/exceltk.0.1.3.zip
 
 ## 0.0.9 for windows
   - http://fanfeilong.github.io/exceltk0.0.9.7z
