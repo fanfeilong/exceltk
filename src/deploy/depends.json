@@ -1,0 +1,23 @@
+{
+	"macos":[
+		"exceltk",
+		"libhostfxr.dylib",
+		"libhostpolicy.dylib",
+		"libcoreclr.dylib",
+		"libclrjit.dylib",
+		"System.Globalization.Native.dylib",
+		"System.Native.dylib",
+		"System.Private.CoreLib.ni.dll",
+		"System.Private.CoreLib.ni.dll",
+		"exceltk.dll",
+		"System.Runtime.dll",
+		"System.Text.RegularExpressions.dll",
+		"System.Collections.dll",
+		"System.Runtime.Extensions.dll",
+		"System.Threading.dll",
+		"System.Console.dll",
+		"System.IO.FileSystem.dll",
+		"System.Runtime.InteropServices.dll",
+		"System.Security.Cryptography.Primitives.dll"
+	]
+}
