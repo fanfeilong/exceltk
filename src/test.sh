@@ -30,3 +30,4 @@ run -t md -mmd -xls test/test6_crossline.xlsx
 run -t md -xls test/test14_late_columns.xlsx
 run -t md -xls test/test10_nostyles.xlsx
 run -t md -xls test/test8_issue8_hyperlinks.xlsx
+run -t tcpstream -xlsx test/test1.xlsx -biff test/test8.xls

@@ -94,6 +94,20 @@ namespace Exceltk.Reader {
             m_SheetIndex=0;
         }
 
+        /// <summary>
+        /// Rewind the workbook BIFF cursor and stream record packages
+        /// (for progressive consumers / TCP demos).
+        /// </summary>
+        internal System.Collections.Generic.IEnumerable<Exceltk.Reader.Package.BinaryPackage> StreamPackages() {
+            if (m_stream == null) {
+                yield break;
+            }
+            m_stream.Seek(0, SeekOrigin.Begin);
+            foreach (var package in m_stream.Parse()) {
+                yield return package;
+            }
+        }
+
         public DataSet AsDataSet() {
             if (!m_isValid) {
                 return null;
