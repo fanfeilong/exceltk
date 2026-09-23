@@ -26,7 +26,12 @@
 
 # Removed: clipboard monitor (`-t cm`)
   - `-t cm` only existed in 0.0.9 (Windows GUI) and was removed later
-  - Old build: http://files.cnblogs.com/files/math/exceltk0.0.9.7z
+  - Prefer [GitHub Releases](https://github.com/fanfeilong/exceltk/releases) for any archived 0.0.9 asset
+
+# Download
+  - Latest: https://github.com/fanfeilong/exceltk/releases/latest
+  - All versions: https://github.com/fanfeilong/exceltk/releases
+  - Assets: `linux-x64` / `osx-x64` / `osx-arm64` (`.tar.gz`), `win-x86` (`.zip`)
 
 # Convert Excel to Json 
   chagne the `-t` option to `json`

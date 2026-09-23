@@ -1,4 +1,4 @@
-Excel toolkit. [![Build Status](https://travis-ci.org/fanfeilong/exceltk.svg?branch=master)](https://travis-ci.org/fanfeilong/exceltk)
+Excel toolkit. [![CI](https://github.com/fanfeilong/exceltk/actions/workflows/ci.yml/badge.svg)](https://github.com/fanfeilong/exceltk/actions/workflows/ci.yml)
 Table SHOULD be edited by advanced GUI applications, BUT converted to any other format. 
 
 
@@ -46,8 +46,8 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
 
 # Removed: clipboard monitor (`-t cm`)
   - `-t cm` (GUI clipboard watcher) existed only in **0.0.9** on Windows and was **removed** afterwards
-  - Download 0.0.9 if you still need it: http://files.cnblogs.com/files/math/exceltk0.0.9.7z
   - Current versions convert files with `-t md|json|tex` instead
+  - If you still need 0.0.9, look for an archived asset on [Releases](https://github.com/fanfeilong/exceltk/releases) (do not rely on README version matrices)
 
 # Convert Excel to Json 
   chagne the `-t` option to `json`
@@ -59,15 +59,25 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - using `-st n` option to split table into multitable
   - using `-sn` option to adjust number, for example, `1234656` will be split into `1 2 3 4 5 6`, it the table width is too large, this is useful
 
-# Download:
+# Download
 
-## 0.1.3
-  - mac: https://github.com/fanfeilong/exceltk/blob/master/pub/exceltk.0.1.3.pkg
-  - windows: http://files.cnblogs.com/files/math/exceltk.0.1.3.zip
+Prebuilt binaries are published through **GitHub Releases** (CI builds self-contained packages for each RID on version tags `v*`).
 
-## 0.0.9 for windows
-  - http://fanfeilong.github.io/exceltk0.0.9.7z
-  - http://files.cnblogs.com/files/math/exceltk0.0.9.7z
+- **Latest release**: https://github.com/fanfeilong/exceltk/releases/latest
+- **All releases**: https://github.com/fanfeilong/exceltk/releases
+
+Pick the asset that matches your OS:
+
+| Asset RID | Platform |
+| --- | --- |
+| `linux-x64` | Linux x64 (`.tar.gz`) |
+| `osx-x64` | macOS Intel (`.tar.gz`) |
+| `osx-arm64` | macOS Apple Silicon (`.tar.gz`) |
+| `win-x86` | Windows (`.zip`) |
+
+Example asset name: `exceltk-0.1.4-linux-x64.tar.gz`.
+
+To cut a release: tag `vX.Y.Z` and push; `.github/workflows/release.yml` publishes the assets.
 
 
 # 3rd projects
