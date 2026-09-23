@@ -579,29 +579,39 @@ namespace Exceltk.Reader {
                 string location = m_xmlReader.GetAttribute("location"); // fragment identifier
                 string hyperlink = display;
 
-
-                Debug.Assert(rid!=null);
-                if (hyperDict.ContainsKey(rid)) {
+                if (!string.IsNullOrEmpty(rid) && hyperDict.ContainsKey(rid)) {
                     hyperlink = hyperDict[rid];
                 }
 
-                int col = -1;
-                int row = -1;
-                XlsxDimension.XlsxDim(aref, out col, out row);
-                if (col >= 1 && row >= 1) {
-                    row = row - 1;
-                    col = col - 1;
-                    if (row < table.Rows.Count) {
-                        if (col < table.Rows[row].Count) {
-                            object value = table.Rows[row][col];
-                            var cell = value as XlsCell;
-                            if(cell==null){
-                                cell = new XlsCell(value);
-                            }
-                            //Console.WriteLine("H:{0}", hyperlink);
-                            cell.SetHyperLink(hyperlink, location);
-                            table.Rows[row][col] = cell;
+                if (string.IsNullOrEmpty(aref)) {
+                    continue;
+                }
+
+                // ref may be a single cell "A2" or a range "A3:A4"
+                var dim = new XlsxDimension(aref);
+                int c1 = dim.FirstCol - 1;
+                int r1 = dim.FirstRow - 1;
+                int c2 = dim.LastCol - 1;
+                int r2 = dim.LastRow - 1;
+                if (c1 < 0 || r1 < 0) {
+                    continue;
+                }
+
+                for (int row = r1; row <= r2; row++) {
+                    if (row >= table.Rows.Count) {
+                        break;
+                    }
+                    for (int col = c1; col <= c2; col++) {
+                        if (col >= table.Rows[row].Count) {
+                            break;
                         }
+                        object value = table.Rows[row][col];
+                        var cell = value as XlsCell;
+                        if (cell == null) {
+                            cell = new XlsCell(value);
+                        }
+                        cell.SetHyperLink(hyperlink, location);
+                        table.Rows[row][col] = cell;
                     }
                 }
             }
