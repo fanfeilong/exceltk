@@ -15,13 +15,10 @@ namespace Exceltk.Reader.Parser {
                 return null;
             }
 
+            // ExcelBinaryReader.AsDataSet/Close dispose the stream; do not dispose again here.
             var reader = new ExcelBinaryReader();
-            try {
-                reader.Open(streamPackage.Content);
-                return reader.AsDataSet();
-            } finally {
-                reader.Close();
-            }
+            reader.Open(streamPackage.Content);
+            return reader.AsDataSet();
         }
     }
 }
