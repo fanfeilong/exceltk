@@ -13,9 +13,13 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Hyperlink formula support, link formula like `HYPERLINK(C9,...)` will be extract as `[text](url)` format automatic
 
 # Convert CSV to MarkDown Table
-  - Same markdown options as Excel (`-p`, `-a`, `-bhead`)
+  - Same markdown options as Excel (`-p`, `-a`, `-bhead`, `-pretty`)
   - Quoted fields and embedded commas are supported (RFC 4180 style)
   - Input via `-xls file.csv` or `-csv file.csv`
+
+# Pretty MarkDown tables
+  - Use `-pretty` to pad cell text and separators so columns line up in the source
+  - Works with `-a l|c|r` alignment
 
 ### Usage:
   - `exceltk.exe -t md -xls example.xls` 
@@ -24,6 +28,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - `exceltk.exe -t md -xls example.xlsx -sheet sheetname`
   - `exceltk.exe -t md -xls example.csv`
   - `exceltk.exe -t md -csv example.csv`
+  - `exceltk.exe -t md -pretty -xls example.xlsx`, pad columns so the markdown source looks aligned
   - `exceltk.exe -t md -p 2 -xls example.xls`, where `-p 2` setting the decimal precision to 2
   - `exceltk.exe -t md -bhead -xls example.xls`, which will use the first row to replace table header, and keep the head empty, so that 
   the table will auto response in small screen device, this is just a simply solution.

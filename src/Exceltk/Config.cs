@@ -29,6 +29,11 @@
             set;
         }
 
+        // for md mode: pad columns so pipes align in the source text
+        public static bool PrettyTable {
+            get;
+            set;
+        }
 
         // for tex mode
         public static bool SplitNumber {
