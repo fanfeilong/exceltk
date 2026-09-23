@@ -84,7 +84,6 @@
     <Compile Include="Reader\Binary\XlsBiffRow.cs" />
     <Compile Include="Reader\Binary\XlsBiffSimpleValueRecord.cs" />
     <Compile Include="Reader\Binary\XlsBiffSST.cs" />
-    <Compile Include="Reader\Binary\XlsBiffStream.cs" />
     <Compile Include="Reader\Binary\XlsBiffUncalced.cs" />
     <Compile Include="Reader\Binary\XlsBiffWindow1.cs" />
     <Compile Include="Reader\Binary\XlsCellRangeAddress.cs" />
