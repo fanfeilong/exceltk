@@ -85,14 +85,14 @@ exceltk -t md -a r -xls example.xlsx
   - 使用 `-sn` 把数字拆分，例如`1234656` 会被拆成`1 2 3 4 5 6`, 如果表太大时有用
 # 在 Linux 上构建与使用
 
-需要安装 [.NET 8 SDK](https://learn.microsoft.com/dotnet/core/install/linux)。
+需要安装 [.NET 10 SDK](https://learn.microsoft.com/dotnet/core/install/linux)（LTS）。仓库根目录 `global.json` 会约束使用 .NET 10 SDK。
 
 ```bash
 dotnet build src/Exceltk/Exceltk.csproj -c Release
 dotnet run --project src/Exceltk/Exceltk.csproj -c Release -- -t md -xls src/test/test1.xlsx
 
 dotnet publish -r linux-x64 src/Exceltk/Exceltk.csproj -c Release
-./src/bin/net8.0/linux-x64/publish/exceltk -t md -xls src/test/test1.xlsx
+./src/bin/net10.0/linux-x64/publish/exceltk -t md -xls src/test/test1.xlsx
 ```
 
-说明：`dotnet run` 传参时请在参数前加 `--`，避免 `-t` / `-a` 被 dotnet 自己吃掉。更多平台说明见英文 README 的 How to build。
+说明：`dotnet run` 传参时请在参数前加 `--`，避免 `-t` / `-a` 被 dotnet 自己吃掉。CI 见 `.github/workflows/ci.yml`。更多平台说明见英文 README 的 How to build。

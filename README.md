@@ -78,7 +78,7 @@ ExcelTk integrated the following projects
 
 # How to build
 
-Requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
+Requires [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (LTS). A `global.json` at the repo root pins SDK 10 with `rollForward: latestMajor`.
 
 Quick check (any OS):
 
@@ -91,6 +91,8 @@ dotnet run --project src/Exceltk/Exceltk.csproj -c Release -- -t md -xls src/tes
 
 Optional: if `dotnet restore` feels slow because of publish RIDs, you can temporarily remove or comment the `RuntimeIdentifiers` block in `src/Exceltk/Exceltk.csproj`.
 
+CI: GitHub Actions (`.github/workflows/ci.yml`) builds on .NET 10 and runs `src/test.sh`.
+
 ## Build on MacOS
 ```bash
 dotnet publish -r osx-x64 src/Exceltk/Exceltk.csproj -c Release
@@ -102,10 +104,10 @@ dotnet publish -r osx-arm64 src/Exceltk/Exceltk.csproj -c Release
 ```bash
 dotnet publish -r win-x86 src/Exceltk/Exceltk.csproj -c Release
 ```
-You can also open `src/exceltk_vs.sln` in Visual Studio.
+Open `src/exceltk.sln` (SDK-style `Exceltk.csproj`) in Visual Studio / VS Code. The legacy `exceltk_vs.sln` / `Exceltk_vs.csproj` (.NET Framework) is obsolete.
 
 ## Build on Linux (example: ubuntu / linux-x64)
-1. Install the [.NET 8 SDK](https://learn.microsoft.com/dotnet/core/install/linux)
+1. Install the [.NET 10 SDK](https://learn.microsoft.com/dotnet/core/install/linux)
 2. From the repo root:
 
 ```bash
@@ -118,8 +120,8 @@ dotnet run --project src/Exceltk/Exceltk.csproj -c Release -- -t md -xls src/tes
 
 ```bash
 dotnet publish -r linux-x64 src/Exceltk/Exceltk.csproj -c Release
-# output under: src/bin/net8.0/linux-x64/publish/exceltk
-./src/bin/net8.0/linux-x64/publish/exceltk -t md -xls src/test/test1.xlsx
+# output under: src/bin/net10.0/linux-x64/publish/exceltk
+./src/bin/net10.0/linux-x64/publish/exceltk -t md -xls src/test/test1.xlsx
 ```
 
 `linux-x64` is the portable RID for Ubuntu and most x64 Linux distros. Other RIDs: https://learn.microsoft.com/dotnet/core/rid-catalog
