@@ -426,7 +426,8 @@ namespace Exceltk.Reader {
 
                     //Console.WriteLine(o);
 
-                    if (col - 1 < m_cellsValues.Length) {
+                    if (col >= 1) {
+                        EnsureRowCapacity(sheet, col);
                         if(hyperlinkIndex!=null){
                             var co = new XlsCell(o);
                             co.HyperLinkIndex = hyperlinkIndex;
@@ -606,6 +607,45 @@ namespace Exceltk.Reader {
             return m_defaultDateTimeStyles.Contains(styleId);
         }
 
+        /// <summary>
+        /// Grow the current row buffer (and sheet column count) when a cell appears
+        /// beyond the width guessed during DetectDemension.
+        /// </summary>
+        private void EnsureRowCapacity(XlsxWorksheet sheet, int col1Based) {
+            int needed = col1Based;
+            if (m_cellsValues != null && m_cellsValues.Length >= needed) {
+                return;
+            }
+            int oldLen = m_cellsValues == null ? 0 : m_cellsValues.Length;
+            var grown = new object[needed];
+            if (m_cellsValues != null && oldLen > 0) {
+                Array.Copy(m_cellsValues, grown, oldLen);
+            }
+            m_cellsValues = grown;
+            if (sheet.Dimension != null && sheet.Dimension.LastCol < needed) {
+                sheet.Dimension.LastCol = needed;
+            }
+        }
+
+        private static void EnsureTableWidth(DataTable table, int width) {
+            while (table.Columns.Count < width) {
+                int i = table.Columns.Count;
+                table.Columns.Add(i.ToString(CultureInfo.InvariantCulture), typeof(Object));
+            }
+            // Pad earlier rows so ItemArray length matches column count.
+            for (int r = 0; r < table.Rows.Count; r++) {
+                object[] old = table.Rows[r].ItemArray;
+                if (old != null && old.Length >= width) {
+                    continue;
+                }
+                var padded = new object[width];
+                if (old != null && old.Length > 0) {
+                    Array.Copy(old, padded, old.Length);
+                }
+                table.Rows[r].ItemArray = padded;
+            }
+        }
+
         private Dictionary<int, XlsxDimension> DetectDemension() {
             var dict = new Dictionary<int, XlsxDimension>();
             for (int sheetIndex = 0; sheetIndex < m_workbook.Sheets.Count; sheetIndex++) {
@@ -617,9 +657,10 @@ namespace Exceltk.Reader {
                     m_depth = 0;
                     m_emptyRowCount = 0;
 
-                    // Scan every row for the rightmost used column. Limiting to the first
-                    // 100 rows previously dropped columns that only appear later (#14).
-                    int detectRows = sheet.Dimension.LastRow;
+                    // Sample the first 100 rows to trim huge empty trailing dimensions
+                    // cheaply. Columns that only appear later are still kept via
+                    // EnsureRowCapacity during the full read (#14 + perf).
+                    int detectRows = Math.Min(sheet.Dimension.LastRow, 100);
                     int maxColumnCount = 0;
                     while (detectRows > 0) {
                         if (!ReadSheetRow(sheet)) {
@@ -678,7 +719,15 @@ namespace Exceltk.Reader {
                 // Read Sheet Rows
                 table.BeginLoadData();
                 while (ReadSheetRow(sheet)) {
-                    table.Rows.Add(m_cellsValues);
+                    int width = m_cellsValues == null ? 0 : m_cellsValues.Length;
+                    EnsureTableWidth(table, width);
+                    object[] rowValues = m_cellsValues;
+                    if (rowValues != null && rowValues.Length < table.Columns.Count) {
+                        var padded = new object[table.Columns.Count];
+                        Array.Copy(rowValues, padded, rowValues.Length);
+                        rowValues = padded;
+                    }
+                    table.Rows.Add(rowValues);
                 }
 
                 if (table.Rows.Count > 0) {
