@@ -5,7 +5,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
 # Convert Excel sheet to MarkDown Table
   - HyperLink cell in Excel sheet will be **retained** as `[text](url)` format 
   - CrossLine cell in Excel sheet will be **expanded** to multirow
-  - Empty columns on the right side will be **trimed**, which is **detected** by the first 100 rows. 
+  - Empty columns on the right side will be **trimed** (sampled from the first 100 rows for speed; columns that appear later are still kept when encountered during the full read). 
   - Support set the precision of decimal
   - Support to set markdown table aligin
   - Convert newline in cell text into `<br/>`
