@@ -11,3 +11,5 @@ dotnet run -p Exceltk/Exceltk.csproj -t md -xls test/test8.xls
 dotnet run -p Exceltk/Exceltk.csproj -t md -bhead -xls test/test10_bodyhead.xlsx 
 dotnet run -p Exceltk/Exceltk.csproj -t md -bhead -xls test/test9_formula.xlsx 
 dotnet run -p Exceltk/Exceltk.csproj -t md -bhead -xls test/test11_form.xls
+dotnet run -p Exceltk/Exceltk.csproj -t md -xls test/test13_csv.csv
+dotnet run -p Exceltk/Exceltk.csproj -t md -csv test/test13_csv.csv

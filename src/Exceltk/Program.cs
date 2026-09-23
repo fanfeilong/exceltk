@@ -83,19 +83,23 @@ namespace Exceltk {
                     break;
                 }
 
-                // check xls arg
-                if (cmd["xls"] == null) {
-                    Console.WriteLine("ERROR:xls not found");
+                // check input file arg (-xls also accepts .csv)
+                if (cmd["xls"] == null && cmd["csv"] == null) {
+                    Console.WriteLine("ERROR:xls/csv not found");
                     break;
                 }
 
-                // check xls exist
-                string xls = cmd["xls"];
+                // check input exist
+                string xls = cmd["xls"] ?? cmd["csv"];
                 string sheet = cmd["sheet"];
                 string root = Directory.GetCurrentDirectory();
                 xls = Path.Combine(root, xls);
                 if (!File.Exists(xls)) {
-                    Console.WriteLine("ERROR:xls file is not exist:{0}", xls);
+                    Console.WriteLine("ERROR:input file is not exist:{0}", xls);
+                    break;
+                }
+                if (!Exceltk.Reader.WorkbookLoader.IsSupportedExtension(xls)) {
+                    Console.WriteLine("ERROR:unsupported file format:{0}", Path.GetExtension(xls));
                     break;
                 }
 
@@ -138,8 +142,9 @@ namespace Exceltk {
             if (ret!=0) {
                 Console.WriteLine();
                 Console.WriteLine("Usecase:");
-                Console.WriteLine("1. Convert xls to markdown: Exceltk -t md -xls xlsfile [-sheet sheetname]");
-                Console.WriteLine("2. Monitor and convert clipboard to markdown: Exceltk -t cm");
+                Console.WriteLine("1. Convert xls/xlsx to markdown: Exceltk -t md -xls xlsfile [-sheet sheetname]");
+                Console.WriteLine("2. Convert csv to markdown: Exceltk -t md -xls csvfile  (or -csv csvfile)");
+                Console.WriteLine("3. Monitor and convert clipboard to markdown: Exceltk -t cm");
             }
         }
     }

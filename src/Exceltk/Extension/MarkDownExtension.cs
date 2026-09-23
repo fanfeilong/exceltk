@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -9,49 +8,34 @@ using Exceltk.Reader;
 namespace Exceltk{
     public static class MarkDownExtension {
         public static SimpleTable ToMd(this string xls, string sheet) {
-            FileStream stream=File.Open(xls, FileMode.Open, FileAccess.Read);
-            IExcelDataReader excelReader=null;
-            if (Path.GetExtension(xls)==".xls") {
-                excelReader=ExcelReaderFactory.CreateBinaryReader(stream);
-            } else if (Path.GetExtension(xls)==".xlsx") {
-                excelReader=ExcelReaderFactory.CreateOpenXmlReader(stream);
-            } else {
-                throw new ArgumentException("Not Support Format: ");
-            }
-            DataSet dataSet=excelReader.AsDataSet();
-            DataTable dataTable=dataSet.Tables[sheet];
+            DataSet dataSet=WorkbookLoader.Load(xls);
+            DataTable dataTable=ResolveTable(dataSet, sheet);
 
-            var table=new SimpleTable {
+            return new SimpleTable {
                     Name=dataTable.TableName,
                     Value=dataTable.ToMd(dataSet)
             };
-
-            excelReader.Close();
-
-            return table;
         }
         public static IEnumerable<SimpleTable> ToMd(this string xls) {
-            FileStream stream=File.Open(xls, FileMode.Open, FileAccess.Read);
-            IExcelDataReader excelReader=null;
-            if (Path.GetExtension(xls)==".xls") {
-                excelReader=ExcelReaderFactory.CreateBinaryReader(stream);
-            } else if (Path.GetExtension(xls)==".xlsx") {
-                excelReader=ExcelReaderFactory.CreateOpenXmlReader(stream);
-            } else {
-                throw new ArgumentException("Not Support Format: ");
-            }
-            DataSet dataSet=excelReader.AsDataSet();
+            DataSet dataSet=WorkbookLoader.Load(xls);
 
             foreach (DataTable dataTable in dataSet.Tables) {
-                var table=new SimpleTable {
+                yield return new SimpleTable {
                         Name=dataTable.TableName,
                         Value=dataTable.ToMd(dataSet)
                 };
-
-                yield return table;
             }
+        }
 
-            excelReader.Close();
+        private static DataTable ResolveTable(DataSet dataSet, string sheet) {
+            if (dataSet.Tables.ContainsTable(sheet)) {
+                return dataSet.Tables[sheet];
+            }
+            // CSV has a single unnamed table; allow -sheet to be omitted or ignored when only one table exists.
+            if (dataSet.Tables.Count==1 && (string.IsNullOrEmpty(sheet) || string.IsNullOrEmpty(dataSet.Tables[0].TableName))) {
+                return dataSet.Tables[0];
+            }
+            throw new ArgumentException("Sheet not found: "+sheet);
         }
 
         public static string ToMd(this DataTable table, DataSet dataSet, bool insertHeader=true) {
