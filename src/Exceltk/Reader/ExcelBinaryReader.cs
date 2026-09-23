@@ -131,9 +131,6 @@ namespace Exceltk.Reader {
 
 
 
-        private static XlsBiffRecord RecordOf(BinaryPackage package) {
-            return package==null ? null : package.Record;
-        }
 
         #region Private methods
 
@@ -157,7 +154,7 @@ namespace Exceltk.Reader {
 
         private int findFirstDataCellOffset(int startOffset) {
             //seek to the first dbcell record
-            XlsBiffRecord record=RecordOf(m_stream.ReadAt(startOffset));
+            XlsBiffRecord record=m_stream.ReadAt(startOffset);
             while (!(record is XlsBiffDbCell)) {
                 if (m_stream.Position >= m_stream.Size) {
                     return -1;
@@ -168,7 +165,7 @@ namespace Exceltk.Reader {
                 }
 
                 try {
-                    record=RecordOf(m_stream.Read());
+                    record=m_stream.Read();
                 } catch {
                     return -2;
                 }
@@ -180,7 +177,7 @@ namespace Exceltk.Reader {
             int offs=startCell.RowAddress;
 
             do {
-                row=RecordOf(m_stream.ReadAt(offs)) as XlsBiffRow;
+                row=m_stream.ReadAt(offs) as XlsBiffRow;
                 if (row==null){
                     break;
                 }
@@ -221,7 +218,7 @@ namespace Exceltk.Reader {
 
             m_stream.Seek(0, SeekOrigin.Begin);
 
-            XlsBiffRecord rec=RecordOf(m_stream.Read());
+            XlsBiffRecord rec=m_stream.Read();
             var bof=rec as XlsBiffBOF;
 
             if (bof==null||bof.Type!=BIFFTYPE.WorkbookGlobals) {
@@ -234,7 +231,7 @@ namespace Exceltk.Reader {
             m_version=bof.Version;
             m_sheets=new List<XlsWorksheet>();
 
-            while (null!=(rec=RecordOf(m_stream.Read()))) {
+            while (null!=(rec=m_stream.Read())) {
                 switch (rec.ID) {
                     case BIFFRECORDTYPE.INTERFACEHDR:
                         m_globals.InterfaceHdr=(XlsBiffInterfaceHdr)rec;
@@ -328,20 +325,20 @@ namespace Exceltk.Reader {
             m_stream.Seek((int)sheet.DataOffset, SeekOrigin.Begin);
 
             // Read BOF
-            var bof=RecordOf(m_stream.Read()) as XlsBiffBOF;
+            var bof=m_stream.Read() as XlsBiffBOF;
             if (bof==null||bof.Type!=BIFFTYPE.Worksheet) {
                 return false;
             }
 
             // Read Index
-            XlsBiffRecord rec=RecordOf(m_stream.Read());
+            XlsBiffRecord rec=m_stream.Read();
             if (rec==null)
                 return false;
             if (rec is XlsBiffIndex) {
                 idx=rec as XlsBiffIndex;
             } else if (rec is XlsBiffUncalced) {
                 // Sometimes this come before the index...
-                idx=RecordOf(m_stream.Read()) as XlsBiffIndex;
+                idx=m_stream.Read() as XlsBiffIndex;
             }
 
             if (idx!=null) {
@@ -353,7 +350,7 @@ namespace Exceltk.Reader {
             XlsBiffDimensions dims=null;
 
             do {
-                trec=RecordOf(m_stream.Read());
+                trec=m_stream.Read();
                 if (trec.ID==BIFFRECORDTYPE.DIMENSIONS) {
                     dims=(XlsBiffDimensions)trec;
                     break;
@@ -370,7 +367,7 @@ namespace Exceltk.Reader {
             while (rowRecord==null) {
                 if (m_stream.Position>=m_stream.Size)
                     break;
-                XlsBiffRecord thisRec=RecordOf(m_stream.Read());
+                XlsBiffRecord thisRec=m_stream.Read();
 
                 if (thisRec is XlsBiffEOF)
                     break;
@@ -409,7 +406,7 @@ namespace Exceltk.Reader {
             while (true) {
                 if (m_stream.Position>=m_stream.Size)
                     break;
-                XlsBiffRecord thisRecord=RecordOf(m_stream.Read());
+                XlsBiffRecord thisRecord=m_stream.Read();
 
                 if (thisRecord is XlsBiffEOF) {
                     break;
@@ -434,7 +431,7 @@ namespace Exceltk.Reader {
             int startPos=m_stream.Position;
 
             do {
-                rec=RecordOf(m_stream.Read());
+                rec=m_stream.Read();
             } while (rec!=null&&m_stream.Position<m_stream.Size);
 
             m_stream.Seek(startPos, SeekOrigin.Begin);
@@ -444,7 +441,7 @@ namespace Exceltk.Reader {
             m_cellsValues=new XlsCell[m_maxCol];
 
             while (m_cellOffset<m_stream.Size) {
-                XlsBiffRecord rec=RecordOf(m_stream.ReadAt(m_cellOffset));
+                XlsBiffRecord rec=m_stream.ReadAt(m_cellOffset);
 
                 m_cellOffset+=rec.Size;
 
@@ -698,7 +695,7 @@ namespace Exceltk.Reader {
                         return false;
                     }
 
-                    XlsBiffRecord record=RecordOf(m_stream.Read());
+                    XlsBiffRecord record=m_stream.Read();
                     if (record is XlsBiffEOF) {
                         return false;
                     }
@@ -716,7 +713,7 @@ namespace Exceltk.Reader {
                     return false;
                 }
 
-                XlsBiffRecord record=RecordOf(m_stream.Read());
+                XlsBiffRecord record=m_stream.Read();
                 if (record is XlsBiffEOF) {
                     return false;
                 }

@@ -1,12 +1,8 @@
 using System.Collections.Generic;
+using Exceltk.Reader.Package;
 
-namespace Exceltk.Reader.Package {
-    /// <summary>
-    /// Base type for OpenXML worksheet semantic units streamed by <c>XmlPackageParser</c>.
-    /// </summary>
-    internal abstract class XmlPackage : IPackage {
-    }
-
+namespace Exceltk.Reader.Xml {
+    /// <summary>Emitted when the worksheet root element is seen.</summary>
     internal sealed class XmlWorksheetStartPackage : XmlPackage {
         public string NamespaceUri {
             get;
@@ -14,6 +10,7 @@ namespace Exceltk.Reader.Package {
         }
     }
 
+    /// <summary>Complete <c>dimension</c> element.</summary>
     internal sealed class XmlDimensionPackage : XmlPackage {
         public string Ref {
             get;
@@ -21,6 +18,9 @@ namespace Exceltk.Reader.Package {
         }
     }
 
+    /// <summary>
+    /// One complete cell fragment (<c>&lt;c&gt;...&lt;/c&gt;</c>) — emit as soon as the element ends.
+    /// </summary>
     internal sealed class XmlCellPackage : XmlPackage {
         public string Reference {
             get;
@@ -48,12 +48,15 @@ namespace Exceltk.Reader.Package {
         }
     }
 
+    /// <summary>
+    /// One complete row fragment — emit when <c>&lt;/row&gt;</c> is reached so a renderer
+    /// can paint the row without waiting for the rest of the sheet.
+    /// </summary>
     internal sealed class XmlRowPackage : XmlPackage {
         public XmlRowPackage() {
             Cells = new List<XmlCellPackage>();
         }
 
-        /// <summary>1-based row index from the <c>r</c> attribute, when present.</summary>
         public string RowIndexAttribute {
             get;
             set;
@@ -65,6 +68,7 @@ namespace Exceltk.Reader.Package {
         }
     }
 
+    /// <summary>Complete <c>mergeCell</c> element.</summary>
     internal sealed class XmlMergePackage : XmlPackage {
         public string Ref {
             get;
@@ -72,6 +76,7 @@ namespace Exceltk.Reader.Package {
         }
     }
 
+    /// <summary>Complete <c>hyperlink</c> element.</summary>
     internal sealed class XmlHyperlinkPackage : XmlPackage {
         public string Ref {
             get;
@@ -94,6 +99,7 @@ namespace Exceltk.Reader.Package {
         }
     }
 
+    /// <summary>Marker that <c>sheetData</c> has ended.</summary>
     internal sealed class XmlSheetDataEndPackage : XmlPackage {
     }
 }

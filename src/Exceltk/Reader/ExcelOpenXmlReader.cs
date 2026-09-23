@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Xml;
 using System.Text;
-using Exceltk.Reader.Package;
 using Exceltk.Reader.Parser;
 using Exceltk.Reader.Xml;
 
