@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <RuntimeIdentifiers>win-x86;osx-x64;osx-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x86;osx-x64;osx-arm64;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>

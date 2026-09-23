@@ -78,50 +78,51 @@ ExcelTk integrated the following projects
 
 # How to build
 
+Requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
+
+Quick check (any OS):
+
+```bash
+dotnet build src/Exceltk/Exceltk.csproj -c Release
+dotnet run --project src/Exceltk/Exceltk.csproj -c Release -- -t md -xls src/test/test1.xlsx
+```
+
+> Tip: put `--` before app args when using `dotnet run`, so options like `-t` / `-a` are not eaten by the `dotnet` CLI.
+
+Optional: if `dotnet restore` feels slow because of publish RIDs, you can temporarily remove or comment the `RuntimeIdentifiers` block in `src/Exceltk/Exceltk.csproj`.
+
 ## Build on MacOS
-1. install .NET Core SDK 2.0.0-preview1-005977 
-2. cd to the project dir
-3. run the following script step by step.
-  - `dotnet restore src/exceltk.sln`
-  - `dotnet build src/exceltk.sln` 
-  - `dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test1.xlsx`
-4. the `dotnet restore`, this will take long time to install nupack files for publish target runtime, you can comment the following config in `src/Exceltk/Exceltk.csproj` to ignore it.
-```
-  <PropertyGroup>
-    <RuntimeIdentifiers>win-x86;osx-x64</RuntimeIdentifiers>
-  </PropertyGroup>
-```
-5. run the following script to publish 
-```
-dotnet publish -r osx-x64 src/exceltk.sln -c Release
+```bash
+dotnet publish -r osx-x64 src/Exceltk/Exceltk.csproj -c Release
+# Apple Silicon:
+dotnet publish -r osx-arm64 src/Exceltk/Exceltk.csproj -c Release
 ```
 
 ## Build on Windows
-1. you can also build for windows with the .NET Core SDK, and publish it
+```bash
+dotnet publish -r win-x86 src/Exceltk/Exceltk.csproj -c Release
 ```
-dotnet publish -r win-x86 src/exceltk.sln -c Release
-```
-2. you can also build with the visual studio by load the `src/exceltk_vs.sln`
+You can also open `src/exceltk_vs.sln` in Visual Studio.
 
+## Build on Linux (example: ubuntu / linux-x64)
+1. Install the [.NET 8 SDK](https://learn.microsoft.com/dotnet/core/install/linux)
+2. From the repo root:
 
-## Build on Linux (example by ubuntu-x64)
-1. install .NET Core SDK 
-2. cd to the project dir
-3. append the `ubuntu-x64` to following RuntimeIdentifiers in `src/Exceltk/Exceltk.csproj`. you can find other RuntimeIdentifiers at: https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+```bash
+dotnet restore src/Exceltk/Exceltk.csproj
+dotnet build src/Exceltk/Exceltk.csproj -c Release
+dotnet run --project src/Exceltk/Exceltk.csproj -c Release -- -t md -xls src/test/test1.xlsx
 ```
-  <PropertyGroup>
-    <RuntimeIdentifiers>win-x86;osx-x64;ubuntu-x64</RuntimeIdentifiers>
-  </PropertyGroup>
-```
-4. run the following script step by step.
-  - `dotnet restore src/exceltk.sln`
-  - `dotnet build src/exceltk.sln` 
-  - `dotnet run --project src/Exceltk/Exceltk.csproj -t md -xls src/test/test1.xlsx`
 
-5. run the following script to publish 
+3. Publish a linux binary:
+
+```bash
+dotnet publish -r linux-x64 src/Exceltk/Exceltk.csproj -c Release
+# output under: src/bin/net8.0/linux-x64/publish/exceltk
+./src/bin/net8.0/linux-x64/publish/exceltk -t md -xls src/test/test1.xlsx
 ```
-dotnet publish -r ubuntu-x64 src/exceltk.sln -c Release
-```
+
+`linux-x64` is the portable RID for Ubuntu and most x64 Linux distros. Other RIDs: https://learn.microsoft.com/dotnet/core/rid-catalog
 
 
 
