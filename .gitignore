@@ -1,6 +1,13 @@
 .DS_Store
 .vscode/
 
+# Release binaries belong on GitHub Releases, not in git
+pub/*.zip
+pub/*.pkg
+pub/*.7z
+publish/
+dist/
+
 src/.vs
 src/Exceltk/bin/
 src/Exceltk/obj/

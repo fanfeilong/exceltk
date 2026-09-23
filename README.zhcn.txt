@@ -40,8 +40,17 @@ Mac OS 版本请在命令行下直接使用`exceltk`，不用带exe后缀，MacO
 ## 已移除：剪切板监控（`-t cm`）
 
 - `-t cm`（Windows GUI，监控剪切板并即时转 Markdown）**仅在 0.0.9 提供**，之后版本已移除
-- 如需该功能请下载 0.0.9：http://files.cnblogs.com/files/math/exceltk0.0.9.7z
 - 当前版本请用 `-t md|json|tex` 转换文件
+- 如仍需 0.0.9，请到 [Releases](https://github.com/fanfeilong/exceltk/releases) 查找归档资源（不要再依赖 README 里的多版本下载列表）
+
+## 下载
+
+预编译包通过 **GitHub Releases** 发布（打 `v*` 标签后由 Actions 为各 RID 构建自包含包）：
+
+- 最新版：https://github.com/fanfeilong/exceltk/releases/latest
+- 全部版本：https://github.com/fanfeilong/exceltk/releases
+
+按系统选择资源：`linux-x64` / `osx-x64` / `osx-arm64`（`.tar.gz`），`win-x86`（`.zip`）。
 
 ## 解决在移动设备上表格不能自适应的问题
 
