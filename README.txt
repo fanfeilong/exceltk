@@ -19,11 +19,14 @@
   - `exceltk.exe -t md -p 2 -xls example.xls`, where `-p 2` setting the decimal precision to 2
   - `exceltk.exe -t md -bhead -xls example.xls`, which will use the first row to replace table header, and keep the head empty, so that 
   the table will auto response in small screen device, this is just a simply solution.
-  - `exceltk.exe -t cm`, Now you can copy sheet from excel, then paster to any editor, which will be Markdown table.
   - `exceltk -t md -a r -xls example.xlsx`, where the `-a` option can be followd by a aligin character
     - `-a l`: aligin left
     - `-a r`: aligin right
     - `-a c`: aligin center
+
+# Removed: clipboard monitor (`-t cm`)
+  - `-t cm` only existed in 0.0.9 (Windows GUI) and was removed later
+  - Old build: http://files.cnblogs.com/files/math/exceltk0.0.9.7z
 
 # Convert Excel to Json 
   chagne the `-t` option to `json`

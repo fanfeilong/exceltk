@@ -37,6 +37,12 @@ Mac OS 版本请在命令行下直接使用`exceltk`，不用带exe后缀，MacO
 - 指定小数数字的精度，例如指定精确到小数点后2位数字
     - `exceltk.exe -t md -p 2 -xls xxx.xls`
 
+## 已移除：剪切板监控（`-t cm`）
+
+- `-t cm`（Windows GUI，监控剪切板并即时转 Markdown）**仅在 0.0.9 提供**，之后版本已移除
+- 如需该功能请下载 0.0.9：http://files.cnblogs.com/files/math/exceltk0.0.9.7z
+- 当前版本请用 `-t md|json|tex` 转换文件
+
 ## 解决在移动设备上表格不能自适应的问题
 
 
