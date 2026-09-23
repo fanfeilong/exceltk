@@ -1,275 +1,183 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip;
 
 namespace Exceltk.Reader {
     /// <summary>
-    /// OpenXML ZIP archive IO helper (file container). Not a semantic <c>Package</c> entity —
-    /// worksheet XML is streamed as <c>XmlPackage</c> by <c>XmlPackageParser</c>.
+    /// OpenXML ZIP IO: keeps the archive open and streams individual entries
+    /// (no full extract-to-temp). Worksheet XML can then be package-parsed
+    /// incrementally as the entry inflate stream produces tokens.
     /// </summary>
     public class ZipWorker : IDisposable {
-        #region Members and Properties
+        private const string FILE_sharedStrings = "xl/sharedStrings.xml";
+        private const string FILE_styles = "xl/styles.xml";
+        private const string FILE_workbook = "xl/workbook.xml";
+        private const string FILE_workbook_rels = "xl/_rels/workbook.xml.rels";
 
-        private const string TMP="TMP_Z";
-        private const string FOLDER_xl="xl";
-        private const string FOLDER_worksheets="worksheets";
-        private const string FILE_sharedStrings="sharedStrings.{0}";
-        private const string FILE_styles="styles.{0}";
-        private const string FILE_workbook="workbook.{0}";
-        private const string FILE_sheet="sheet{0}.{1}";
-        private const string FOLDER_rels="_rels";
-        private const string FILE_rels="workbook.{0}.rels";
-        private const string _format="xml";
-
-        private readonly string _tempEnv;
-        private string _exceptionMessage;
-        private bool _isCleaned;
-
-        private bool _isValid;
-        private string _tempPath;
-        private string _xlPath;
-        private byte[] buffer;
-
+        private ZipFile m_zip;
+        private Stream m_zipStream;
+        private bool m_ownsStream;
+        private string m_exceptionMessage;
+        private bool m_isValid;
         private bool disposed;
-        //private bool _isBinary12Format;
 
-        /// <summary>
-        /// Gets a value indicating whether this instance is valid.
-        /// </summary>
-        /// <value><c>true</c> if this instance is valid; otherwise, <c>false</c>.</value>
         public bool IsValid {
             get {
-                return _isValid;
+                return m_isValid;
             }
         }
 
-        /// <summary>
-        /// Gets the temp path for extracted files.
-        /// </summary>
-        /// <value>The temp path for extracted files.</value>
-        public string TempPath {
-            get {
-                return _tempPath;
-            }
-        }
-
-        /// <summary>
-        /// Gets the exception message.
-        /// </summary>
-        /// <value>The exception message.</value>
         public string ExceptionMessage {
             get {
-                return _exceptionMessage;
+                return m_exceptionMessage;
             }
         }
-
-        #endregion
-
-        public ZipWorker() {
-            _tempEnv=Path.GetTempPath();
-        }
-
-        #region IDisposable Members
 
         public void Dispose() {
             Dispose(true);
-
             GC.SuppressFinalize(this);
         }
 
-        #endregion
-
         /// <summary>
-        /// Extracts the specified zip file stream.
+        /// Open an .xlsx archive for streamed entry access (preferred over full extract).
         /// </summary>
-        /// <param name="fileStream">The zip file stream.</param>
-        /// <returns></returns>
-        public bool Extract(Stream fileStream) {
-            if (null==fileStream)
+        public bool Open(Stream fileStream) {
+            return Open(fileStream, ownsStream: true);
+        }
+
+        public bool Open(Stream fileStream, bool ownsStream) {
+            if (fileStream == null) {
                 return false;
-
-            CleanFromTemp(false);
-
-            NewTempPath();
-
-            _isValid=true;
-
-            ZipFile zipFile=null;
-
-            try {
-                zipFile=new ZipFile(fileStream);
-
-                IEnumerator enumerator=zipFile.GetEnumerator();
-
-                while (enumerator.MoveNext()) {
-                    var entry=(ZipEntry)enumerator.Current;
-
-                    ExtractZipEntry(zipFile, entry);
-                }
-            } catch (Exception ex) {
-                _isValid=false;
-                _exceptionMessage=ex.Message;
-
-                CleanFromTemp(true);
-                //true tells CleanFromTemp not to raise an IO Exception if this operation fails. If it did then the real error here would be masked
-            } finally {
-                fileStream.Dispose();
-
-                if (null!=zipFile)
-                    zipFile.Dispose();
             }
 
-            return _isValid && CheckFolderTree();
+            CloseZip();
+            m_ownsStream = ownsStream;
+            m_zipStream = fileStream;
+            m_isValid = true;
+            m_exceptionMessage = null;
+
+            try {
+                m_zip = new ZipFile(fileStream);
+                m_zip.IsStreamOwner = false; // ZipWorker owns the stream lifetime
+                if (FindEntry(FILE_workbook) == null) {
+                    m_isValid = false;
+                    m_exceptionMessage = "Missing xl/workbook.xml";
+                    CloseZip();
+                    return false;
+                }
+            } catch (Exception ex) {
+                m_isValid = false;
+                m_exceptionMessage = ex.Message;
+                CloseZip();
+                return false;
+            }
+
+            return m_isValid;
         }
 
-        /// <summary>
-        /// Gets the shared strings stream.
-        /// </summary>
-        /// <returns></returns>
+        /// <summary>Backward-compatible alias for <see cref="Open(Stream)"/>.</summary>
+        public bool Extract(Stream fileStream) {
+            return Open(fileStream);
+        }
+
         public Stream GetSharedStringsStream() {
-            return GetStream(Path.Combine(_xlPath, string.Format(FILE_sharedStrings, _format)));
+            return OpenEntry(FILE_sharedStrings);
         }
 
-        /// <summary>
-        /// Gets the styles stream.
-        /// </summary>
-        /// <returns></returns>
         public Stream GetStylesStream() {
-            return GetStream(Path.Combine(_xlPath, string.Format(FILE_styles, _format)));
+            return OpenEntry(FILE_styles);
         }
 
-        /// <summary>
-        /// Gets the workbook stream.
-        /// </summary>
-        /// <returns></returns>
         public Stream GetWorkbookStream() {
-            return GetStream(Path.Combine(_xlPath, string.Format(FILE_workbook, _format)));
+            return OpenEntry(FILE_workbook);
         }
 
-        /// <summary>
-        /// Gets the worksheet stream.
-        /// </summary>
-        /// <param name="sheetId">The sheet id.</param>
-        /// <returns></returns>
+        public Stream GetWorkbookRelsStream() {
+            return OpenEntry(FILE_workbook_rels);
+        }
+
         public Stream GetWorksheetStream(int sheetId) {
-            return GetStream(Path.Combine(
-                Path.Combine(_xlPath, FOLDER_worksheets),
-                string.Format(FILE_sheet, sheetId, _format)));
+            return OpenEntry(string.Format("xl/worksheets/sheet{0}.xml", sheetId));
         }
 
         public Stream GetWorksheetStream(string sheetPath) {
-            //its possible sheetPath starts with /xl. in this case trim the /xl
-            if (sheetPath.StartsWith("/xl/"))
-                sheetPath=sheetPath.Substring(4);
-            return GetStream(Path.Combine(_xlPath, sheetPath));
+            return OpenEntry(NormalizeXlPath(sheetPath));
         }
 
         public Stream GetWorksheetRelsStream(string sheetPath) {
-            if (sheetPath.StartsWith("/xl/"))
-                sheetPath=sheetPath.Substring(4);
-            sheetPath=Path.Combine(_xlPath, sheetPath);
-
-            string sheetDirName=Path.GetDirectoryName(sheetPath);
-            string relsFileName=Path.GetFileName(sheetPath)+".rels";
-            string relsPath=string.Format("{0}/_rels/{1}", sheetDirName, relsFileName);
-            return GetStream(relsPath);
-        }
-
-        /// <summary>
-        /// Gets the workbook rels stream.
-        /// </summary>
-        /// <returns></returns>
-        public Stream GetWorkbookRelsStream() {
-            return GetStream(Path.Combine(_xlPath, Path.Combine(FOLDER_rels, string.Format(FILE_rels, _format))));
-        }
-
-        private void CleanFromTemp(bool catchIoError) {
-            if (string.IsNullOrEmpty(_tempPath))
-                return;
-
-            _isCleaned=true;
-
-            try {
-                if (Directory.Exists(_tempPath)) {
-                    Directory.Delete(_tempPath, true);
-                }
-            } catch {
-                //TODO: minimally add some logging so we know this happened. log4net?
-                if (!catchIoError)
-                    throw;
-            }
-        }
-
-        private void ExtractZipEntry(ZipFile zipFile, ZipEntry entry) {
-            if (!entry.IsCompressionMethodSupported()||string.IsNullOrEmpty(entry.Name))
-                return;
-
-            string tPath=Path.Combine(_tempPath, entry.Name);
-            string path=entry.IsDirectory?tPath:Path.GetDirectoryName(Path.GetFullPath(tPath));
-
-            Debug.Assert(path!=null);
-            if (!Directory.Exists(path)) {
-                Directory.CreateDirectory(path);
-            }
-
-            if (!entry.IsFile)
-                return;
-
-            using (FileStream stream=File.Create(tPath)) {
-                if (buffer==null) {
-                    buffer=new byte[0x1000];
-                }
-
-                using (Stream inputStream=zipFile.GetInputStream(entry)) {
-                    int count;
-                    while ((count=inputStream.Read(buffer, 0, buffer.Length))>0) {
-                        stream.Write(buffer, 0, count);
-                    }
-                }
-                stream.Flush();
-            }
-        }
-
-        private void NewTempPath() {
-            string tempID=Guid.NewGuid().ToString("N");
-            _tempPath=Path.Combine(_tempEnv, TMP+DateTime.Now.ToFileTimeUtc().ToString(CultureInfo.InvariantCulture)+tempID);
-
-            _isCleaned=false;
-
-            Directory.CreateDirectory(_tempPath);
-        }
-
-        private bool CheckFolderTree() {
-            _xlPath=Path.Combine(_tempPath, FOLDER_xl);
-
-            return Directory.Exists(_xlPath)&&
-                   Directory.Exists(Path.Combine(_xlPath, FOLDER_worksheets))&&
-                   File.Exists(Path.Combine(_xlPath, FILE_workbook))&&
-                   File.Exists(Path.Combine(_xlPath, FILE_styles));
-        }
-
-        private static Stream GetStream(string filePath) {
-            if (File.Exists(filePath)) {
-                return File.Open(filePath, FileMode.Open, FileAccess.Read);
-            } else {
+            string path = NormalizeXlPath(sheetPath);
+            int slash = path.LastIndexOf('/');
+            if (slash < 0) {
                 return null;
+            }
+            string dir = path.Substring(0, slash);
+            string file = path.Substring(slash + 1);
+            return OpenEntry(dir + "/_rels/" + file + ".rels");
+        }
+
+        private static string NormalizeXlPath(string sheetPath) {
+            if (string.IsNullOrEmpty(sheetPath)) {
+                return sheetPath;
+            }
+            sheetPath = sheetPath.Replace('\\', '/');
+            if (sheetPath.StartsWith("/")) {
+                sheetPath = sheetPath.Substring(1);
+            }
+            if (sheetPath.StartsWith("xl/")) {
+                return sheetPath;
+            }
+            return "xl/" + sheetPath;
+        }
+
+        private Stream OpenEntry(string entryName) {
+            if (m_zip == null || string.IsNullOrEmpty(entryName)) {
+                return null;
+            }
+            ZipEntry entry = FindEntry(entryName);
+            if (entry == null || !entry.IsFile) {
+                return null;
+            }
+            return m_zip.GetInputStream(entry);
+        }
+
+        private ZipEntry FindEntry(string entryName) {
+            entryName = entryName.Replace('\\', '/');
+            // ZipFile indexer / GetEntry expects the stored name
+            IEnumerator enumerator = m_zip.GetEnumerator();
+            while (enumerator.MoveNext()) {
+                var entry = (ZipEntry)enumerator.Current;
+                if (entry == null || string.IsNullOrEmpty(entry.Name)) {
+                    continue;
+                }
+                string name = entry.Name.Replace('\\', '/');
+                if (string.Equals(name, entryName, StringComparison.OrdinalIgnoreCase)) {
+                    return entry;
+                }
+            }
+            return null;
+        }
+
+        private void CloseZip() {
+            if (m_zip != null) {
+                m_zip.Close();
+                m_zip = null;
+            }
+            if (m_ownsStream && m_zipStream != null) {
+                m_zipStream.Dispose();
+                m_zipStream = null;
+            } else {
+                m_zipStream = null;
             }
         }
 
         private void Dispose(bool disposing) {
-            // Check to see if Dispose has already been called.
             if (!disposed) {
                 if (disposing) {
-                    if (!_isCleaned)
-                        CleanFromTemp(false);
+                    CloseZip();
                 }
-
-                buffer=null;
-
-                disposed=true;
+                disposed = true;
             }
         }
 

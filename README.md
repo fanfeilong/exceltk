@@ -103,6 +103,8 @@ Optional: if `dotnet restore` feels slow because of publish RIDs, you can tempor
 
 CI: GitHub Actions (`.github/workflows/ci.yml`) builds on .NET 10 and runs `src/test.sh`.
 
+Architecture note: binary/OpenXML reading is organized as **streaming packages** (emit a complete local format unit as soon as it is recognized) so a renderer can progress while data is still arriving — see [`docs/streaming-packages.md`](docs/streaming-packages.md).
+
 ## Build on MacOS
 ```bash
 dotnet publish -r osx-x64 src/Exceltk/Exceltk.csproj -c Release

@@ -1,12 +1,13 @@
 using System;
+using Exceltk.Reader.Package;
 
 namespace Exceltk.Reader.Binary {
     /// <summary>
     /// BIFF:Binary Interchange File Format
-    /// Represents basic BIFF record
-    /// Base class for all BIFF record types
+    /// Represents basic BIFF record — itself a <see cref="BinaryPackage"/> so a streaming
+    /// parser can emit it as soon as one record (type+size+body) is complete.
     /// </summary>
-    internal class XlsBiffRecord {
+    internal class XlsBiffRecord : BinaryPackage {
         protected readonly ExcelBinaryReader reader;
         protected byte[] m_bytes;
         protected int m_readoffset;

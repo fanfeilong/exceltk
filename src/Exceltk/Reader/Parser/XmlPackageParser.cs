@@ -5,7 +5,9 @@ using Exceltk.Reader.Xml;
 
 namespace Exceltk.Reader.Parser {
     /// <summary>
-    /// Streams <see cref="XmlPackage"/> entities from an OpenXML worksheet XmlReader.
+    /// Streams <see cref="XmlPackage"/> entities from worksheet XML.
+    /// Emits a package when a local fragment is complete (row / merge / hyperlink / …)
+    /// so a renderer can progress without waiting for the rest of the sheet.
     /// </summary>
     internal sealed class XmlPackageParser : IPackageParser<XmlPackage> {
         private readonly XmlReader m_reader;

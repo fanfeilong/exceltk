@@ -6,10 +6,12 @@ using Exceltk.Reader.Package;
 
 namespace Exceltk.Reader.Parser {
     /// <summary>
-    /// Streams <see cref="BinaryPackage"/> entities (one BIFF record each) from a workbook stream.
+    /// Streams BIFF <see cref="BinaryPackage"/> entities (each <see cref="XlsBiffRecord"/>)
+    /// from a workbook stream. Emits a package as soon as one record's header+body is complete;
+    /// each package owns an isolated byte slice so a renderer need not retain the full workbook.
     /// </summary>
-    internal sealed class BinaryPackageParser : XlsStream, IPackageParser<BinaryPackage> {
-        private readonly byte[] m_bytes;
+    internal sealed class BinaryPackageParser : XlsStream, IPullPackageParser<BinaryPackage> {
+        private readonly byte[] m_workbookBytes;
         private readonly int m_size;
         private readonly ExcelBinaryReader m_reader;
         private int m_offset;
@@ -18,8 +20,10 @@ namespace Exceltk.Reader.Parser {
             ExcelBinaryReader reader)
             : base(hdr, streamStart, isMini, rootDir) {
             m_reader = reader;
-            m_bytes = base.ReadStream();
-            m_size = m_bytes.Length;
+            // OLE compound storage still needs sector assembly to reach the workbook stream;
+            // once positioned, we only slice one record at a time into each package.
+            m_workbookBytes = base.ReadStream();
+            m_size = m_workbookBytes.Length;
             m_offset = 0;
         }
 
@@ -60,50 +64,67 @@ namespace Exceltk.Reader.Parser {
         }
 
         /// <summary>
-        /// Read the next BIFF record as a <see cref="BinaryPackage"/> and advance the cursor.
+        /// Read the next complete BIFF record package (local format unit) and advance.
         /// </summary>
-        public BinaryPackage Read() {
-            if ((uint)m_offset >= m_bytes.Length) {
+        public XlsBiffRecord Read() {
+            BinaryPackage package;
+            if (!TryRead(out package)) {
                 return null;
             }
-
-            XlsBiffRecord rec = XlsBiffRecord.GetRecord(m_bytes, (uint)m_offset, m_reader);
-            m_offset += rec.Size;
-
-            if (m_offset > m_size) {
-                return null;
-            }
-
-            return new BinaryPackage(rec);
+            return (XlsBiffRecord)package;
         }
 
         /// <summary>
-        /// Read a record package at an absolute offset without moving the cursor.
+        /// Peek/build a record package at an absolute workbook-stream offset (no cursor move).
+        /// Still allocates a one-record slice — suitable for index/DBCELL jumps.
         /// </summary>
-        public BinaryPackage ReadAt(int offset) {
-            if ((uint)offset >= m_bytes.Length) {
+        public XlsBiffRecord ReadAt(int offset) {
+            if ((uint)offset >= m_workbookBytes.Length || offset + 4 > m_size) {
                 return null;
             }
 
-            XlsBiffRecord rec = XlsBiffRecord.GetRecord(m_bytes, (uint)offset, m_reader);
-
-            if (m_reader.ReadOption == ReadOption.Strict) {
-                if (offset + rec.Size > m_size) {
-                    return null;
-                }
+            ushort recordSize = BitConverter.ToUInt16(m_workbookBytes, offset + 2);
+            int size = 4 + recordSize;
+            if (m_reader.ReadOption == ReadOption.Strict && offset + size > m_size) {
+                return null;
+            }
+            if (offset + size > m_size) {
+                size = m_size - offset;
             }
 
-            return new BinaryPackage(rec);
+            byte[] slice = SliceRecord(offset, size);
+            return XlsBiffRecord.GetRecord(slice, 0, m_reader);
         }
 
-        /// <summary>
-        /// Stream all remaining packages from the current cursor to the end.
-        /// </summary>
+        public bool TryRead(out BinaryPackage package) {
+            package = null;
+            if ((uint)m_offset >= m_workbookBytes.Length || m_offset + 4 > m_size) {
+                return false;
+            }
+
+            ushort recordSize = BitConverter.ToUInt16(m_workbookBytes, m_offset + 2);
+            int size = 4 + recordSize;
+            if (m_offset + size > m_size) {
+                return false;
+            }
+
+            byte[] slice = SliceRecord(m_offset, size);
+            m_offset += size;
+            package = XlsBiffRecord.GetRecord(slice, 0, m_reader);
+            return package != null;
+        }
+
         public IEnumerable<BinaryPackage> Parse() {
             BinaryPackage package;
-            while ((package = Read()) != null) {
+            while (TryRead(out package)) {
                 yield return package;
             }
+        }
+
+        private byte[] SliceRecord(int offset, int size) {
+            var slice = new byte[size];
+            Buffer.BlockCopy(m_workbookBytes, offset, slice, 0, size);
+            return slice;
         }
     }
 }
