@@ -6,6 +6,7 @@ using System.IO;
 using System.Xml;
 using System.Text;
 using Exceltk.Reader.Package;
+using Exceltk.Reader.Parser;
 using Exceltk.Reader.Xml;
 
 namespace Exceltk.Reader {
@@ -22,14 +23,15 @@ namespace Exceltk.Reader {
         private string m_instanceId = Guid.NewGuid().ToString();
         private bool m_isClosed;
         private bool m_isValid;
-        private bool m_ownsPackage;
+        private bool m_ownsZipWorker;
 
         private string m_namespaceUri;
         private object[] m_savedCellsValues;
         private Stream m_sheetStream;
         private XlsxWorkbook m_workbook;
         private XmlReader m_xmlReader;
-        private IOpenXmlPackage m_package;
+        private ZipWorker m_zipWorker;
+        private IEnumerator<XmlRowPackage> m_rowPackages;
 
         #endregion
 
@@ -47,25 +49,13 @@ namespace Exceltk.Reader {
         #region IExcelDataReader Members
 
         public void Open(Stream fileStream) {
-            var zipWorker = new ZipWorker();
-            zipWorker.Extract(fileStream);
-            Open(zipWorker, ownsPackage: true);
-        }
+            m_zipWorker = new ZipWorker();
+            m_zipWorker.Extract(fileStream);
+            m_ownsZipWorker = true;
 
-        /// <summary>
-        /// Open an already-extracted OpenXML package (package / package-parser path).
-        /// </summary>
-        public void Open(IOpenXmlPackage package, bool ownsPackage = false) {
-            if (package == null) {
-                throw new ArgumentNullException("package");
-            }
-
-            m_package = package;
-            m_ownsPackage = ownsPackage;
-
-            if (!m_package.IsValid) {
+            if (!m_zipWorker.IsValid) {
                 m_isValid = false;
-                m_exceptionMessage = m_package.ExceptionMessage;
+                m_exceptionMessage = m_zipWorker.ExceptionMessage;
                 Dispose();
             } else {
                 m_isValid = true;
@@ -98,11 +88,16 @@ namespace Exceltk.Reader {
                 m_sheetStream = null;
             }
 
-            if (m_package != null) {
-                if (m_ownsPackage) {
-                    m_package.Dispose();
+            if (m_rowPackages != null) {
+                m_rowPackages.Dispose();
+                m_rowPackages = null;
+            }
+
+            if (m_zipWorker != null) {
+                if (m_ownsZipWorker) {
+                    m_zipWorker.Dispose();
                 }
-                m_package = null;
+                m_zipWorker = null;
             }
         }
 
@@ -112,10 +107,10 @@ namespace Exceltk.Reader {
 
         private void ReadGlobals() {
             m_workbook = new XlsxWorkbook(
-                m_package.GetWorkbookStream(),
-                m_package.GetWorkbookRelsStream(),
-                m_package.GetSharedStringsStream(),
-                m_package.GetStylesStream());
+                m_zipWorker.GetWorkbookStream(),
+                m_zipWorker.GetWorkbookRelsStream(),
+                m_zipWorker.GetSharedStringsStream(),
+                m_zipWorker.GetStylesStream());
 
             // Some workbooks omit styles.xml; treat that as empty styles instead of NRE (#10).
             if (m_workbook.Styles == null) {
@@ -228,6 +223,14 @@ namespace Exceltk.Reader {
             m_xmlReader.ReadToFollowing(XlsxWorksheet.N_sheetData, m_namespaceUri);
             if (m_xmlReader.IsEmptyElement) {
                 sheet.IsEmpty=true;
+                m_rowPackages = null;
+            } else {
+                // Stream rows as XmlRowPackage entities via XmlPackageParser.
+                if (m_rowPackages != null) {
+                    m_rowPackages.Dispose();
+                }
+                var parser = new XmlPackageParser(m_xmlReader, m_namespaceUri);
+                m_rowPackages = parser.ParseRows().GetEnumerator();
             }                
         }
 
@@ -242,7 +245,7 @@ namespace Exceltk.Reader {
                 m_xmlReader = null;
             }
 
-            m_sheetStream = m_package.GetWorksheetStream(sheet.Path);
+            m_sheetStream = m_zipWorker.GetWorksheetStream(sheet.Path);
             if (null == m_sheetStream) {
                 return false;
             }
@@ -312,10 +315,6 @@ namespace Exceltk.Reader {
                 return false;
             }
 
-            if (null == m_xmlReader) {
-                return false;
-            }
-
             if (m_emptyRowCount != 0) {
                 m_cellsValues = new object[sheet.ColumnsCount];
                 m_emptyRowCount--;
@@ -332,147 +331,25 @@ namespace Exceltk.Reader {
                 return true;
             }
 
-            bool isRow = false;
-            bool isSheetData = (m_xmlReader.NodeType == XmlNodeType.Element &&
-                                m_xmlReader.LocalName == XlsxWorksheet.N_sheetData);
-            if (isSheetData) {
-                isRow = m_xmlReader.ReadToFollowing(XlsxWorksheet.N_row, m_namespaceUri);
-            } else {
-                if (m_xmlReader.LocalName == XlsxWorksheet.N_row && m_xmlReader.NodeType == XmlNodeType.EndElement) {
-                    //Console.WriteLine("read");
-                    m_xmlReader.Read();
-                }
-                isRow = (m_xmlReader.NodeType == XmlNodeType.Element && m_xmlReader.LocalName == XlsxWorksheet.N_row);
-            }
-
-            if (!isRow) {
+            if (m_rowPackages == null || !m_rowPackages.MoveNext()) {
                 return false;
             }
 
-            //Console.WriteLine("New Row");
-
+            XmlRowPackage rowPackage = m_rowPackages.Current;
             m_cellsValues = new object[sheet.ColumnsCount];
-            if (sheet.ColumnsCount > 13) {
-                int i = sheet.ColumnsCount;
-            }
 
-            var rowIndexText = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
-            Debug.Assert(rowIndexText!=null);
-            int rowIndex=int.Parse(rowIndexText);
+            Debug.Assert(rowPackage.RowIndexAttribute != null);
+            int rowIndex = int.Parse(rowPackage.RowIndexAttribute);
 
             if (rowIndex != (m_depth + 1)) {
                 m_emptyRowCount = rowIndex - m_depth - 1;
             }
 
-            bool hasValue = false;
-            bool hasFormula = false;
-            HyperLinkIndex hyperlinkIndex = null;
-            string a_s = String.Empty;
-            string a_t = String.Empty;
-            string a_r = String.Empty;
-            string f = String.Empty;
-            int col = 0;
-            int row = 0;
-
-            while (m_xmlReader.Read()) {
-
-                //Console.WriteLine("m_xmlReader.LocalName:{0}",m_xmlReader.LocalName);
-                //Console.WriteLine("m_xmlReader.Value:{0}",m_xmlReader.Value);
-                if (m_xmlReader.Depth == 2) {
-                    break;
-                }
-
-                if (m_xmlReader.NodeType == XmlNodeType.Element) {
-                    hasValue = false;
-
-                    if (m_xmlReader.LocalName == XlsxWorksheet.N_c) {
-                        a_s = m_xmlReader.GetAttribute(XlsxWorksheet.A_s);
-                        a_t = m_xmlReader.GetAttribute(XlsxWorksheet.A_t);
-                        a_r = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
-                        XlsxDimension.XlsxDim(a_r, out col, out row);
-                    } else if(m_xmlReader.LocalName == XlsxWorksheet.N_f){
-                        hasFormula = true;
-                    } else if (m_xmlReader.LocalName == XlsxWorksheet.N_v || m_xmlReader.LocalName == XlsxWorksheet.N_t) {
-                        hasValue = true;
-                        hasFormula = false;
-                    } else {
-                        //Console.WriteLine("m_xmlReader.LocalName:{0}",m_xmlReader.LocalName);
-                        // Ignore
-                    }
-                }
-
-                bool hasHyperLinkFormula = false;
-                if(m_xmlReader.NodeType == XmlNodeType.Text && hasFormula){
-                    string formula = m_xmlReader.Value.ToString();
-                    if(formula.StartsWith("HYPERLINK(")){
-                        hyperlinkIndex = this.ReadHyperLinkFormula(sheet.Name, formula);
-                    }
-                }
-                
-
-                if (m_xmlReader.NodeType == XmlNodeType.Text && hasValue) {
-                    double number;
-                    object o = m_xmlReader.Value;
-
-                    //Console.WriteLine("O:{0}", o);
-
-                    if (double.TryParse(o.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out number)) {
-                        // numeric
-                        o=number;
-                    }
-
-                    if (null!=a_t&&a_t==XlsxWorksheet.A_s) {
-                        // string
-                        if (m_workbook.SST!=null) {
-                            var sstStr = m_workbook.SST[int.Parse(o.ToString())];
-                            //Console.WriteLine(sstStr);
-                            o=sstStr.ConvertEscapeChars();
-                        }
-                    } else if (null!=a_t&&a_t==XlsxWorksheet.N_inlineStr) {
-                        // string inline
-                        o=o.ToString().ConvertEscapeChars();
-                    } else if (a_t=="b") {
-                        // boolean
-                        o=m_xmlReader.Value=="1";
-                    } else if (a_t=="str") {
-                        // string
-                        o=m_xmlReader.Value;
-                    } else if (null!=a_s && m_workbook.Styles!=null && m_workbook.Styles.CellXfs!=null) {
-                        // something else — apply number/date format when style exists
-                        int styleIndex;
-                        if (int.TryParse(a_s, out styleIndex)
-                            && styleIndex>=0
-                            && styleIndex<m_workbook.Styles.CellXfs.Count) {
-                            XlsxXf xf=m_workbook.Styles.CellXfs[styleIndex];
-                            if (xf.ApplyNumberFormat&&o!=null&&o.ToString()!=string.Empty&&
-                                IsDateTimeStyle(xf.NumFmtId)) {
-                                o=number.ConvertFromOATime();
-                            } else if (xf.NumFmtId==49) {
-                                o=o.ToString();
-                            }
-                        }
-                    }
-
-                    //Console.WriteLine(o);
-
-                    if (col >= 1) {
-                        EnsureRowCapacity(sheet, col);
-                        if(hyperlinkIndex!=null){
-                            var co = new XlsCell(o);
-                            co.HyperLinkIndex = hyperlinkIndex;
-                            m_cellsValues[col - 1] = co;
-                            hyperlinkIndex = null;
-                        }else{
-                            m_cellsValues[col - 1] = o;
-                        }
-                    } 
-                }else{
-                    //Console.WriteLine(m_xmlReader.Value.ToString());
-                } 
+            foreach (XmlCellPackage cellPackage in rowPackage.Cells) {
+                ApplyCellPackage(sheet, cellPackage);
             }
 
             if (m_emptyRowCount > 0) {
-                //Console.WriteLine("Again");
                 m_savedCellsValues = m_cellsValues;
                 return ReadSheetRow(sheet);
             }
@@ -481,37 +358,80 @@ namespace Exceltk.Reader {
             return true;
         }
 
+        private void ApplyCellPackage(XlsxWorksheet sheet, XmlCellPackage cellPackage) {
+            string a_s = cellPackage.StyleId;
+            string a_t = cellPackage.CellType;
+            string a_r = cellPackage.Reference;
+            int col;
+            int row;
+            if (string.IsNullOrEmpty(a_r)) {
+                return;
+            }
+            XlsxDimension.XlsxDim(a_r, out col, out row);
+
+            HyperLinkIndex hyperlinkIndex = null;
+            if (!string.IsNullOrEmpty(cellPackage.Formula) && cellPackage.Formula.StartsWith("HYPERLINK(")) {
+                hyperlinkIndex = this.ReadHyperLinkFormula(sheet.Name, cellPackage.Formula);
+            }
+
+            double number;
+            object o = cellPackage.ValueText;
+
+            if (double.TryParse(o.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out number)) {
+                o = number;
+            }
+
+            if (null != a_t && a_t == XlsxWorksheet.A_s) {
+                if (m_workbook.SST != null) {
+                    var sstStr = m_workbook.SST[int.Parse(o.ToString())];
+                    o = sstStr.ConvertEscapeChars();
+                }
+            } else if (null != a_t && a_t == XlsxWorksheet.N_inlineStr) {
+                o = o.ToString().ConvertEscapeChars();
+            } else if (a_t == "b") {
+                o = cellPackage.ValueText == "1";
+            } else if (a_t == "str") {
+                o = cellPackage.ValueText;
+            } else if (null != a_s && m_workbook.Styles != null && m_workbook.Styles.CellXfs != null) {
+                int styleIndex;
+                if (int.TryParse(a_s, out styleIndex)
+                    && styleIndex >= 0
+                    && styleIndex < m_workbook.Styles.CellXfs.Count) {
+                    XlsxXf xf = m_workbook.Styles.CellXfs[styleIndex];
+                    if (xf.ApplyNumberFormat && o != null && o.ToString() != string.Empty &&
+                        IsDateTimeStyle(xf.NumFmtId)) {
+                        o = number.ConvertFromOATime();
+                    } else if (xf.NumFmtId == 49) {
+                        o = o.ToString();
+                    }
+                }
+            }
+
+            if (col >= 1) {
+                EnsureRowCapacity(sheet, col);
+                if (hyperlinkIndex != null) {
+                    var co = new XlsCell(o);
+                    co.HyperLinkIndex = hyperlinkIndex;
+                    m_cellsValues[col - 1] = co;
+                } else {
+                    m_cellsValues[col - 1] = o;
+                }
+            }
+        }
+
         private bool ReadMergeCells(XlsxWorksheet sheet, DataTable table) {
             // Restart the sheet stream so we can locate mergeCells independently of row reading.
             if (!ResetSheetReader(sheet)) {
                 return false;
             }
 
-            if (!m_xmlReader.ReadToFollowing(XlsxWorksheet.N_mergeCells)) {
-                return false;
-            }
-            if (m_xmlReader.IsEmptyElement) {
-                return false;
-            }
-
-            while (m_xmlReader.Read()) {
-                if (m_xmlReader.NodeType != XmlNodeType.Element) {
-                    if (m_xmlReader.NodeType == XmlNodeType.EndElement &&
-                        m_xmlReader.LocalName == XlsxWorksheet.N_mergeCells) {
-                        break;
-                    }
-                    continue;
-                }
-                if (m_xmlReader.LocalName != XlsxWorksheet.N_mergeCell) {
-                    break;
-                }
-
-                string aref = m_xmlReader.GetAttribute(XlsxWorksheet.A_ref);
+            var parser = new XmlPackageParser(m_xmlReader, m_namespaceUri);
+            foreach (XmlMergePackage mergePackage in parser.ParseMerges()) {
+                string aref = mergePackage.Ref;
                 if (string.IsNullOrEmpty(aref)) {
                     continue;
                 }
 
-                // ref may be "A2:A8" or a single cell "A2"
                 string[] parts = aref.Split(':');
                 int c1, r1, c2, r2;
                 XlsxDimension.XlsxDim(parts[0], out c1, out r1);
@@ -522,7 +442,6 @@ namespace Exceltk.Reader {
                     r2 = r1;
                 }
 
-                // Convert to 0-based
                 c1--; r1--; c2--; r2--;
                 if (c1 < 0 || r1 < 0) {
                     continue;
@@ -551,27 +470,19 @@ namespace Exceltk.Reader {
                 return false;
             }
 
-            // ReadTo HyperLinks Node
             if (m_xmlReader == null) {
                 return false;
             }
 
-            if (!m_xmlReader.ReadToFollowing(XlsxWorksheet.N_hyperlinks)) {
-                return false;
-            }
-            if (m_xmlReader.IsEmptyElement) {
-                return false;
-            }
-
-            // Read Realtionship Table
-            Stream sheetRelStream = m_package.GetWorksheetRelsStream(sheet.Path);
+            // Read Relationship Table
+            Stream sheetRelStream = m_zipWorker.GetWorksheetRelsStream(sheet.Path);
             var hyperDict = new Dictionary<string, string>();
             if (sheetRelStream != null) {
                 using (XmlReader reader = XmlReader.Create(sheetRelStream)) {
                     while (reader.Read()) {
                         if (reader.NodeType == XmlNodeType.Element && reader.LocalName == XlsxWorkbook.N_rel) {
                             string rid = reader.GetAttribute(XlsxWorkbook.A_id);
-                            Debug.Assert(rid!=null);
+                            Debug.Assert(rid != null);
                             hyperDict[rid] = reader.GetAttribute(XlsxWorkbook.A_target);
                         }
                     }
@@ -579,21 +490,14 @@ namespace Exceltk.Reader {
                 }
             }
 
-
-            // Read All HyperLink Node
-            while (m_xmlReader.Read()) {
-                if (m_xmlReader.NodeType != XmlNodeType.Element) {
-                    break;
-                }
-
-                if (m_xmlReader.LocalName != XlsxWorksheet.N_hyperlink) {
-                    break;
-                }
-
-                string aref = m_xmlReader.GetAttribute(XlsxWorksheet.A_ref);
-                string display = m_xmlReader.GetAttribute(XlsxWorksheet.A_display);
-                string rid = m_xmlReader.GetAttribute(XlsxWorksheet.A_rid);
-                string location = m_xmlReader.GetAttribute("location"); // fragment identifier
+            var parser = new XmlPackageParser(m_xmlReader, m_namespaceUri);
+            bool any = false;
+            foreach (XmlHyperlinkPackage linkPackage in parser.ParseHyperlinks()) {
+                any = true;
+                string aref = linkPackage.Ref;
+                string display = linkPackage.Display;
+                string rid = linkPackage.RelationshipId;
+                string location = linkPackage.Location;
                 string hyperlink = display;
 
                 if (!string.IsNullOrEmpty(rid) && hyperDict.ContainsKey(rid)) {
@@ -604,7 +508,6 @@ namespace Exceltk.Reader {
                     continue;
                 }
 
-                // ref may be a single cell "A2" or a range "A3:A4"
                 var dim = new XlsxDimension(aref);
                 int c1 = dim.FirstCol - 1;
                 int r1 = dim.FirstRow - 1;
@@ -633,13 +536,12 @@ namespace Exceltk.Reader {
                 }
             }
 
-            // Close
             m_xmlReader.Close();
             if (m_sheetStream != null) {
                 m_sheetStream.Close();
             }
 
-            return true;
+            return any;
         }
 
         private bool IsDateTimeStyle(int styleId) {
@@ -805,11 +707,12 @@ namespace Exceltk.Reader {
                         ((IDisposable)m_xmlReader).Dispose();
                     if (m_sheetStream != null)
                         m_sheetStream.Dispose();
-                    if (m_package != null && m_ownsPackage)
-                        m_package.Dispose();
+                    if (m_zipWorker != null && m_ownsZipWorker)
+                        m_zipWorker.Dispose();
                 }
 
-                m_package = null;
+                m_zipWorker = null;
+                m_rowPackages = null;
                 m_xmlReader = null;
                 m_sheetStream = null;
 
