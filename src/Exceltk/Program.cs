@@ -10,6 +10,20 @@ namespace Exceltk {
         [STAThread]
         private static void Main(string[] args) {
             var cmd=new CommandParser(args);
+            if (cmd["t"] == "tcpstream") {
+                string root = Directory.GetCurrentDirectory();
+                string xlsx = cmd["xlsx"] ?? cmd["xls"] ?? Path.Combine("test", "test1.xlsx");
+                string xls = cmd["biff"] ?? Path.Combine("test", "test8.xls");
+                if (!Path.IsPathRooted(xlsx)) {
+                    xlsx = Path.Combine(root, xlsx);
+                }
+                if (!Path.IsPathRooted(xls)) {
+                    xls = Path.Combine(root, xls);
+                }
+                Environment.ExitCode = Test.TcpStreamingDemo.Run(xlsx, xls);
+                return;
+            }
+
             var r = InitConfig(cmd);
             if (r) {
                 Xls2MarkDown(cmd);
@@ -154,6 +168,7 @@ namespace Exceltk {
                 Console.WriteLine("3. Pretty (column-aligned) markdown: Exceltk -t md -pretty -xls file");
                 Console.WriteLine("4. MultiMarkdown HTML tables (merged cells): Exceltk -t md -mmd -xls file");
                 Console.WriteLine("Note: -t cm (clipboard GUI) was removed after 0.0.9; use 0.0.9 if needed.");
+                Console.WriteLine("5. TCP streaming package demo: Exceltk -t tcpstream [-xlsx file.xlsx] [-biff file.xls]");
             }
         }
     }

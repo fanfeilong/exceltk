@@ -42,3 +42,17 @@ A progressive renderer can subscribe to `IPackageParser<T>.Parse()` (or
 Fully forward-only OPC (single `ZipInputStream` pass over a non-seekable network
 body) is a follow-up: sheet parts are not contiguous with workbook.xml. Seekable
 streams (files, buffered downloads) are supported via `ZipFile` entry streaming.
+
+## TCP demo
+
+Run a loopback server/client that streams sheet XML and BIFF packages:
+
+```bash
+dotnet run --project src/Exceltk/Exceltk.csproj -- -t tcpstream \
+  -xlsx src/test/test1.xlsx -biff src/test/test8.xls
+```
+
+(or from `src/`: `dotnet run --project Exceltk/Exceltk.csproj -- -t tcpstream`)
+
+The receiver prints packages as they complete (`[xml-stream] row#…`, `[biff-stream] #…`)
+and exits with `TCP stream test OK` / `Done!` on success. Wired into `src/test.sh`.
