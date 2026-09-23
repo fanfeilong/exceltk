@@ -451,13 +451,84 @@ namespace Exceltk.Reader {
             return true;
         }
 
+        private bool ReadMergeCells(XlsxWorksheet sheet, DataTable table) {
+            // Restart the sheet stream so we can locate mergeCells independently of row reading.
+            if (!ResetSheetReader(sheet)) {
+                return false;
+            }
+
+            if (!m_xmlReader.ReadToFollowing(XlsxWorksheet.N_mergeCells)) {
+                return false;
+            }
+            if (m_xmlReader.IsEmptyElement) {
+                return false;
+            }
+
+            while (m_xmlReader.Read()) {
+                if (m_xmlReader.NodeType != XmlNodeType.Element) {
+                    if (m_xmlReader.NodeType == XmlNodeType.EndElement &&
+                        m_xmlReader.LocalName == XlsxWorksheet.N_mergeCells) {
+                        break;
+                    }
+                    continue;
+                }
+                if (m_xmlReader.LocalName != XlsxWorksheet.N_mergeCell) {
+                    break;
+                }
+
+                string aref = m_xmlReader.GetAttribute(XlsxWorksheet.A_ref);
+                if (string.IsNullOrEmpty(aref)) {
+                    continue;
+                }
+
+                // ref may be "A2:A8" or a single cell "A2"
+                string[] parts = aref.Split(':');
+                int c1, r1, c2, r2;
+                XlsxDimension.XlsxDim(parts[0], out c1, out r1);
+                if (parts.Length > 1) {
+                    XlsxDimension.XlsxDim(parts[1], out c2, out r2);
+                } else {
+                    c2 = c1;
+                    r2 = r1;
+                }
+
+                // Convert to 0-based
+                c1--; r1--; c2--; r2--;
+                if (c1 < 0 || r1 < 0) {
+                    continue;
+                }
+
+                int rowSpan = r2 - r1 + 1;
+                int colSpan = c2 - c1 + 1;
+                if (rowSpan < 1 || colSpan < 1) {
+                    continue;
+                }
+
+                table.Merges.Add(new CellMerge {
+                    Row = r1,
+                    Col = c1,
+                    RowSpan = rowSpan,
+                    ColSpan = colSpan
+                });
+            }
+
+            return table.Merges.Count > 0;
+        }
+
         private bool ReadHyperLinks(XlsxWorksheet sheet, DataTable table) {
+            // Restart so hyperlink parsing does not depend on prior mergeCells scanning.
+            if (!ResetSheetReader(sheet)) {
+                return false;
+            }
+
             // ReadTo HyperLinks Node
             if (m_xmlReader == null) {
                 return false;
             }
 
-            m_xmlReader.ReadToFollowing(XlsxWorksheet.N_hyperlinks);
+            if (!m_xmlReader.ReadToFollowing(XlsxWorksheet.N_hyperlinks)) {
+                return false;
+            }
             if (m_xmlReader.IsEmptyElement) {
                 return false;
             }
@@ -610,6 +681,9 @@ namespace Exceltk.Reader {
                 if (table.Rows.Count > 0) {
                     dataset.Tables.Add(table);
                 }
+
+                // Read merged cells (before hyperlinks — both appear after sheetData)
+                ReadMergeCells(sheet, table);
 
                 // Read HyperLinks
                 ReadHyperLinks(sheet, table);

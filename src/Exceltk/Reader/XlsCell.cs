@@ -12,6 +12,16 @@ namespace Exceltk.Reader {
         public int Row{get;set;}
     }
 
+    /// <summary>
+    /// Merged cell region in 0-based coordinates (top-left + spans).
+    /// </summary>
+    public class CellMerge {
+        public int Row{get;set;}
+        public int Col{get;set;}
+        public int RowSpan{get;set;}
+        public int ColSpan{get;set;}
+    }
+
     public class XlsCell {
         private readonly object m_object;
         private string m_hyperLink;
@@ -21,12 +31,33 @@ namespace Exceltk.Reader {
         public XlsCell(object obj) {
             m_object=obj;
             prepareMarkDown = null;
+            RowSpan=1;
+            ColSpan=1;
         }
 
         public object Value {
             get {
                 return m_object;
             }
+        }
+
+        public int RowSpan {
+            get;
+            set;
+        }
+
+        public int ColSpan {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// True when this cell is covered by another cell's merge region
+        /// and should be omitted from MultiMarkdown/HTML output.
+        /// </summary>
+        public bool IsMergeCovered {
+            get;
+            set;
         }
 
         public bool IsHyperLink {

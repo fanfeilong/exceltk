@@ -42,6 +42,14 @@ namespace Exceltk.Reader {
             set;
         }
 
+        /// <summary>
+        /// Merged cell regions for this sheet (0-based), used by MultiMarkdown HTML output.
+        /// </summary>
+        public List<CellMerge> Merges {
+            get;
+            set;
+        }
+
         public DataRow NewRow(){
             var r = new DataRow();
             Rows.Add(r);
@@ -72,6 +80,7 @@ namespace Exceltk.Reader {
             TableName=name;
             Columns = new DataColumnCollection();
             Rows = new DataRowCollection();
+            Merges = new List<CellMerge>();
         }
     }
     public class DataTableCollection : IEnumerable<DataTable>{

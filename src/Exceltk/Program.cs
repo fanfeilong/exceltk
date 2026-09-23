@@ -28,6 +28,7 @@ namespace Exceltk {
                     }
 
                     Config.PrettyTable = cmd["pretty"]!=null;
+                    Config.MultiMarkdown = cmd["mmd"]!=null;
 
                     if (cmd["p"]!=null) {
                         int precision = 0;
@@ -147,7 +148,8 @@ namespace Exceltk {
                 Console.WriteLine("1. Convert xls/xlsx to markdown: Exceltk -t md -xls xlsfile [-sheet sheetname]");
                 Console.WriteLine("2. Convert csv to markdown: Exceltk -t md -xls csvfile  (or -csv csvfile)");
                 Console.WriteLine("3. Pretty (column-aligned) markdown: Exceltk -t md -pretty -xls file");
-                Console.WriteLine("4. Monitor and convert clipboard to markdown: Exceltk -t cm");
+                Console.WriteLine("4. MultiMarkdown HTML tables (merged cells): Exceltk -t md -mmd -xls file");
+                Console.WriteLine("5. Monitor and convert clipboard to markdown: Exceltk -t cm");
             }
         }
     }

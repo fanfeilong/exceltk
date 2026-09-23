@@ -16,3 +16,4 @@ dotnet run -p Exceltk/Exceltk.csproj -t md -csv test/test13_csv.csv
 dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -xls test/test13_csv.csv
 dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -a c -xls test/test13_csv.csv
 dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -a r -xls test/test13_csv.csv
+dotnet run -p Exceltk/Exceltk.csproj -- -t md -mmd -xls test/test6_crossline.xlsx

@@ -16,6 +16,8 @@ namespace Exceltk.Reader.Xml {
         public const string A_rid="r:id";
         public const string N_sheetData="sheetData";
         public const string N_inlineStr="inlineStr";
+        public const string N_mergeCells="mergeCells";
+        public const string N_mergeCell="mergeCell";
         public const string N_hyperlinks="hyperlinks";
         public const string N_hyperlink="hyperlink";
         private readonly string _Name;
