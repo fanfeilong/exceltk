@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Xml;
 using System.Text;
+using Exceltk.Reader.Package;
 using Exceltk.Reader.Xml;
 
 namespace Exceltk.Reader {
@@ -21,13 +22,14 @@ namespace Exceltk.Reader {
         private string m_instanceId = Guid.NewGuid().ToString();
         private bool m_isClosed;
         private bool m_isValid;
+        private bool m_ownsPackage;
 
         private string m_namespaceUri;
         private object[] m_savedCellsValues;
         private Stream m_sheetStream;
         private XlsxWorkbook m_workbook;
         private XmlReader m_xmlReader;
-        private ZipWorker m_zipWorker;
+        private IOpenXmlPackage m_package;
 
         #endregion
 
@@ -45,12 +47,25 @@ namespace Exceltk.Reader {
         #region IExcelDataReader Members
 
         public void Open(Stream fileStream) {
-            m_zipWorker = new ZipWorker();
-            m_zipWorker.Extract(fileStream);
+            var zipWorker = new ZipWorker();
+            zipWorker.Extract(fileStream);
+            Open(zipWorker, ownsPackage: true);
+        }
 
-            if (!m_zipWorker.IsValid) {
+        /// <summary>
+        /// Open an already-extracted OpenXML package (package / package-parser path).
+        /// </summary>
+        public void Open(IOpenXmlPackage package, bool ownsPackage = false) {
+            if (package == null) {
+                throw new ArgumentNullException("package");
+            }
+
+            m_package = package;
+            m_ownsPackage = ownsPackage;
+
+            if (!m_package.IsValid) {
                 m_isValid = false;
-                m_exceptionMessage = m_zipWorker.ExceptionMessage;
+                m_exceptionMessage = m_package.ExceptionMessage;
                 Dispose();
             } else {
                 m_isValid = true;
@@ -83,9 +98,11 @@ namespace Exceltk.Reader {
                 m_sheetStream = null;
             }
 
-            if (m_zipWorker != null) {
-                m_zipWorker.Dispose();
-                m_zipWorker = null;
+            if (m_package != null) {
+                if (m_ownsPackage) {
+                    m_package.Dispose();
+                }
+                m_package = null;
             }
         }
 
@@ -95,10 +112,10 @@ namespace Exceltk.Reader {
 
         private void ReadGlobals() {
             m_workbook = new XlsxWorkbook(
-                m_zipWorker.GetWorkbookStream(),
-                m_zipWorker.GetWorkbookRelsStream(),
-                m_zipWorker.GetSharedStringsStream(),
-                m_zipWorker.GetStylesStream());
+                m_package.GetWorkbookStream(),
+                m_package.GetWorkbookRelsStream(),
+                m_package.GetSharedStringsStream(),
+                m_package.GetStylesStream());
 
             // Some workbooks omit styles.xml; treat that as empty styles instead of NRE (#10).
             if (m_workbook.Styles == null) {
@@ -225,7 +242,7 @@ namespace Exceltk.Reader {
                 m_xmlReader = null;
             }
 
-            m_sheetStream = m_zipWorker.GetWorksheetStream(sheet.Path);
+            m_sheetStream = m_package.GetWorksheetStream(sheet.Path);
             if (null == m_sheetStream) {
                 return false;
             }
@@ -547,7 +564,7 @@ namespace Exceltk.Reader {
             }
 
             // Read Realtionship Table
-            Stream sheetRelStream = m_zipWorker.GetWorksheetRelsStream(sheet.Path);
+            Stream sheetRelStream = m_package.GetWorksheetRelsStream(sheet.Path);
             var hyperDict = new Dictionary<string, string>();
             if (sheetRelStream != null) {
                 using (XmlReader reader = XmlReader.Create(sheetRelStream)) {
@@ -788,11 +805,11 @@ namespace Exceltk.Reader {
                         ((IDisposable)m_xmlReader).Dispose();
                     if (m_sheetStream != null)
                         m_sheetStream.Dispose();
-                    if (m_zipWorker != null)
-                        m_zipWorker.Dispose();
+                    if (m_package != null && m_ownsPackage)
+                        m_package.Dispose();
                 }
 
-                m_zipWorker = null;
+                m_package = null;
                 m_xmlReader = null;
                 m_sheetStream = null;
 

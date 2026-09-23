@@ -3,10 +3,15 @@ using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using Exceltk.Reader.Package;
 using ICSharpCode.SharpZipLib.Zip;
 
 namespace Exceltk.Reader {
-    public class ZipWorker : IDisposable {
+    /// <summary>
+    /// OpenXML ZIP package worker. Implements <see cref="IOpenXmlPackage"/> for the
+    /// package / package-parser architecture.
+    /// </summary>
+    public class ZipWorker : IOpenXmlPackage {
         #region Members and Properties
 
         private const string TMP="TMP_Z";
