@@ -617,11 +617,14 @@ namespace Exceltk.Reader {
                     m_depth = 0;
                     m_emptyRowCount = 0;
 
-                    // 
-                    int detectRows = Math.Min(sheet.Dimension.LastRow, 100);
+                    // Scan every row for the rightmost used column. Limiting to the first
+                    // 100 rows previously dropped columns that only appear later (#14).
+                    int detectRows = sheet.Dimension.LastRow;
                     int maxColumnCount = 0;
                     while (detectRows > 0) {
-                        ReadSheetRow(sheet);
+                        if (!ReadSheetRow(sheet)) {
+                            break;
+                        }
                         maxColumnCount = Math.Max(LastIndexOfNonNull(m_cellsValues) + 1, maxColumnCount);
                         detectRows--;
                     }
