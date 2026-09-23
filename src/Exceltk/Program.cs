@@ -27,6 +27,8 @@ namespace Exceltk {
                         Config.BodyHead = false;
                     }
 
+                    Config.PrettyTable = cmd["pretty"]!=null;
+
                     if (cmd["p"]!=null) {
                         int precision = 0;
                         var ret = Int32.TryParse(cmd["p"],out precision);
@@ -144,7 +146,8 @@ namespace Exceltk {
                 Console.WriteLine("Usecase:");
                 Console.WriteLine("1. Convert xls/xlsx to markdown: Exceltk -t md -xls xlsfile [-sheet sheetname]");
                 Console.WriteLine("2. Convert csv to markdown: Exceltk -t md -xls csvfile  (or -csv csvfile)");
-                Console.WriteLine("3. Monitor and convert clipboard to markdown: Exceltk -t cm");
+                Console.WriteLine("3. Pretty (column-aligned) markdown: Exceltk -t md -pretty -xls file");
+                Console.WriteLine("4. Monitor and convert clipboard to markdown: Exceltk -t cm");
             }
         }
     }

@@ -13,3 +13,6 @@ dotnet run -p Exceltk/Exceltk.csproj -t md -bhead -xls test/test9_formula.xlsx
 dotnet run -p Exceltk/Exceltk.csproj -t md -bhead -xls test/test11_form.xls
 dotnet run -p Exceltk/Exceltk.csproj -t md -xls test/test13_csv.csv
 dotnet run -p Exceltk/Exceltk.csproj -t md -csv test/test13_csv.csv
+dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -xls test/test13_csv.csv
+dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -a c -xls test/test13_csv.csv
+dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -a r -xls test/test13_csv.csv

@@ -2,6 +2,7 @@
 
 - 转换Excel表格到MarkDown表格
 - 转换CSV到MarkDown表格（`-xls file.csv` 或 `-csv file.csv`）
+- 支持 `-pretty` 生成列宽对齐、更易读的 Markdown 表格源码
 - 支持Excel单元格带超链接，如果一个单元格，你右键添加了超链接，自动转成`[text](url)`
 - 如果Excel里有合并的跨行单元格，在转换后的MarkDown里是分开的单元格，这是因为MarkDown本身不支持跨行单元格
 - 如果Excel表格右侧有大量的空列，则会被自动裁剪，算法是根据前100行来检测并计算
@@ -20,6 +21,10 @@ Mac OS 版本请在命令行下直接使用`exceltk`，不用带exe后缀，MacO
     - `exceltk.exe -t md -xls xxx.xlsx`
     - `exceltk.exe -t md -xls xxx.csv`
     - `exceltk.exe -t md -csv xxx.csv`
+
+- 生成列对齐的美化表格
+    - `exceltk.exe -t md -pretty -xls xxx.xlsx`
+    - `exceltk.exe -t md -pretty -a c -xls xxx.csv`
 
 - 指定sheet
     - `exceltk.exe -t md -xls xx.xls -sheet sheetname`
