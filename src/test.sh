@@ -18,3 +18,4 @@ dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -a c -xls test/test13_csv.
 dotnet run -p Exceltk/Exceltk.csproj -- -t md -pretty -a r -xls test/test13_csv.csv
 dotnet run -p Exceltk/Exceltk.csproj -- -t md -mmd -xls test/test6_crossline.xlsx
 dotnet run -p Exceltk/Exceltk.csproj -- -t md -xls test/test14_late_columns.xlsx
+dotnet run -p Exceltk/Exceltk.csproj -- -t md -xls test/test10_nostyles.xlsx

@@ -100,11 +100,16 @@ namespace Exceltk.Reader {
                 m_zipWorker.GetSharedStringsStream(),
                 m_zipWorker.GetStylesStream());
 
-            CheckDateTimeNumFmts(m_workbook.Styles.NumFmts);
+            // Some workbooks omit styles.xml; treat that as empty styles instead of NRE (#10).
+            if (m_workbook.Styles == null) {
+                CheckDateTimeNumFmts(new List<XlsxNumFmt>());
+            } else {
+                CheckDateTimeNumFmts(m_workbook.Styles.NumFmts);
+            }
         }
 
         private void CheckDateTimeNumFmts(List<XlsxNumFmt> list) {
-            if (list.Count == 0) {
+            if (list == null || list.Count == 0) {
                 return;
             }
 
@@ -401,9 +406,11 @@ namespace Exceltk.Reader {
 
                     if (null!=a_t&&a_t==XlsxWorksheet.A_s) {
                         // string
-                        var sstStr = m_workbook.SST[int.Parse(o.ToString())];
-                        //Console.WriteLine(sstStr);
-                        o=sstStr.ConvertEscapeChars();
+                        if (m_workbook.SST!=null) {
+                            var sstStr = m_workbook.SST[int.Parse(o.ToString())];
+                            //Console.WriteLine(sstStr);
+                            o=sstStr.ConvertEscapeChars();
+                        }
                     } else if (null!=a_t&&a_t==XlsxWorksheet.N_inlineStr) {
                         // string inline
                         o=o.ToString().ConvertEscapeChars();
@@ -413,14 +420,19 @@ namespace Exceltk.Reader {
                     } else if (a_t=="str") {
                         // string
                         o=m_xmlReader.Value;
-                    } else if (null!=a_s) {
-                        //something else
-                        XlsxXf xf=m_workbook.Styles.CellXfs[int.Parse(a_s)];
-                        if (xf.ApplyNumberFormat&&o!=null&&o.ToString()!=string.Empty&&
-                            IsDateTimeStyle(xf.NumFmtId)) {
-                            o=number.ConvertFromOATime();
-                        } else if (xf.NumFmtId==49) {
-                            o=o.ToString();
+                    } else if (null!=a_s && m_workbook.Styles!=null && m_workbook.Styles.CellXfs!=null) {
+                        // something else — apply number/date format when style exists
+                        int styleIndex;
+                        if (int.TryParse(a_s, out styleIndex)
+                            && styleIndex>=0
+                            && styleIndex<m_workbook.Styles.CellXfs.Count) {
+                            XlsxXf xf=m_workbook.Styles.CellXfs[styleIndex];
+                            if (xf.ApplyNumberFormat&&o!=null&&o.ToString()!=string.Empty&&
+                                IsDateTimeStyle(xf.NumFmtId)) {
+                                o=number.ConvertFromOATime();
+                            } else if (xf.NumFmtId==49) {
+                                o=o.ToString();
+                            }
                         }
                     }
 
