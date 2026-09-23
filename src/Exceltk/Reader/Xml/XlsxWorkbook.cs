@@ -61,10 +61,11 @@ namespace Exceltk.Reader.Xml {
 
 
         private void ReadStyles(Stream xmlFileStream) {
+            // Always allocate styles so callers can rely on a non-null Styles instance.
+            _Styles=new XlsxStyles();
+
             if (null==xmlFileStream)
                 return;
-
-            _Styles=new XlsxStyles();
 
             bool rXlsxNumFmt=false;
 

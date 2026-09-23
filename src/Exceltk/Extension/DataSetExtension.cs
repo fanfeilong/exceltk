@@ -13,18 +13,7 @@ namespace Exceltk{
             int rowCount=dataTable.Rows.Count;
             for (int r=rowCount-1; r>=0; r--) {
                 for (int c=columnCount-1; c>=0; c--) {
-                    object cell=dataTable.Rows[r][c];
-                    string value="";
-                    if (cell!=null) {
-                        var xlsCell=cell as XlsCell;
-                        if (cell is XlsCell) {
-                            value=xlsCell.Value.ToString();
-                        } else {
-                            value=cell.ToString();
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(value.Trim())) {
+                    if (!IsBlankCell(dataTable.Rows[r][c])) {
                         goto CUT_COLUMN;
                     }
                 }
@@ -37,17 +26,7 @@ namespace Exceltk{
             rowCount=dataTable.Rows.Count;
             for (int c=columnCount-1; c>=0; c--) {
                 for (int r=rowCount-1; r>=0; r--) {
-                    object cell=dataTable.Rows[r][c];
-                    string value="";
-                    if (cell!=null) {
-                        var xlsCell=cell as XlsCell;
-                        if (cell is XlsCell) {
-                            value=xlsCell.Value.ToString();
-                        } else {
-                            value=cell.ToString();
-                        }
-                    }
-                    if (!string.IsNullOrEmpty(value.Trim())) {
+                    if (!IsBlankCell(dataTable.Rows[r][c])) {
                         goto QUIT;
                     }
                 }
@@ -58,6 +37,20 @@ namespace Exceltk{
             QUIT:
 
             return dataTable;
+        }
+
+        private static bool IsBlankCell(object cell) {
+            if (cell==null) {
+                return true;
+            }
+            var xlsCell=cell as XlsCell;
+            string value;
+            if (xlsCell!=null) {
+                value=xlsCell.Value==null ? "" : xlsCell.Value.ToString();
+            } else {
+                value=cell.ToString();
+            }
+            return string.IsNullOrEmpty(value==null ? "" : value.Trim());
         }
 
         public static DataTable RemoveColumnsByRow(this DataTable dataTable, int rowIndex, Func<XlsCell, bool> filter) {
@@ -92,15 +85,7 @@ namespace Exceltk{
 
         public static bool IsEmpty(this DataRow row) {
             foreach (object cell in row.ItemArray) {
-                string value="";
-                var xlsCell=cell as XlsCell;
-                if (xlsCell!=null) {
-                    value=xlsCell.Value.ToString();
-                } else {
-                    value=cell.ToString();
-                }
-
-                if (!string.IsNullOrEmpty(value.Trim())) {
+                if (!IsBlankCell(cell)) {
                     return false;
                 }
             }

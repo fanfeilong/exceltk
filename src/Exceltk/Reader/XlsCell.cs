@@ -83,15 +83,16 @@ namespace Exceltk.Reader {
         }
 
         public string GetMarkDownText(DataSet dataSet){
+            string text=m_object==null ? "" : m_object.ToString();
             if(m_isHyperLink){
                 if(prepareMarkDown!=null){
                     return prepareMarkDown;
                 }else{
-                    return string.Format("[{0}]({1})", m_object, HttpUtility.UrlPathEncode(m_hyperLink));
+                    return string.Format("[{0}]({1})", text, HttpUtility.UrlPathEncode(m_hyperLink));
                 }
             }else{
                 if(m_hyperLinkIndex==null){
-                    return m_object.ToString();
+                    return text;
                 }
 
                 var table = dataSet.Tables[m_hyperLinkIndex.Sheet];
@@ -103,7 +104,7 @@ namespace Exceltk.Reader {
 
                     var rc = ro as XlsCell;
                     if(rc==null){
-                        url = ro.ToString();
+                        url = ro==null ? null : ro.ToString();
                     }else{
                         url = rc.HyperLink;
                     }
@@ -119,10 +120,10 @@ namespace Exceltk.Reader {
                     if(prepareMarkDown!=null){
                         return prepareMarkDown;
                     }else{
-                        return string.Format("[{0}]({1})", m_object, HttpUtility.UrlPathEncode(m_hyperLink));
+                        return string.Format("[{0}]({1})", text, HttpUtility.UrlPathEncode(m_hyperLink));
                     }
                 }else{
-                    return m_object.ToString();
+                    return text;
                 }
             }
         }
@@ -142,7 +143,7 @@ namespace Exceltk.Reader {
 
             m_isHyperLink=true;
             if(url=="_blank"){
-                var text=m_object.ToString();
+                var text=m_object==null ? "" : m_object.ToString();
                 var regex = @"\[.*\]\((.*)\)";
                 var m = Regex.Match(text,regex);
                 if(m.Captures.Count>0){
@@ -161,7 +162,7 @@ namespace Exceltk.Reader {
                 if (location != null) {
                     url += "#" + location;
                 }
-                var text=m_object.ToString();
+                var text=m_object==null ? "" : m_object.ToString();
                 var regex = string.Format(@"\[.*\]\({0}\)",url);
                 var m = Regex.Match(text,regex);
                 if(m.Captures.Count>0){
@@ -174,7 +175,7 @@ namespace Exceltk.Reader {
         }
 
         public override string ToString() {
-            return m_object.ToString();
+            return m_object==null ? "" : m_object.ToString();
         }
     }
 }
