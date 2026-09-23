@@ -12,11 +12,18 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Cross sheet Hyperlink formula support, link formula like `HYPERLINK(test_sheet!C9,...)` will be extract as `[text](url)` format automatic
   - Hyperlink formula support, link formula like `HYPERLINK(C9,...)` will be extract as `[text](url)` format automatic
 
+# Convert CSV to MarkDown Table
+  - Same markdown options as Excel (`-p`, `-a`, `-bhead`)
+  - Quoted fields and embedded commas are supported (RFC 4180 style)
+  - Input via `-xls file.csv` or `-csv file.csv`
+
 ### Usage:
   - `exceltk.exe -t md -xls example.xls` 
   - `exceltk.exe -t md -xls example.xls -sheet sheetname`
   - `exceltk.exe -t md -xls example.xlsx` 
   - `exceltk.exe -t md -xls example.xlsx -sheet sheetname`
+  - `exceltk.exe -t md -xls example.csv`
+  - `exceltk.exe -t md -csv example.csv`
   - `exceltk.exe -t md -p 2 -xls example.xls`, where `-p 2` setting the decimal precision to 2
   - `exceltk.exe -t md -bhead -xls example.xls`, which will use the first row to replace table header, and keep the head empty, so that 
   the table will auto response in small screen device, this is just a simply solution.

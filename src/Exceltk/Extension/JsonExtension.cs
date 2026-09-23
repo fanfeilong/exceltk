@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -10,50 +9,26 @@ namespace Exceltk
 {
     public static class JsonExtension{
         public static SimpleTable ToJson(this string xls, string sheet) {
-            FileStream stream=File.Open(xls, FileMode.Open, FileAccess.Read);
-            IExcelDataReader excelReader=null;
-            if (Path.GetExtension(xls)==".xls") {
-                excelReader=ExcelReaderFactory.CreateBinaryReader(stream);
-            } else if (Path.GetExtension(xls)==".xlsx") {
-                excelReader=ExcelReaderFactory.CreateOpenXmlReader(stream);
-            } else {
-                throw new ArgumentException("Not Support Format: ");
-            }
-            DataSet dataSet=excelReader.AsDataSet();
-            DataTable dataTable=dataSet.Tables[sheet];
+            DataSet dataSet=WorkbookLoader.Load(xls);
+            DataTable dataTable=dataSet.Tables.ContainsTable(sheet)
+                ? dataSet.Tables[sheet]
+                : (dataSet.Tables.Count==1 ? dataSet.Tables[0] : dataSet.Tables[sheet]);
 
-            var table=new SimpleTable {
+            return new SimpleTable {
                     Name=dataTable.TableName,
                     Value=dataTable.ToJson(dataSet)
             };
-
-            excelReader.Close();
-
-            return table;
         }
 
         public static IEnumerable<SimpleTable> ToJson(this string xls) {
-            FileStream stream=File.Open(xls, FileMode.Open, FileAccess.Read);
-            IExcelDataReader excelReader=null;
-            if (Path.GetExtension(xls)==".xls") {
-                excelReader=ExcelReaderFactory.CreateBinaryReader(stream);
-            } else if (Path.GetExtension(xls)==".xlsx") {
-                excelReader=ExcelReaderFactory.CreateOpenXmlReader(stream);
-            } else {
-                throw new ArgumentException("Not Support Format: ");
-            }
-            DataSet dataSet=excelReader.AsDataSet();
+            DataSet dataSet=WorkbookLoader.Load(xls);
 
             foreach (DataTable dataTable in dataSet.Tables) {
-                var table=new SimpleTable {
+                yield return new SimpleTable {
                         Name=dataTable.TableName,
                         Value=dataTable.ToJson(dataSet)
                 };
-
-                yield return table;
             }
-
-            excelReader.Close();
         }
 
         public static string ToJson(this DataTable table, DataSet dataSet, bool insertHeader=true) {
