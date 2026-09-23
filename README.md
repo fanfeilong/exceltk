@@ -11,6 +11,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Convert newline in cell text into `<br/>`
   - Cross sheet Hyperlink formula support, link formula like `HYPERLINK(test_sheet!C9,...)` will be extract as `[text](url)` format automatic
   - Hyperlink formula support, link formula like `HYPERLINK(C9,...)` will be extract as `[text](url)` format automatic
+  - MultiMarkdown mode (`-mmd`): emit HTML tables with `rowspan`/`colspan` for Excel merged cells (pipe Markdown cannot express rowspan)
 
 # Convert CSV to MarkDown Table
   - Same markdown options as Excel (`-p`, `-a`, `-bhead`, `-pretty`)
@@ -21,6 +22,11 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - Use `-pretty` to pad cell text and separators so columns line up in the source
   - Works with `-a l|c|r` alignment
 
+# MultiMarkdown merged cells
+  - Use `-mmd` to emit an HTML `<table>` with `rowspan`/`colspan` from Excel merge regions
+  - HTML tables are valid in MultiMarkdown documents; standard pipe Markdown cannot express rowspan
+  - Currently supported for `.xlsx` worksheets that declare `mergeCells`
+
 ### Usage:
   - `exceltk.exe -t md -xls example.xls` 
   - `exceltk.exe -t md -xls example.xls -sheet sheetname`
@@ -29,6 +35,7 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - `exceltk.exe -t md -xls example.csv`
   - `exceltk.exe -t md -csv example.csv`
   - `exceltk.exe -t md -pretty -xls example.xlsx`, pad columns so the markdown source looks aligned
+  - `exceltk.exe -t md -mmd -xls example.xlsx`, MultiMarkdown-friendly HTML table preserving merged cells
   - `exceltk.exe -t md -p 2 -xls example.xls`, where `-p 2` setting the decimal precision to 2
   - `exceltk.exe -t md -bhead -xls example.xls`, which will use the first row to replace table header, and keep the head empty, so that 
   the table will auto response in small screen device, this is just a simply solution.

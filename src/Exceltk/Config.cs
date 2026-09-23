@@ -35,6 +35,12 @@
             set;
         }
 
+        // for md mode: MultiMarkdown-oriented HTML tables with rowspan/colspan
+        public static bool MultiMarkdown {
+            get;
+            set;
+        }
+
         // for tex mode
         public static bool SplitNumber {
             get;
