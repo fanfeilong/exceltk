@@ -85,6 +85,17 @@ namespace Exceltk {
                     Console.WriteLine("ERROR:target not found");
                     break;
                 }
+                var target = cmd["t"];
+                if (target == "cm") {
+                    Console.WriteLine("ERROR: -t cm (clipboard monitor GUI) was removed after version 0.0.9.");
+                    Console.WriteLine("       Use 0.0.9 on Windows if you need that feature:");
+                    Console.WriteLine("       http://files.cnblogs.com/files/math/exceltk0.0.9.7z");
+                    break;
+                }
+                if(target!="md"&&target!="json"&&target!="tex"){
+                    Console.WriteLine("ERROR: target not support: {0}", target);
+                    break;
+                }
 
                 // check input file arg (-xls also accepts .csv)
                 if (cmd["xls"] == null && cmd["csv"] == null) {
@@ -111,13 +122,6 @@ namespace Exceltk {
                 string fileName = Path.GetFileNameWithoutExtension(xls);
                 if(dirName==null||fileName==null){
                     Console.WriteLine("ERROR: xls path is valid:{0}",xls);
-                    break;
-                }
-
-                // check md or json target
-                var target = cmd["t"];
-                if(target!="md"&&target!="json"&&target!="tex"){
-                    Console.WriteLine("ERROR: target not support",target);
                     break;
                 }
 
@@ -149,7 +153,7 @@ namespace Exceltk {
                 Console.WriteLine("2. Convert csv to markdown: Exceltk -t md -xls csvfile  (or -csv csvfile)");
                 Console.WriteLine("3. Pretty (column-aligned) markdown: Exceltk -t md -pretty -xls file");
                 Console.WriteLine("4. MultiMarkdown HTML tables (merged cells): Exceltk -t md -mmd -xls file");
-                Console.WriteLine("5. Monitor and convert clipboard to markdown: Exceltk -t cm");
+                Console.WriteLine("Note: -t cm (clipboard GUI) was removed after 0.0.9; use 0.0.9 if needed.");
             }
         }
     }
