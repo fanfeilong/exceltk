@@ -2,13 +2,75 @@ using System;
 
 namespace Exceltk.Reader.Binary {
     /// <summary>
-    /// Represents Dimensions of worksheet
+    /// BIFF Package: DIMENSIONS.
     /// </summary>
-    internal class XlsBiffDimensions : XlsBiffRecord {
-        private bool isV8=true;
+    internal class XlsBiffDimensions : BinaryPackage {
+        private bool isV8 = true;
+        private uint m_firstRow;
+        private uint m_lastRow;
+        private ushort m_firstColumn;
+        private ushort m_lastColumn;
+
+        internal XlsBiffDimensions(ExcelBinaryReader reader)
+            : base(reader) {
+        }
 
         internal XlsBiffDimensions(byte[] bytes, uint offset, ExcelBinaryReader reader)
             : base(bytes, offset, reader) {
+        }
+
+        protected override void DecodeBody(byte[] buffer, int offset, int length) {
+            ParseFields(buffer, offset, length);
+        }
+
+        private void ParseFields(byte[] buffer, int offset, int length) {
+            if (buffer == null || length <= 0) {
+                return;
+            }
+            if (isV8) {
+                if (length < 10) {
+                    return;
+                }
+                m_firstRow = BodyReadUInt32(buffer, offset, 0x0);
+                m_lastRow = BodyReadUInt32(buffer, offset, 0x4);
+                m_firstColumn = BodyReadUInt16(buffer, offset, 0x8);
+                // Preserve historical decode: high byte of UInt16 at body+0x9, then +1.
+                m_lastColumn = (ushort)((BodyReadUInt16(buffer, offset, 0x9) >> 8) + 1);
+            } else {
+                if (length < 8) {
+                    return;
+                }
+                m_firstRow = BodyReadUInt16(buffer, offset, 0x0);
+                m_lastRow = BodyReadUInt16(buffer, offset, 0x2);
+                m_firstColumn = BodyReadUInt16(buffer, offset, 0x4);
+                m_lastColumn = BodyReadUInt16(buffer, offset, 0x6);
+            }
+        }
+
+        protected override int GetRequiredEncodeBodyBufferLength() {
+            return isV8 ? 14 : 8;
+        }
+
+        protected override void EncodeBody(byte[] buffer, int offset, int capacity, out int written) {
+            int need = GetRequiredEncodeBodyBufferLength();
+            if (capacity < need) {
+                throw new ArgumentException(Errors.ErrorBIFFBufferSize);
+            }
+            if (isV8) {
+                WriteUInt32(buffer, offset + 0x0, m_firstRow);
+                WriteUInt32(buffer, offset + 0x4, m_lastRow);
+                WriteUInt16(buffer, offset + 0x8, m_firstColumn);
+                // Inverse of decode (ReadUInt16(0x9)>>8)+1 → low byte of colMac at 0xA.
+                ushort colMacWire = m_lastColumn == 0 ? (ushort)0 : (ushort)(m_lastColumn - 1);
+                WriteUInt16(buffer, offset + 0xA, colMacWire);
+                WriteUInt16(buffer, offset + 0xC, 0); // reserved
+            } else {
+                WriteUInt16(buffer, offset + 0x0, (ushort)m_firstRow);
+                WriteUInt16(buffer, offset + 0x2, (ushort)m_lastRow);
+                WriteUInt16(buffer, offset + 0x4, m_firstColumn);
+                WriteUInt16(buffer, offset + 0x6, m_lastColumn);
+            }
+            written = need;
         }
 
         /// <summary>
@@ -19,43 +81,34 @@ namespace Exceltk.Reader.Binary {
                 return isV8;
             }
             set {
-                isV8=value;
+                isV8 = value;
+                if (m_bytes != null && m_bytes.Length > 0) {
+                    ParseFields(m_bytes, m_readoffset, m_bodyLength);
+                }
             }
         }
 
-        /// <summary>
-        /// Index of first row
-        /// </summary>
         public uint FirstRow {
             get {
-                return (isV8)?base.ReadUInt32(0x0):base.ReadUInt16(0x0);
+                return m_firstRow;
             }
         }
 
-        /// <summary>
-        /// Index of last row + 1
-        /// </summary>
         public uint LastRow {
             get {
-                return (isV8)?base.ReadUInt32(0x4):base.ReadUInt16(0x2);
+                return m_lastRow;
             }
         }
 
-        /// <summary>
-        /// Index of first column
-        /// </summary>
         public ushort FirstColumn {
             get {
-                return (isV8)?base.ReadUInt16(0x8):base.ReadUInt16(0x4);
+                return m_firstColumn;
             }
         }
 
-        /// <summary>
-        /// Index of last column + 1
-        /// </summary>
         public ushort LastColumn {
             get {
-                return (isV8)?(ushort)((base.ReadUInt16(0x9)>>8)+1):base.ReadUInt16(0x6);
+                return m_lastColumn;
             }
             set {
                 throw new NotImplementedException();

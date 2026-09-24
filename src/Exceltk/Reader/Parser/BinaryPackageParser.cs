@@ -1,130 +1,125 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Exceltk.Reader.Binary;
-using Exceltk.Reader.Package;
 
 namespace Exceltk.Reader.Parser {
     /// <summary>
-    /// Streams BIFF <see cref="BinaryPackage"/> entities (each <see cref="XlsBiffRecord"/>)
-    /// from a workbook stream. Emits a package as soon as one record's header+body is complete;
-    /// each package owns an isolated byte slice so a renderer need not retain the full workbook.
+    /// BIFF record framer over a byte stream feed (XUdt-style PushData state machine).
+    /// Does not load OLE compound storage — caller assembles the workbook stream and pushes bytes.
     /// </summary>
-    internal sealed class BinaryPackageParser : XlsStream, IPullPackageParser<BinaryPackage> {
-        private readonly byte[] m_workbookBytes;
-        private readonly int m_size;
+    internal sealed class BinaryPackageParser : IPackageParser<BinaryPackage> {
+        private enum FrameState {
+            NeedHeader,
+            NeedBody
+        }
+
         private readonly ExcelBinaryReader m_reader;
-        private int m_offset;
+        private readonly Queue<BinaryPackage> m_queue = new Queue<BinaryPackage>();
+        private readonly List<byte> m_pending = new List<byte>(256);
+        private readonly byte[] m_header = new byte[BinaryPackage.HeaderSize];
 
-        public BinaryPackageParser(XlsHeader hdr, uint streamStart, bool isMini, XlsRootDirectory rootDir,
-            ExcelBinaryReader reader)
-            : base(hdr, streamStart, isMini, rootDir) {
+        private FrameState m_state = FrameState.NeedHeader;
+        private ushort m_bodyLength;
+        private BinaryPackage m_building;
+        private int m_streamOffset;
+        private int m_recordStartOffset;
+
+        public BinaryPackageParser(ExcelBinaryReader reader) {
             m_reader = reader;
-            // OLE compound storage still needs sector assembly to reach the workbook stream;
-            // once positioned, we only slice one record at a time into each package.
-            m_workbookBytes = base.ReadStream();
-            m_size = m_workbookBytes.Length;
-            m_offset = 0;
         }
 
-        public int Size {
+        public bool HavePackage {
             get {
-                return m_size;
+                return m_queue.Count > 0;
             }
         }
 
-        public int Position {
+        public bool HaveUnParsedData {
             get {
-                return m_offset;
+                return m_pending.Count > 0 || m_building != null;
             }
         }
 
-        public void Seek(int offset, SeekOrigin origin) {
-            switch (origin) {
-                case SeekOrigin.Begin:
-                    m_offset = offset;
-                    break;
-                case SeekOrigin.Current:
-                    m_offset += offset;
-                    break;
-                case SeekOrigin.End:
-                    m_offset = m_size - offset;
-                    break;
+        public void Reset() {
+            m_queue.Clear();
+            m_pending.Clear();
+            m_state = FrameState.NeedHeader;
+            m_bodyLength = 0;
+            m_building = null;
+            m_streamOffset = 0;
+            m_recordStartOffset = 0;
+        }
+
+        public BinaryPackage PopPackage() {
+            return m_queue.Dequeue();
+        }
+
+        public void PushData(byte[] data, int offset, int count) {
+            if (data == null) {
+                throw new ArgumentNullException("data");
+            }
+            if (offset < 0 || count < 0 || offset + count > data.Length) {
+                throw new ArgumentOutOfRangeException("count");
             }
 
-            if (m_offset < 0) {
-                string message = string.Format("{0} On offset={1}", Errors.ErrorBIFFIlegalBefore, offset);
-                throw new ArgumentOutOfRangeException(message);
+            for (int i = 0; i < count; i++) {
+                m_pending.Add(data[offset + i]);
             }
 
-            if (m_offset > m_size) {
-                string message = string.Format("{0} On offset={1}", Errors.ErrorBIFFIlegalAfter, offset);
-                throw new ArgumentOutOfRangeException(message);
+            FrameAvailable();
+        }
+
+        private void FrameAvailable() {
+            while (true) {
+                if (m_state == FrameState.NeedHeader) {
+                    if (m_pending.Count < BinaryPackage.HeaderSize) {
+                        return;
+                    }
+
+                    for (int i = 0; i < BinaryPackage.HeaderSize; i++) {
+                        m_header[i] = m_pending[i];
+                    }
+                    m_pending.RemoveRange(0, BinaryPackage.HeaderSize);
+
+                    var recordType = (BIFFRECORDTYPE)BinaryPackage.ReadHeaderType(m_header, 0);
+                    m_bodyLength = BinaryPackage.ReadHeaderBodyLength(m_header, 0);
+                    m_recordStartOffset = m_streamOffset;
+                    m_streamOffset += BinaryPackage.HeaderSize;
+                    m_building = BinaryPackage.CreateEmpty(recordType, m_reader);
+                    m_state = FrameState.NeedBody;
+                }
+
+                if (m_state == FrameState.NeedBody) {
+                    if (m_pending.Count < m_bodyLength) {
+                        return;
+                    }
+
+                    byte[] body = ConsumePending(m_bodyLength);
+                    m_streamOffset += m_bodyLength;
+
+                    var recordBytes = new byte[BinaryPackage.HeaderSize + m_bodyLength];
+                    Buffer.BlockCopy(m_header, 0, recordBytes, 0, BinaryPackage.HeaderSize);
+                    if (m_bodyLength > 0) {
+                        Buffer.BlockCopy(body, 0, recordBytes, BinaryPackage.HeaderSize, m_bodyLength);
+                    }
+
+                    m_building.DecodePackage(recordBytes, 0, recordBytes.Length);
+                    m_building.AttachStreamOffset(m_recordStartOffset);
+                    m_queue.Enqueue(m_building);
+
+                    m_building = null;
+                    m_state = FrameState.NeedHeader;
+                }
             }
         }
 
-        /// <summary>
-        /// Read the next complete BIFF record package (local format unit) and advance.
-        /// </summary>
-        public XlsBiffRecord Read() {
-            BinaryPackage package;
-            if (!TryRead(out package)) {
-                return null;
+        private byte[] ConsumePending(int count) {
+            var result = new byte[count];
+            for (int i = 0; i < count; i++) {
+                result[i] = m_pending[i];
             }
-            return (XlsBiffRecord)package;
-        }
-
-        /// <summary>
-        /// Peek/build a record package at an absolute workbook-stream offset (no cursor move).
-        /// Still allocates a one-record slice — suitable for index/DBCELL jumps.
-        /// </summary>
-        public XlsBiffRecord ReadAt(int offset) {
-            if ((uint)offset >= m_workbookBytes.Length || offset + 4 > m_size) {
-                return null;
-            }
-
-            ushort recordSize = BitConverter.ToUInt16(m_workbookBytes, offset + 2);
-            int size = 4 + recordSize;
-            if (m_reader.ReadOption == ReadOption.Strict && offset + size > m_size) {
-                return null;
-            }
-            if (offset + size > m_size) {
-                size = m_size - offset;
-            }
-
-            byte[] slice = SliceRecord(offset, size);
-            return XlsBiffRecord.GetRecord(slice, 0, m_reader);
-        }
-
-        public bool TryRead(out BinaryPackage package) {
-            package = null;
-            if ((uint)m_offset >= m_workbookBytes.Length || m_offset + 4 > m_size) {
-                return false;
-            }
-
-            ushort recordSize = BitConverter.ToUInt16(m_workbookBytes, m_offset + 2);
-            int size = 4 + recordSize;
-            if (m_offset + size > m_size) {
-                return false;
-            }
-
-            byte[] slice = SliceRecord(m_offset, size);
-            m_offset += size;
-            package = XlsBiffRecord.GetRecord(slice, 0, m_reader);
-            return package != null;
-        }
-
-        public IEnumerable<BinaryPackage> Parse() {
-            BinaryPackage package;
-            while (TryRead(out package)) {
-                yield return package;
-            }
-        }
-
-        private byte[] SliceRecord(int offset, int size) {
-            var slice = new byte[size];
-            Buffer.BlockCopy(m_workbookBytes, offset, slice, 0, size);
-            return slice;
+            m_pending.RemoveRange(0, count);
+            return result;
         }
     }
 }

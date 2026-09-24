@@ -60,7 +60,7 @@ namespace Exceltk.Reader.Binary {
             set;
         }
 
-        public XlsBiffRecord Delta {
+        public BinaryPackage Delta {
             get;
             set;
         }
@@ -73,7 +73,7 @@ namespace Exceltk.Reader.Binary {
             set;
         }
 
-        public XlsBiffRecord Window {
+        public BinaryPackage Window {
             get;
             set;
         }

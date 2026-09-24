@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Xml;
 using System.Text;
+using Exceltk.Reader.Package;
 using Exceltk.Reader.Parser;
 using Exceltk.Reader.Xml;
 
@@ -30,7 +31,7 @@ namespace Exceltk.Reader {
         private XlsxWorkbook m_workbook;
         private XmlReader m_xmlReader;
         private ZipWorker m_zipWorker;
-        private IEnumerator<XmlRowPackage> m_rowPackages;
+        private XmlPackageParser m_sheetParser;
 
         #endregion
 
@@ -87,10 +88,7 @@ namespace Exceltk.Reader {
                 m_sheetStream = null;
             }
 
-            if (m_rowPackages != null) {
-                m_rowPackages.Dispose();
-                m_rowPackages = null;
-            }
+            m_sheetParser = null;
 
             if (m_zipWorker != null) {
                 if (m_ownsZipWorker) {
@@ -160,41 +158,51 @@ namespace Exceltk.Reader {
                 return;
             }
 
-            //count rows and cols in case there is no dimension elements
+            // Prefer XmlDimensionPackage via PackageParser; fall back to counting rows/cells.
             m_namespaceUri = null;
             int rows = 0;
             int cols = 0;
             int biggestColumn = 0;
 
-            while (m_xmlReader.Read()) {
-                if (m_xmlReader.NodeType == XmlNodeType.Element && m_xmlReader.LocalName == XlsxWorksheet.N_worksheet) {
-                    //grab the namespaceuri from the worksheet element
-                    m_namespaceUri = m_xmlReader.NamespaceURI;
-                }
+            var globalsParser = new XmlPackageParser(m_xmlReader);
+            bool sawDimension = false;
+            while (globalsParser.TryFrameOne() || globalsParser.HavePackage) {
+                while (globalsParser.HavePackage) {
+                    XmlPackage package = globalsParser.PopPackage();
+                    if (globalsParser.NamespaceUri != null) {
+                        m_namespaceUri = globalsParser.NamespaceUri;
+                    }
 
-                if (m_xmlReader.NodeType == XmlNodeType.Element && m_xmlReader.LocalName == XlsxWorksheet.N_dimension) {
-                    string dimValue = m_xmlReader.GetAttribute(XlsxWorksheet.A_ref);
-                    sheet.Dimension = new XlsxDimension(dimValue);
-                    break;
-                }
+                    var dim = package as XmlDimensionPackage;
+                    if (dim != null) {
+                        if (!string.IsNullOrEmpty(dim.Ref)) {
+                            sheet.Dimension = new XlsxDimension(dim.Ref);
+                        }
+                        sawDimension = true;
+                        break;
+                    }
 
-                if (m_xmlReader.NodeType == XmlNodeType.Element && m_xmlReader.LocalName == XlsxWorksheet.N_row) {
-                    rows++;
-                }
-
-                // check cells so we can find size of sheet if can't work it out from dimension or 
-                // col elements (dimension should have been set before the cells if it was available)
-                // ditto for cols
-                if (sheet.Dimension == null && cols == 0 && m_xmlReader.NodeType == XmlNodeType.Element && m_xmlReader.LocalName == XlsxWorksheet.N_c) {
-                    string refAttribute = m_xmlReader.GetAttribute(XlsxWorksheet.A_r);
-
-                    if (refAttribute != null) {
-                        int[] thisRef = refAttribute.ReferenceToColumnAndRow();
-                        if (thisRef[1] > biggestColumn) {
-                            biggestColumn = thisRef[1];
+                    var row = package as XmlRowPackage;
+                    if (row != null) {
+                        rows++;
+                        foreach (XmlCellPackage cell in row.Cells) {
+                            if (string.IsNullOrEmpty(cell.Reference)) {
+                                continue;
+                            }
+                            int[] thisRef = cell.Reference.ReferenceToColumnAndRow();
+                            if (thisRef[1] > biggestColumn) {
+                                biggestColumn = thisRef[1];
+                            }
                         }
                     }
                 }
+                if (sawDimension) {
+                    break;
+                }
+            }
+
+            if (m_namespaceUri == null && globalsParser.NamespaceUri != null) {
+                m_namespaceUri = globalsParser.NamespaceUri;
             }
 
             // if we didn't get a dimension element then use the calculated rows/cols to create it
@@ -221,16 +229,13 @@ namespace Exceltk.Reader {
             Debug.Assert(m_namespaceUri!=null);
             m_xmlReader.ReadToFollowing(XlsxWorksheet.N_sheetData, m_namespaceUri);
             if (m_xmlReader.IsEmptyElement) {
-                sheet.IsEmpty=true;
-                m_rowPackages = null;
+                sheet.IsEmpty = true;
+                m_sheetParser = null;
             } else {
-                // Stream rows as XmlRowPackage entities via XmlPackageParser.
-                if (m_rowPackages != null) {
-                    m_rowPackages.Dispose();
-                }
-                var parser = new XmlPackageParser(m_xmlReader, m_namespaceUri);
-                m_rowPackages = parser.ParseRows().GetEnumerator();
-            }                
+                // Frame sheetData via XmlPackageParser; rows consumed with PopPackage.
+                m_sheetParser = new XmlPackageParser(m_xmlReader, m_namespaceUri);
+                m_sheetParser.BeginSheetDataRows();
+            }
         }
 
         private bool ResetSheetReader(XlsxWorksheet sheet) {
@@ -330,11 +335,11 @@ namespace Exceltk.Reader {
                 return true;
             }
 
-            if (m_rowPackages == null || !m_rowPackages.MoveNext()) {
+            XmlRowPackage rowPackage = PopNextRowPackage();
+            if (rowPackage == null) {
                 return false;
             }
 
-            XmlRowPackage rowPackage = m_rowPackages.Current;
             m_cellsValues = new object[sheet.ColumnsCount];
 
             Debug.Assert(rowPackage.RowIndexAttribute != null);
@@ -355,6 +360,31 @@ namespace Exceltk.Reader {
             m_depth++;
 
             return true;
+        }
+
+        /// <summary>
+        /// Pump the sheet parser until the next <see cref="XmlRowPackage"/> or EOF / sheetData end.
+        /// </summary>
+        private XmlRowPackage PopNextRowPackage() {
+            if (m_sheetParser == null) {
+                return null;
+            }
+
+            while (true) {
+                if (!m_sheetParser.HavePackage) {
+                    if (!m_sheetParser.TryFrameOne()) {
+                        return null;
+                    }
+                }
+
+                while (m_sheetParser.HavePackage) {
+                    XmlPackage package = m_sheetParser.PopPackage();
+                    var row = package as XmlRowPackage;
+                    if (row != null) {
+                        return row;
+                    }
+                }
+            }
         }
 
         private void ApplyCellPackage(XlsxWorksheet sheet, XmlCellPackage cellPackage) {
@@ -425,39 +455,56 @@ namespace Exceltk.Reader {
             }
 
             var parser = new XmlPackageParser(m_xmlReader, m_namespaceUri);
-            foreach (XmlMergePackage mergePackage in parser.ParseMerges()) {
-                string aref = mergePackage.Ref;
-                if (string.IsNullOrEmpty(aref)) {
-                    continue;
-                }
+            if (!parser.SeekToElement(XlsxWorksheet.N_mergeCells)) {
+                return false;
+            }
 
-                string[] parts = aref.Split(':');
-                int c1, r1, c2, r2;
-                XlsxDimension.XlsxDim(parts[0], out c1, out r1);
-                if (parts.Length > 1) {
-                    XlsxDimension.XlsxDim(parts[1], out c2, out r2);
-                } else {
-                    c2 = c1;
-                    r2 = r1;
+            while (true) {
+                if (!parser.HavePackage) {
+                    if (!parser.TryFrameOne()) {
+                        break;
+                    }
                 }
+                while (parser.HavePackage) {
+                    XmlPackage package = parser.PopPackage();
+                    var mergePackage = package as XmlMergePackage;
+                    if (mergePackage == null) {
+                        continue;
+                    }
 
-                c1--; r1--; c2--; r2--;
-                if (c1 < 0 || r1 < 0) {
-                    continue;
+                    string aref = mergePackage.Ref;
+                    if (string.IsNullOrEmpty(aref)) {
+                        continue;
+                    }
+
+                    string[] parts = aref.Split(':');
+                    int c1, r1, c2, r2;
+                    XlsxDimension.XlsxDim(parts[0], out c1, out r1);
+                    if (parts.Length > 1) {
+                        XlsxDimension.XlsxDim(parts[1], out c2, out r2);
+                    } else {
+                        c2 = c1;
+                        r2 = r1;
+                    }
+
+                    c1--; r1--; c2--; r2--;
+                    if (c1 < 0 || r1 < 0) {
+                        continue;
+                    }
+
+                    int rowSpan = r2 - r1 + 1;
+                    int colSpan = c2 - c1 + 1;
+                    if (rowSpan < 1 || colSpan < 1) {
+                        continue;
+                    }
+
+                    table.Merges.Add(new CellMerge {
+                        Row = r1,
+                        Col = c1,
+                        RowSpan = rowSpan,
+                        ColSpan = colSpan
+                    });
                 }
-
-                int rowSpan = r2 - r1 + 1;
-                int colSpan = c2 - c1 + 1;
-                if (rowSpan < 1 || colSpan < 1) {
-                    continue;
-                }
-
-                table.Merges.Add(new CellMerge {
-                    Row = r1,
-                    Col = c1,
-                    RowSpan = rowSpan,
-                    ColSpan = colSpan
-                });
             }
 
             return table.Merges.Count > 0;
@@ -490,47 +537,68 @@ namespace Exceltk.Reader {
             }
 
             var parser = new XmlPackageParser(m_xmlReader, m_namespaceUri);
+            if (!parser.SeekToElement(XlsxWorksheet.N_hyperlinks)) {
+                m_xmlReader.Close();
+                if (m_sheetStream != null) {
+                    m_sheetStream.Close();
+                }
+                return false;
+            }
+
             bool any = false;
-            foreach (XmlHyperlinkPackage linkPackage in parser.ParseHyperlinks()) {
-                any = true;
-                string aref = linkPackage.Ref;
-                string display = linkPackage.Display;
-                string rid = linkPackage.RelationshipId;
-                string location = linkPackage.Location;
-                string hyperlink = display;
-
-                if (!string.IsNullOrEmpty(rid) && hyperDict.ContainsKey(rid)) {
-                    hyperlink = hyperDict[rid];
-                }
-
-                if (string.IsNullOrEmpty(aref)) {
-                    continue;
-                }
-
-                var dim = new XlsxDimension(aref);
-                int c1 = dim.FirstCol - 1;
-                int r1 = dim.FirstRow - 1;
-                int c2 = dim.LastCol - 1;
-                int r2 = dim.LastRow - 1;
-                if (c1 < 0 || r1 < 0) {
-                    continue;
-                }
-
-                for (int row = r1; row <= r2; row++) {
-                    if (row >= table.Rows.Count) {
+            while (true) {
+                if (!parser.HavePackage) {
+                    if (!parser.TryFrameOne()) {
                         break;
                     }
-                    for (int col = c1; col <= c2; col++) {
-                        if (col >= table.Rows[row].Count) {
+                }
+                while (parser.HavePackage) {
+                    XmlPackage package = parser.PopPackage();
+                    var linkPackage = package as XmlHyperlinkPackage;
+                    if (linkPackage == null) {
+                        continue;
+                    }
+
+                    any = true;
+                    string aref = linkPackage.Ref;
+                    string display = linkPackage.Display;
+                    string rid = linkPackage.RelationshipId;
+                    string location = linkPackage.Location;
+                    string hyperlink = display;
+
+                    if (!string.IsNullOrEmpty(rid) && hyperDict.ContainsKey(rid)) {
+                        hyperlink = hyperDict[rid];
+                    }
+
+                    if (string.IsNullOrEmpty(aref)) {
+                        continue;
+                    }
+
+                    var dim = new XlsxDimension(aref);
+                    int c1 = dim.FirstCol - 1;
+                    int r1 = dim.FirstRow - 1;
+                    int c2 = dim.LastCol - 1;
+                    int r2 = dim.LastRow - 1;
+                    if (c1 < 0 || r1 < 0) {
+                        continue;
+                    }
+
+                    for (int row = r1; row <= r2; row++) {
+                        if (row >= table.Rows.Count) {
                             break;
                         }
-                        object value = table.Rows[row][col];
-                        var cell = value as XlsCell;
-                        if (cell == null) {
-                            cell = new XlsCell(value);
+                        for (int col = c1; col <= c2; col++) {
+                            if (col >= table.Rows[row].Count) {
+                                break;
+                            }
+                            object value = table.Rows[row][col];
+                            var cell = value as XlsCell;
+                            if (cell == null) {
+                                cell = new XlsCell(value);
+                            }
+                            cell.SetHyperLink(hyperlink, location);
+                            table.Rows[row][col] = cell;
                         }
-                        cell.SetHyperLink(hyperlink, location);
-                        table.Rows[row][col] = cell;
                     }
                 }
             }
@@ -711,7 +779,7 @@ namespace Exceltk.Reader {
                 }
 
                 m_zipWorker = null;
-                m_rowPackages = null;
+                m_sheetParser = null;
                 m_xmlReader = null;
                 m_sheetStream = null;
 

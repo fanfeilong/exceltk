@@ -1,205 +1,272 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Xml;
 using Exceltk.Reader.Package;
 using Exceltk.Reader.Xml;
 
 namespace Exceltk.Reader.Parser {
     /// <summary>
-    /// Streams <see cref="XmlPackage"/> entities from worksheet XML.
-    /// Emits a package when a local fragment is complete (row / merge / hyperlink / …)
-    /// so a renderer can progress without waiting for the rest of the sheet.
+    /// SpreadsheetML element framer (XUdt-style).
+    /// Recognizes Office elements (<c>dimension</c>/<c>row</c>/<c>c</c>/<c>mergeCell</c>/<c>hyperlink</c>),
+    /// creates empty packages, calls <see cref="XmlPackage.Decode"/>, and queues them.
+    /// Container elements (<c>worksheet</c>/<c>sheetData</c>/…) are parser state only — not packages.
     /// </summary>
     internal sealed class XmlPackageParser : IPackageParser<XmlPackage> {
-        private readonly XmlReader m_reader;
-        private readonly string m_namespaceUri;
+        private readonly Queue<XmlPackage> m_queue = new Queue<XmlPackage>();
+        private readonly MemoryStream m_pushBuffer = new MemoryStream();
 
+        private XmlReader m_reader;
+        private string m_namespaceUri;
+        private bool m_ownsReader;
+        private bool m_eof;
+        private string m_stopAtEndElement;
+        private bool m_inSheetData;
+        private bool m_pushMode;
+
+        /// <summary>
+        /// Frame from an existing <see cref="XmlReader"/> (file or network stream).
+        /// Call <see cref="Pump"/> / <see cref="TryFrameOne"/> to fill the package queue.
+        /// </summary>
         public XmlPackageParser(XmlReader reader, string namespaceUri = null) {
+            if (reader == null) {
+                throw new ArgumentNullException("reader");
+            }
             m_reader = reader;
             m_namespaceUri = namespaceUri;
-        }
+            m_ownsReader = false;
+            m_pushMode = false;
 
-        /// <summary>
-        /// Walk the worksheet document, yielding dimension / row / sheetData-end packages.
-        /// Caller should position at the start of the worksheet document.
-        /// </summary>
-        public IEnumerable<XmlPackage> Parse() {
-            while (m_reader.Read()) {
-                if (m_reader.NodeType != XmlNodeType.Element) {
-                    continue;
-                }
-
-                if (m_reader.LocalName == XlsxWorksheet.N_worksheet) {
-                    yield return new XmlWorksheetStartPackage {
-                        NamespaceUri = m_reader.NamespaceURI
-                    };
-                } else if (m_reader.LocalName == XlsxWorksheet.N_dimension) {
-                    yield return new XmlDimensionPackage {
-                        Ref = m_reader.GetAttribute(XlsxWorksheet.A_ref)
-                    };
-                } else if (m_reader.LocalName == XlsxWorksheet.N_sheetData) {
-                    if (m_reader.IsEmptyElement) {
-                        yield return new XmlSheetDataEndPackage();
-                        continue;
-                    }
-                    foreach (XmlPackage rowPackage in ParseRows()) {
-                        yield return rowPackage;
-                    }
-                    yield return new XmlSheetDataEndPackage();
-                } else if (m_reader.LocalName == XlsxWorksheet.N_mergeCells) {
-                    foreach (XmlMergePackage merge in ParseMergesFromCurrent()) {
-                        yield return merge;
-                    }
-                } else if (m_reader.LocalName == XlsxWorksheet.N_hyperlinks) {
-                    foreach (XmlHyperlinkPackage link in ParseHyperlinksFromCurrent()) {
-                        yield return link;
-                    }
-                }
+            if (m_reader.NodeType == XmlNodeType.Element &&
+                m_reader.LocalName == XlsxWorksheet.N_sheetData) {
+                m_inSheetData = !m_reader.IsEmptyElement;
             }
         }
 
         /// <summary>
-        /// Stream row packages from the current sheetData element (or subsequent rows).
+        /// PushData-first mode: accumulate UTF-8 worksheet bytes, then frame via an internal reader.
         /// </summary>
-        public IEnumerable<XmlRowPackage> ParseRows() {
-            bool first = true;
-            while (true) {
-                bool isRow;
-                if (first && m_reader.NodeType == XmlNodeType.Element &&
-                    m_reader.LocalName == XlsxWorksheet.N_sheetData) {
-                    if (m_namespaceUri != null) {
-                        isRow = m_reader.ReadToFollowing(XlsxWorksheet.N_row, m_namespaceUri);
-                    } else {
-                        isRow = m_reader.ReadToFollowing(XlsxWorksheet.N_row);
-                    }
-                    first = false;
+        public XmlPackageParser(string namespaceUri = null) {
+            m_namespaceUri = namespaceUri;
+            m_pushMode = true;
+            m_ownsReader = true;
+        }
+
+        /// <summary>Namespace URI captured from the <c>worksheet</c> element (parser state, not a package).</summary>
+        public string NamespaceUri {
+            get {
+                return m_namespaceUri;
+            }
+        }
+
+        public bool HavePackage {
+            get {
+                return m_queue.Count > 0;
+            }
+        }
+
+        public bool HaveUnParsedData {
+            get {
+                if (m_pushMode && m_pushBuffer.Length > 0 && m_reader == null) {
+                    return true;
+                }
+                return !m_eof && m_reader != null;
+            }
+        }
+
+        public bool IsEof {
+            get {
+                return m_eof;
+            }
+        }
+
+        public void Reset() {
+            m_queue.Clear();
+            m_eof = false;
+            m_stopAtEndElement = null;
+            m_inSheetData = false;
+            if (m_ownsReader && m_reader != null) {
+                m_reader.Close();
+                m_reader = null;
+            }
+            m_pushBuffer.SetLength(0);
+            m_pushBuffer.Position = 0;
+        }
+
+        public XmlPackage PopPackage() {
+            return m_queue.Dequeue();
+        }
+
+        /// <summary>
+        /// Feed UTF-8 SpreadsheetML bytes (push mode). In XmlReader mode, bytes are ignored
+        /// because the reader already owns the input stream (e.g. NetworkStream).
+        /// </summary>
+        public void PushData(byte[] data, int offset, int count) {
+            if (data == null) {
+                throw new ArgumentNullException("data");
+            }
+            if (offset < 0 || count < 0 || offset + count > data.Length) {
+                throw new ArgumentOutOfRangeException("count");
+            }
+            if (!m_pushMode) {
+                return;
+            }
+            if (m_reader != null) {
+                throw new InvalidOperationException("PushData after framing started; Reset first.");
+            }
+            m_pushBuffer.Write(data, offset, count);
+        }
+
+        /// <summary>
+        /// Finish the push buffer and open an XmlReader over the accumulated worksheet XML.
+        /// </summary>
+        public void CompletePush() {
+            if (!m_pushMode) {
+                return;
+            }
+            EnsurePushReader();
+        }
+
+        /// <summary>
+        /// Enter <c>sheetData</c> row framing: stop when <c>&lt;/sheetData&gt;</c> is reached.
+        /// Caller should position on the non-empty <c>sheetData</c> start element.
+        /// </summary>
+        public void BeginSheetDataRows() {
+            m_stopAtEndElement = XlsxWorksheet.N_sheetData;
+            if (m_reader != null &&
+                m_reader.NodeType == XmlNodeType.Element &&
+                m_reader.LocalName == XlsxWorksheet.N_sheetData) {
+                if (m_reader.IsEmptyElement) {
+                    m_eof = true;
+                    m_inSheetData = false;
+                    return;
+                }
+                m_inSheetData = true;
+            }
+        }
+
+        /// <summary>
+        /// Advance to a container element (<c>mergeCells</c> / <c>hyperlinks</c> / …).
+        /// Returns false if missing or empty. Framing stops at the matching end element.
+        /// </summary>
+        public bool SeekToElement(string localName) {
+            if (m_reader == null) {
+                return false;
+            }
+
+            bool found = m_reader.NodeType == XmlNodeType.Element && m_reader.LocalName == localName;
+            if (!found) {
+                if (m_namespaceUri != null) {
+                    found = m_reader.ReadToFollowing(localName, m_namespaceUri);
                 } else {
-                    if (m_reader.LocalName == XlsxWorksheet.N_row && m_reader.NodeType == XmlNodeType.EndElement) {
-                        m_reader.Read();
-                    }
-                    isRow = (m_reader.NodeType == XmlNodeType.Element && m_reader.LocalName == XlsxWorksheet.N_row);
-                    first = false;
+                    found = m_reader.ReadToFollowing(localName);
                 }
-
-                if (!isRow) {
-                    yield break;
-                }
-
-                yield return ReadCurrentRow();
             }
-        }
 
-        public IEnumerable<XmlMergePackage> ParseMerges() {
-            if (!m_reader.ReadToFollowing(XlsxWorksheet.N_mergeCells)) {
-                yield break;
+            if (!found) {
+                return false;
             }
-            foreach (XmlMergePackage merge in ParseMergesFromCurrent()) {
-                yield return merge;
-            }
-        }
-
-        public IEnumerable<XmlHyperlinkPackage> ParseHyperlinks() {
-            if (!m_reader.ReadToFollowing(XlsxWorksheet.N_hyperlinks)) {
-                yield break;
-            }
-            foreach (XmlHyperlinkPackage link in ParseHyperlinksFromCurrent()) {
-                yield return link;
-            }
-        }
-
-        private IEnumerable<XmlMergePackage> ParseMergesFromCurrent() {
             if (m_reader.IsEmptyElement) {
-                yield break;
+                return false;
             }
 
-            while (m_reader.Read()) {
-                if (m_reader.NodeType != XmlNodeType.Element) {
-                    if (m_reader.NodeType == XmlNodeType.EndElement &&
-                        m_reader.LocalName == XlsxWorksheet.N_mergeCells) {
-                        yield break;
-                    }
-                    continue;
-                }
-                if (m_reader.LocalName != XlsxWorksheet.N_mergeCell) {
-                    yield break;
-                }
-                yield return new XmlMergePackage {
-                    Ref = m_reader.GetAttribute(XlsxWorksheet.A_ref)
-                };
-            }
+            m_stopAtEndElement = localName;
+            m_eof = false;
+            return true;
         }
 
-        private IEnumerable<XmlHyperlinkPackage> ParseHyperlinksFromCurrent() {
-            if (m_reader.IsEmptyElement) {
-                yield break;
-            }
-
-            while (m_reader.Read()) {
-                if (m_reader.NodeType != XmlNodeType.Element) {
-                    yield break;
-                }
-                if (m_reader.LocalName != XlsxWorksheet.N_hyperlink) {
-                    yield break;
-                }
-                yield return new XmlHyperlinkPackage {
-                    Ref = m_reader.GetAttribute(XlsxWorksheet.A_ref),
-                    Display = m_reader.GetAttribute(XlsxWorksheet.A_display),
-                    RelationshipId = m_reader.GetAttribute(XlsxWorksheet.A_rid),
-                    Location = m_reader.GetAttribute("location")
-                };
-            }
-        }
-
-        private XmlRowPackage ReadCurrentRow() {
-            var row = new XmlRowPackage {
-                RowIndexAttribute = m_reader.GetAttribute(XlsxWorksheet.A_r)
-            };
-
-            string a_s = string.Empty;
-            string a_t = string.Empty;
-            string a_r = string.Empty;
-            string formula = null;
-            bool hasValue = false;
-            bool hasFormula = false;
-
-            while (m_reader.Read()) {
-                if (m_reader.Depth == 2) {
+        /// <summary>
+        /// Frame until at least one package is queued, or input is exhausted.
+        /// </summary>
+        public bool Pump() {
+            EnsurePushReader();
+            while (!HavePackage && !m_eof) {
+                if (!TryFrameOne()) {
                     break;
                 }
+            }
+            return HavePackage;
+        }
 
-                if (m_reader.NodeType == XmlNodeType.Element) {
-                    hasValue = false;
-                    if (m_reader.LocalName == XlsxWorksheet.N_c) {
-                        a_s = m_reader.GetAttribute(XlsxWorksheet.A_s);
-                        a_t = m_reader.GetAttribute(XlsxWorksheet.A_t);
-                        a_r = m_reader.GetAttribute(XlsxWorksheet.A_r);
-                        formula = null;
-                    } else if (m_reader.LocalName == XlsxWorksheet.N_f) {
-                        hasFormula = true;
-                    } else if (m_reader.LocalName == XlsxWorksheet.N_v || m_reader.LocalName == XlsxWorksheet.N_t) {
-                        hasValue = true;
-                        hasFormula = false;
-                    }
-                }
-
-                if (m_reader.NodeType == XmlNodeType.Text && hasFormula) {
-                    formula = m_reader.Value;
-                    hasFormula = false;
-                }
-
-                if (m_reader.NodeType == XmlNodeType.Text && hasValue) {
-                    row.Cells.Add(new XmlCellPackage {
-                        Reference = a_r,
-                        StyleId = a_s,
-                        CellType = a_t,
-                        Formula = formula,
-                        ValueText = m_reader.Value
-                    });
-                    formula = null;
-                    hasValue = false;
-                }
+        /// <summary>
+        /// Advance the reader until one Office element is decoded and queued, or EOF / region end.
+        /// </summary>
+        public bool TryFrameOne() {
+            EnsurePushReader();
+            if (m_reader == null || m_eof) {
+                return false;
             }
 
-            return row;
+            while (m_reader.Read()) {
+                if (m_reader.NodeType == XmlNodeType.EndElement) {
+                    if (m_reader.LocalName == XlsxWorksheet.N_sheetData) {
+                        m_inSheetData = false;
+                    }
+                    if (m_stopAtEndElement != null && m_reader.LocalName == m_stopAtEndElement) {
+                        m_eof = true;
+                        return false;
+                    }
+                    continue;
+                }
+
+                if (m_reader.NodeType != XmlNodeType.Element) {
+                    continue;
+                }
+
+                string localName = m_reader.LocalName;
+
+                if (localName == XlsxWorksheet.N_worksheet) {
+                    if (m_namespaceUri == null) {
+                        m_namespaceUri = m_reader.NamespaceURI;
+                    }
+                    continue;
+                }
+
+                if (localName == XlsxWorksheet.N_sheetData) {
+                    m_inSheetData = !m_reader.IsEmptyElement;
+                    if (!m_inSheetData && m_stopAtEndElement == XlsxWorksheet.N_sheetData) {
+                        m_eof = true;
+                        return false;
+                    }
+                    continue;
+                }
+
+                // Container wrappers — not packages.
+                if (localName == XlsxWorksheet.N_mergeCells ||
+                    localName == XlsxWorksheet.N_hyperlinks) {
+                    continue;
+                }
+
+                XmlPackage package = XmlPackage.CreateEmpty(localName);
+                if (package == null) {
+                    continue;
+                }
+
+                package.Decode(m_reader);
+                m_queue.Enqueue(package);
+                return true;
+            }
+
+            m_eof = true;
+            return false;
+        }
+
+        private void EnsurePushReader() {
+            if (!m_pushMode || m_reader != null) {
+                return;
+            }
+            if (m_pushBuffer.Length == 0) {
+                return;
+            }
+            m_pushBuffer.Position = 0;
+            var settings = new XmlReaderSettings {
+                CloseInput = false,
+                IgnoreComments = true,
+                IgnoreWhitespace = false,
+                ConformanceLevel = ConformanceLevel.Document
+            };
+            m_reader = XmlReader.Create(m_pushBuffer, settings);
+            m_eof = false;
         }
     }
 }

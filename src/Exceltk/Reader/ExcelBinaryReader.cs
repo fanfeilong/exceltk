@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Exceltk.Reader.Binary;
-using Exceltk.Reader.Package;
 using Exceltk.Reader.Parser;
 
 namespace Exceltk.Reader {
@@ -51,7 +50,7 @@ namespace Exceltk.Reader {
         private int m_maxRow;
         private bool m_noIndex;
         private List<XlsWorksheet> m_sheets;
-        private BinaryPackageParser m_stream;
+        private BiffWorkbookCursor m_stream;
         private ushort m_version;
         private DataSet m_workbookData;
 
@@ -95,16 +94,26 @@ namespace Exceltk.Reader {
         }
 
         /// <summary>
-        /// Rewind the workbook BIFF cursor and stream record packages
-        /// (for progressive consumers / TCP demos).
+        /// Feed the assembled workbook BIFF bytes into a <see cref="BinaryPackageParser"/>
+        /// and yield decoded record packages (for progressive consumers / TCP demos).
         /// </summary>
-        internal System.Collections.Generic.IEnumerable<Exceltk.Reader.Package.BinaryPackage> StreamPackages() {
+        internal IEnumerable<BinaryPackage> StreamPackages() {
             if (m_stream == null) {
                 yield break;
             }
-            m_stream.Seek(0, SeekOrigin.Begin);
-            foreach (var package in m_stream.Parse()) {
-                yield return package;
+
+            var parser = new BinaryPackageParser(this);
+            byte[] bytes = m_stream.Bytes;
+            parser.PushData(bytes, 0, bytes.Length);
+            while (parser.HavePackage) {
+                yield return parser.PopPackage();
+            }
+        }
+
+        /// <summary>Assembled workbook BIFF stream bytes (after OLE sector assembly).</summary>
+        internal byte[] WorkbookBytes {
+            get {
+                return m_stream == null ? null : m_stream.Bytes;
             }
         }
 
@@ -168,7 +177,7 @@ namespace Exceltk.Reader {
 
         private int findFirstDataCellOffset(int startOffset) {
             //seek to the first dbcell record
-            XlsBiffRecord record=m_stream.ReadAt(startOffset);
+            BinaryPackage record=m_stream.ReadAt(startOffset);
             while (!(record is XlsBiffDbCell)) {
                 if (m_stream.Position >= m_stream.Size) {
                     return -1;
@@ -223,16 +232,19 @@ namespace Exceltk.Reader {
                 return;
             }
 
-            m_stream=new BinaryPackageParser(m_hdr,
+            // OLE compound storage assembles the workbook stream; BIFF framing is separate.
+            var oleStream = new XlsStream(m_hdr,
                 workbookEntry.StreamFirstSector,
                 workbookEntry.IsEntryMiniStream,
-                dir,this);
+                dir);
+            byte[] workbookBytes = oleStream.ReadStream();
+            m_stream = new BiffWorkbookCursor(workbookBytes, this);
 
             m_globals=new XlsWorkbookGlobals();
 
             m_stream.Seek(0, SeekOrigin.Begin);
 
-            XlsBiffRecord rec=m_stream.Read();
+            BinaryPackage rec=m_stream.Read();
             var bof=rec as XlsBiffBOF;
 
             if (bof==null||bof.Type!=BIFFTYPE.WorkbookGlobals) {
@@ -345,7 +357,7 @@ namespace Exceltk.Reader {
             }
 
             // Read Index
-            XlsBiffRecord rec=m_stream.Read();
+            BinaryPackage rec=m_stream.Read();
             if (rec==null)
                 return false;
             if (rec is XlsBiffIndex) {
@@ -360,7 +372,7 @@ namespace Exceltk.Reader {
             }
 
             // Read Demension
-            XlsBiffRecord trec;
+            BinaryPackage trec;
             XlsBiffDimensions dims=null;
 
             do {
@@ -381,7 +393,7 @@ namespace Exceltk.Reader {
             while (rowRecord==null) {
                 if (m_stream.Position>=m_stream.Size)
                     break;
-                XlsBiffRecord thisRec=m_stream.Read();
+                BinaryPackage thisRec=m_stream.Read();
 
                 if (thisRec is XlsBiffEOF)
                     break;
@@ -420,7 +432,7 @@ namespace Exceltk.Reader {
             while (true) {
                 if (m_stream.Position>=m_stream.Size)
                     break;
-                XlsBiffRecord thisRecord=m_stream.Read();
+                BinaryPackage thisRecord=m_stream.Read();
 
                 if (thisRecord is XlsBiffEOF) {
                     break;
@@ -441,7 +453,7 @@ namespace Exceltk.Reader {
         }
 
         private void DumpBiffRecords() {
-            XlsBiffRecord rec=null;
+            BinaryPackage rec=null;
             int startPos=m_stream.Position;
 
             do {
@@ -455,7 +467,7 @@ namespace Exceltk.Reader {
             m_cellsValues=new XlsCell[m_maxCol];
 
             while (m_cellOffset<m_stream.Size) {
-                XlsBiffRecord rec=m_stream.ReadAt(m_cellOffset);
+                BinaryPackage rec=m_stream.ReadAt(m_cellOffset);
 
                 m_cellOffset+=rec.Size;
 
@@ -709,7 +721,7 @@ namespace Exceltk.Reader {
                         return false;
                     }
 
-                    XlsBiffRecord record=m_stream.Read();
+                    BinaryPackage record=m_stream.Read();
                     if (record is XlsBiffEOF) {
                         return false;
                     }
@@ -727,7 +739,7 @@ namespace Exceltk.Reader {
                     return false;
                 }
 
-                XlsBiffRecord record=m_stream.Read();
+                BinaryPackage record=m_stream.Read();
                 if (record is XlsBiffEOF) {
                     return false;
                 }
@@ -808,7 +820,7 @@ namespace Exceltk.Reader {
         private object tryConvertOADateTime(double value, ushort XFormat) {
             ushort format = 0;
             if (XFormat < m_globals.ExtendedFormats.Count) {
-                XlsBiffRecord rec = m_globals.ExtendedFormats[XFormat];
+                BinaryPackage rec = m_globals.ExtendedFormats[XFormat];
                 switch (rec.ID) {
                     case BIFFRECORDTYPE.XF_V2:
                         format = (ushort)(rec.ReadByte(2) & 0x3F);
