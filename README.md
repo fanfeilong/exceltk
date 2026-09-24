@@ -50,14 +50,29 @@ Table SHOULD be edited by advanced GUI applications, BUT converted to any other 
   - If you still need 0.0.9, look for an archived asset on [Releases](https://github.com/fanfeilong/exceltk/releases) (do not rely on README version matrices)
 
 # Convert Excel to Json 
-  chagne the `-t` option to `json`
+  change the `-t` option to `json`
   - `exceltk.exe -t json -xls example.xls `
+  - JSON is emitted as an ExcelTk `TableDocument` (`marker=EXCELTK1`) so it can be imported back
 
 # Convert Excel to TeX
   change the `-t` option to `tex`
   - `exceltk.exe -t tex -xls example.xls`
   - using `-st n` option to split table into multitable
   - using `-sn` option to adjust number, for example, `1234656` will be split into `1 2 3 4 5 6`, it the table width is too large, this is useful
+
+# Format plugins (export / import)
+  Output formats are plugins (`md`, `json`, `tex`, `img`). Each plugin can **export** Excel/CSV and **import** back to `.xlsx`.
+
+  - Export: `exceltk -t <plugin> -xls file.xlsx [-sheet name] [-out prefix]`
+  - Import: `exceltk -t <plugin> -import file.ext [-out out.xlsx]`
+
+  Precise payloads use marker `EXCELTK1` (Markdown HTML comment, TeX `%` comment, JSON field, or PNG private chunk `tkXl`).
+
+# Marked image plugin (`-t img`)
+  - Export renders a PNG preview and embeds the table payload in a private PNG chunk
+  - Import only accepts ExcelTk-marked PNGs; unmarked images are rejected
+  - `exceltk -t img -xls example.xlsx`
+  - `exceltk -t img -import exampleSheet1.png -out restored.xlsx`
 
 # Download
 
@@ -104,6 +119,8 @@ Optional: if `dotnet restore` feels slow because of publish RIDs, you can tempor
 CI: GitHub Actions (`.github/workflows/ci.yml`) builds on .NET 10 and runs `src/test.sh`.
 
 Architecture note: binary/OpenXML reading is organized as **streaming packages** (emit a complete local format unit as soon as it is recognized) so a renderer can progress while data is still arriving — see [`docs/streaming-packages.md`](docs/streaming-packages.md).
+
+Output formats are **plugins** with export/import — see [`docs/format-plugins.md`](docs/format-plugins.md).
 
 ## Build on MacOS
 ```bash
