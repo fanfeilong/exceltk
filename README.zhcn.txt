@@ -87,11 +87,24 @@ exceltk -t md -a r -xls example.xlsx
 
 # 转换到Json 
   - `exceltk.exe -t json -xls example.xls `
+  - JSON 使用带 `EXCELTK1` 标记的 TableDocument，可再导入为 xlsx
 
 # 转换到TeX
   - `exceltk.exe -t tex -xls example.xls`
   - 使用 `-st n` 拆分表格
   - 使用 `-sn` 把数字拆分，例如`1234656` 会被拆成`1 2 3 4 5 6`, 如果表太大时有用
+
+# 格式插件（导出 / 导入）
+  输出格式已插件化：`md` / `json` / `tex` / `img`，均支持 **export** 与 **import**（导回 `.xlsx`）。
+
+  - 导出：`exceltk -t <plugin> -xls file.xlsx [-sheet name] [-out prefix]`
+  - 导入：`exceltk -t <plugin> -import file.ext [-out out.xlsx]`
+
+# 带标记的图片插件（`-t img`）
+  - 导出 PNG 预览，并在私有 chunk `tkXl` 中写入精确表格数据
+  - 导入只接受含 ExcelTk 标记的 PNG；无标记图片暂不支持
+  - `exceltk -t img -xls example.xlsx`
+  - `exceltk -t img -import exampleSheet1.png -out restored.xlsx`
 # 在 Linux 上构建与使用
 
 需要安装 [.NET 10 SDK](https://learn.microsoft.com/dotnet/core/install/linux)（LTS）。仓库根目录 `global.json` 会约束使用 .NET 10 SDK。
