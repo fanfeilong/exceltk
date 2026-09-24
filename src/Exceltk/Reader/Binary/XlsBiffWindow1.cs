@@ -4,7 +4,7 @@ namespace Exceltk.Reader.Binary {
     /// <summary>
     /// Represents Workbook's global window description
     /// </summary>
-    internal class XlsBiffWindow1 : XlsBiffRecord {
+    internal class XlsBiffWindow1 : BinaryPackage {
         #region Window1Flags enum
 
         [Flags]
@@ -21,17 +21,60 @@ namespace Exceltk.Reader.Binary {
 
         #endregion
 
+        private ushort m_left;
+        private ushort m_top;
+        private ushort m_width;
+        private ushort m_height;
+        private Window1Flags m_flags;
+        private ushort m_activeTab;
+        private ushort m_firstVisibleTab;
+        private ushort m_selectedTabCount;
+        private ushort m_tabRatio;
+
+        internal XlsBiffWindow1(ExcelBinaryReader reader)
+            : base(reader) {
+        }
+
         internal XlsBiffWindow1(byte[] bytes, uint offset, ExcelBinaryReader reader)
             : base(bytes, offset, reader) {
         }
 
+        protected override void DecodeBody(byte[] buffer, int offset, int length) {
+            m_left = ReadUInt16(0x0);
+            m_top = ReadUInt16(0x2);
+            m_width = ReadUInt16(0x4);
+            m_height = ReadUInt16(0x6);
+            m_flags = (Window1Flags)ReadUInt16(0x8);
+            m_activeTab = ReadUInt16(0xA);
+            m_firstVisibleTab = ReadUInt16(0xC);
+            m_selectedTabCount = ReadUInt16(0xE);
+            m_tabRatio = ReadUInt16(0x10);
+        }
+
+        protected override int GetRequiredEncodeBodyBufferLength() {
+            return 18;
+        }
+
+        protected override void EncodeBody(byte[] buffer, int offset, int capacity, out int written) {
+            if (capacity < 18) throw new System.ArgumentException(Errors.ErrorBIFFBufferSize);
+            WriteUInt16(buffer, offset + 0x0, m_left);
+            WriteUInt16(buffer, offset + 0x2, m_top);
+            WriteUInt16(buffer, offset + 0x4, m_width);
+            WriteUInt16(buffer, offset + 0x6, m_height);
+            WriteUInt16(buffer, offset + 0x8, (ushort)m_flags);
+            WriteUInt16(buffer, offset + 0xA, m_activeTab);
+            WriteUInt16(buffer, offset + 0xC, m_firstVisibleTab);
+            WriteUInt16(buffer, offset + 0xE, m_selectedTabCount);
+            WriteUInt16(buffer, offset + 0x10, m_tabRatio);
+            written = 18;
+        }
 
         /// <summary>
         /// Returns X position of a window
         /// </summary>
         public ushort Left {
             get {
-                return base.ReadUInt16(0x0);
+                return m_left;
             }
         }
 
@@ -40,7 +83,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public ushort Top {
             get {
-                return base.ReadUInt16(0x2);
+                return m_top;
             }
         }
 
@@ -49,7 +92,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public ushort Width {
             get {
-                return base.ReadUInt16(0x4);
+                return m_width;
             }
         }
 
@@ -58,7 +101,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public ushort Height {
             get {
-                return base.ReadUInt16(0x6);
+                return m_height;
             }
         }
 
@@ -67,7 +110,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public Window1Flags Flags {
             get {
-                return (Window1Flags)base.ReadUInt16(0x8);
+                return m_flags;
             }
         }
 
@@ -76,7 +119,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public ushort ActiveTab {
             get {
-                return base.ReadUInt16(0xA);
+                return m_activeTab;
             }
         }
 
@@ -85,7 +128,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public ushort FirstVisibleTab {
             get {
-                return base.ReadUInt16(0xC);
+                return m_firstVisibleTab;
             }
         }
 
@@ -94,7 +137,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public ushort SelectedTabCount {
             get {
-                return base.ReadUInt16(0xE);
+                return m_selectedTabCount;
             }
         }
 
@@ -103,7 +146,7 @@ namespace Exceltk.Reader.Binary {
         /// </summary>
         public ushort TabRatio {
             get {
-                return base.ReadUInt16(0x10);
+                return m_tabRatio;
             }
         }
     }

@@ -37,7 +37,8 @@ namespace Exceltk.Test {
         }
 
         /// <summary>
-        /// Server streams worksheet XML bytes; client XmlPackageParser emits row/dimension packages live.
+        /// Server streams worksheet XML bytes; client XmlPackageParser Pump/PopPackage
+        /// emits Office element packages (dimension/row/…) as each completes.
         /// </summary>
         private static bool RunXmlSheetDemo(string xlsxPath) {
             Console.WriteLine("-- XML sheet over TCP: {0}", Path.GetFileName(xlsxPath));
@@ -67,20 +68,27 @@ namespace Exceltk.Test {
                             };
                             using (XmlReader xmlReader = XmlReader.Create(net, settings)) {
                                 var parser = new XmlPackageParser(xmlReader);
-                                foreach (XmlPackage package in parser.Parse()) {
-                                    if (package is XmlDimensionPackage dim) {
-                                        dimSeen++;
-                                        Console.WriteLine("[xml-stream] dimension ref={0}", dim.Ref);
-                                    } else if (package is XmlRowPackage row) {
-                                        rowsSeen++;
-                                        if (rowsSeen <= 15 || rowsSeen % 25 == 0) {
-                                            Console.WriteLine("[xml-stream] row#{0} cells={1} r={2}",
-                                                rowsSeen, row.Cells.Count, row.RowIndexAttribute);
+                                while (parser.TryFrameOne() || parser.HavePackage) {
+                                    while (parser.HavePackage) {
+                                        XmlPackage package = parser.PopPackage();
+                                        if (package is XmlDimensionPackage dim) {
+                                            dimSeen++;
+                                            Console.WriteLine("[xml-stream] dimension ref={0}", dim.Ref);
+                                            if (parser.NamespaceUri != null) {
+                                                Console.WriteLine("[xml-stream] worksheet ns={0}",
+                                                    parser.NamespaceUri);
+                                            }
+                                        } else if (package is XmlRowPackage row) {
+                                            rowsSeen++;
+                                            if (rowsSeen <= 15 || rowsSeen % 25 == 0) {
+                                                Console.WriteLine("[xml-stream] row#{0} cells={1} r={2}",
+                                                    rowsSeen, row.Cells.Count, row.RowIndexAttribute);
+                                            }
+                                        } else if (package is XmlMergePackage merge) {
+                                            Console.WriteLine("[xml-stream] mergeCell ref={0}", merge.Ref);
+                                        } else if (package is XmlHyperlinkPackage link) {
+                                            Console.WriteLine("[xml-stream] hyperlink ref={0}", link.Ref);
                                         }
-                                    } else if (package is XmlSheetDataEndPackage) {
-                                        Console.WriteLine("[xml-stream] sheetData end");
-                                    } else if (package is XmlWorksheetStartPackage ws) {
-                                        Console.WriteLine("[xml-stream] worksheet ns={0}", ws.NamespaceUri);
                                     }
                                 }
                             }
@@ -93,7 +101,6 @@ namespace Exceltk.Test {
 
             using (TcpClient serverClient = listener.AcceptTcpClient())
             using (NetworkStream serverNet = serverClient.GetStream()) {
-                // Progressive send: small chunks so the client parser advances dynamically.
                 for (int offset = 0; offset < sheetXml.Length; offset += ChunkSize) {
                     int len = Math.Min(ChunkSize, sheetXml.Length - offset);
                     serverNet.Write(sheetXml, offset, len);
@@ -119,7 +126,8 @@ namespace Exceltk.Test {
         }
 
         /// <summary>
-        /// Server sends length-prefixed BIFF record packages; client rebuilds BinaryPackage records live.
+        /// Server streams raw workbook BIFF bytes; client <see cref="BinaryPackageParser"/>
+        /// PushData-frames records and pops packages as each header+body completes.
         /// </summary>
         private static bool RunBiffPackageDemo(string xlsPath) {
             Console.WriteLine("-- BIFF packages over TCP: {0}", Path.GetFileName(xlsPath));
@@ -137,26 +145,18 @@ namespace Exceltk.Test {
                         client.Connect(IPAddress.Loopback, port);
                         using (NetworkStream net = client.GetStream()) {
                             var recordReader = new ExcelBinaryReader();
-                            var lenBuf = new byte[4];
-                            while (ReadExact(net, lenBuf, 4)) {
-                                int size = BitConverter.ToInt32(lenBuf, 0);
-                                if (size <= 0) {
-                                    break; // end marker
-                                }
-                                var body = new byte[size];
-                                if (!ReadExact(net, body, size)) {
-                                    throw new EndOfStreamException("truncated BIFF package");
-                                }
-                                XlsBiffRecord record = XlsBiffRecord.GetRecord(body, 0, recordReader);
-                                if (record == null) {
-                                    continue;
-                                }
-                                packagesSeen++;
-                                // BinaryPackage = the record itself
-                                BinaryPackage package = record;
-                                if (packagesSeen <= 20 || packagesSeen % 200 == 0) {
-                                    Console.WriteLine("[biff-stream] #{0} {1} size={2}",
-                                        packagesSeen, package.GetType().Name, record.Size);
+                            var parser = new BinaryPackageParser(recordReader);
+                            var buf = new byte[ChunkSize];
+                            int n;
+                            while ((n = net.Read(buf, 0, buf.Length)) > 0) {
+                                parser.PushData(buf, 0, n);
+                                while (parser.HavePackage) {
+                                    BinaryPackage package = parser.PopPackage();
+                                    packagesSeen++;
+                                    if (packagesSeen <= 20 || packagesSeen % 200 == 0) {
+                                        Console.WriteLine("[biff-stream] #{0} {1} size={2}",
+                                            packagesSeen, package.GetType().Name, package.Size);
+                                    }
                                 }
                             }
                         }
@@ -169,21 +169,15 @@ namespace Exceltk.Test {
             using (FileStream fs = File.Open(xlsPath, FileMode.Open, FileAccess.Read)) {
                 var excelReader = new ExcelBinaryReader();
                 excelReader.Open(fs);
+                byte[] workbookBytes = excelReader.WorkbookBytes;
                 using (TcpClient serverClient = listener.AcceptTcpClient())
                 using (NetworkStream serverNet = serverClient.GetStream()) {
-                    foreach (BinaryPackage package in excelReader.StreamPackages()) {
-                        var record = (XlsBiffRecord)package;
-                        byte[] bytes = record.Bytes;
-                        int size = record.Size;
-                        byte[] len = BitConverter.GetBytes(size);
-                        serverNet.Write(len, 0, 4);
-                        serverNet.Write(bytes, 0, size);
+                    for (int offset = 0; offset < workbookBytes.Length; offset += ChunkSize) {
+                        int len = Math.Min(ChunkSize, workbookBytes.Length - offset);
+                        serverNet.Write(workbookBytes, offset, len);
                         serverNet.Flush();
                         Thread.Sleep(ChunkDelayMs);
                     }
-                    // end marker
-                    serverNet.Write(BitConverter.GetBytes(0), 0, 4);
-                    serverNet.Flush();
                 }
                 excelReader.Close();
             }
@@ -211,12 +205,10 @@ namespace Exceltk.Test {
                     return null;
                 }
                 try {
-                    // Prefer sheet1; fall back to first worksheets/*.xml entry path used by test files.
                     Stream sheet = zip.GetWorksheetStream(1)
                                    ?? zip.GetWorksheetStream("worksheets/sheet1.xml")
                                    ?? zip.GetWorksheetStream("/xl/worksheets/sheet1.xml");
                     if (sheet == null) {
-                        // Some workbooks start at sheet2 for the visible sheet — try a few ids.
                         for (int id = 2; id <= 5 && sheet == null; id++) {
                             sheet = zip.GetWorksheetStream(id);
                         }
@@ -233,18 +225,6 @@ namespace Exceltk.Test {
                     zip.Dispose();
                 }
             }
-        }
-
-        private static bool ReadExact(Stream stream, byte[] buffer, int count) {
-            int offset = 0;
-            while (offset < count) {
-                int n = stream.Read(buffer, offset, count - offset);
-                if (n <= 0) {
-                    return false;
-                }
-                offset += n;
-            }
-            return true;
         }
     }
 }

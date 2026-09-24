@@ -1,58 +1,97 @@
-# Streaming package / progressive render
+# Package / PackageParser (XUdt-style)
 
-ExcelTk's binary and OpenXML readers are built around **packages**: complete local
-format units that a parser can emit as soon as enough input has arrived.
+ExcelTk frames Office-defined protocol units — not UI progressive-render DTOs.
 
-## Mental model
+## Roles
+
+| Role | Responsibility |
+| --- | --- |
+| **Package** | One Office unit (BIFF record type / SpreadsheetML element). Owns `EncodeBody` / `DecodeBody` of Office fields. |
+| **PackageParser** | `PushData` / `Pump` / `TryFrameOne` state machine: recognize complete unit → empty package by type → `DecodeBody` → queue; `HavePackage` / `PopPackage` / `HaveUnParsedData` / `Reset`. Does not invent field layout. |
+| **Reader** | Workbook semantics (SST, styles, DataSet) consuming popped packages / cursor records. |
+
+Wire layouts are dictated by Office Excel — do not change them for streaming convenience.
+
+## Encode / Decode model
+
+Same shape as XUdt:
+
+| Layer | Binary (`BinaryPackage`) | XML (`XmlPackage`) |
+| --- | --- | --- |
+| Header framing | Base writes/reads 2-byte type + 2-byte body size | Element start tag / framer owns fragment bytes |
+| Body | Virtual `EncodeBody` / `DecodeBody` on each concrete package | `EncodeBody(XmlWriter)` / `Decode(XmlReader)` (bytes route via `IPackage.DecodeBody`) |
+| Required size | `GetRequiredEncodeBodyBufferLength()` | Encode-to-`MemoryStream` via `EncodeBody(byte[])` helper |
+
+Base only frames the header (or element wrapper). **Every concrete Package implements body encode/decode.** `OnBytesReady` is gone — field parsing lives in `DecodeBody`.
+
+## Binary (.xls)
 
 ```
-network / file Stream
+OLE/XlsStream (sector assembly)     ← NOT a Package
+        │ workbook byte[]
+        ▼
+BinaryPackageParser.PushData
+        │  CreateEmpty(BIFFRECORDTYPE) → concrete XlsBiff* Package
+        ▼
+BinaryPackage  (base in Reader.Binary)
+  ├── EncodePackage = header + EncodeBody
+  ├── DecodePackage / IPackage.DecodeBody = header → DecodeBody(body)
+  ├── XlsBiffBOF, XlsBiffRKCell, XlsBiffLabelSSTCell, …
+  └── BinaryPackage itself (unknown types: raw body passthrough)
+```
+
+**Each `XlsBiff*` record class in `Reader/Binary/` is a Package** (one Office BIFF command type = one class).
+
+| Is a Package | Is NOT a Package |
+| --- | --- |
+| `BinaryPackage` + every `XlsBiff*` record type | `XlsStream`, `XlsHeader`, `XlsFat`, `XlsRootDirectory` (OLE) |
+| | `XlsWorksheet`, `XlsWorkbookGlobals`, `ExcelBinaryReader` (workbook semantics) |
+| | `BiffWorkbookCursor` (Seek/ReadAt index helper) |
+
+- BIFF header = 2-byte type + 2-byte body length; body from Office header.
+- Factory: `BinaryPackage.CreateEmpty(type)` → typed subclass → `DecodePackage` / `AttachSharedBytes` → `DecodeBody` fills Office fields.
+- Every concrete `XlsBiff*` owns **field-level** `DecodeBody` (buffer → members) and `EncodeBody` (members → buffer). No raw-body cheat on known types.
+- `BinaryPackage` base `CaptureRawBody` remains only for **unknown** record types.
+- Opaque known types (`CONTINUE`, `QUICKTIP`) store `byte[] m_payload` as the Office body member — still field-level.
+- **SST:** members `m_count`, `m_uniqueCount`, `m_stringData` (bytes after the 8-byte header). CONTINUE-spanned strings stay Reader-side (`Append` + `ReadStrings`).
+- **HyperLink:** range, GUID, flags, optional description/frame blocks, and URL are members; Encode rebuilds that structure.
+- Formula string results may look ahead to the next STRING package on the shared buffer.
+- `XlsBiffBlankCell` is a mid-base for shared row/col/xf; subclasses call `base.DecodeBody` then extend (except types that rewrite the full body).
+
+## OpenXML (.xlsx)
+
+```
+worksheet XML stream (file / NetworkStream / PushData buffer)
         │
         ▼
-  PackageParser   ── recognizes a finished local unit ──►  Package
-        │                                                    │
-        │ (continue)                                         ▼
-        │                                              Renderer / DataSet builder
+XmlPackageParser (XmlReader tokenize)
+        │  complete SpreadsheetML element
+        ▼
+XmlPackage.CreateEmpty(localName) → Decode(reader) → queue
+        │
+        EncodeBody(XmlWriter) writes the same Office element shape
 ```
 
-Examples of a “finished local unit”:
+Office element packages only:
 
-| Format | Package | Completeness boundary |
-| --- | --- | --- |
-| BIFF (.xls) | `XlsBiffRecord` (: `BinaryPackage`) | one record header (`type`+`size`) + body |
-| OpenXML sheet | `XmlCellPackage` / `XmlRowPackage` | finished `</c>` / `</row>` |
-| OpenXML | `XmlMergePackage` / `XmlHyperlinkPackage` | finished empty element |
+| Element | Package |
+| --- | --- |
+| `dimension` | `XmlDimensionPackage` |
+| `row` | `XmlRowPackage` (attrs + child `c` cell packages) |
+| `c` | `XmlCellPackage` (attrs `r`/`t`/`s`; children `v`/`t`/`f`) |
+| `mergeCell` | `XmlMergePackage` |
+| `hyperlink` | `XmlHyperlinkPackage` |
 
-A progressive renderer can subscribe to `IPackageParser<T>.Parse()` (or
-`IPullPackageParser.TryRead`) and paint each package without waiting for EOF.
+`worksheet` / `sheetData` / `mergeCells` / `hyperlinks` are **parser state** — not packages.
 
-## What this codebase does today
-
-- **Binary**: `BinaryPackageParser` slices **one BIFF record** into an owned byte
-  buffer per emit. OLE sector assembly still materializes the workbook stream
-  (compound-file seeks); record emission itself is one-package-at-a-time.
-- **OpenXML**: `ZipWorker` keeps the ZIP open and **streams entry inflate**
-  (`GetInputStream`) instead of extracting the whole archive to disk.
-  `XmlPackageParser` emits row/cell/merge/hyperlink packages from `XmlReader`.
-- **Batch path**: markdown/json/tex still build a `DataSet` by consuming the
-  package stream (convenient, not required for progressive UI).
-
-## Non-seekable network ZIP
-
-Fully forward-only OPC (single `ZipInputStream` pass over a non-seekable network
-body) is a follow-up: sheet parts are not contiguous with workbook.xml. Seekable
-streams (files, buffered downloads) are supported via `ZipFile` entry streaming.
+`ExcelOpenXmlReader.ReadSheetGlobals` obtains `XmlDimensionPackage` via `XmlPackageParser` when present; sheets without `dimension` still fall back to counting row/cell packages for size.
 
 ## TCP demo
-
-Run a loopback server/client that streams sheet XML and BIFF packages:
 
 ```bash
 dotnet run --project src/Exceltk/Exceltk.csproj -- -t tcpstream \
   -xlsx src/test/test1.xlsx -biff src/test/test8.xls
 ```
 
-(or from `src/`: `dotnet run --project Exceltk/Exceltk.csproj -- -t tcpstream`)
-
-The receiver prints packages as they complete (`[xml-stream] row#…`, `[biff-stream] #…`)
-and exits with `TCP stream test OK` / `Done!` on success. Wired into `src/test.sh`.
+- **BIFF**: server sends raw workbook stream chunks; client `BinaryPackageParser.PushData` pops concrete `XlsBiff*` packages.
+- **XML**: server sends worksheet XML chunks; client `XmlReader` + `XmlPackageParser.TryFrameOne` / `PopPackage`.

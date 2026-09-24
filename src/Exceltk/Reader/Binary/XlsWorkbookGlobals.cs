@@ -7,8 +7,8 @@ namespace Exceltk.Reader.Binary {
     /// Represents Globals section of workbook
     /// </summary>
     internal class XlsWorkbookGlobals {
-        private readonly List<XlsBiffRecord> m_ExtendedFormats=new List<XlsBiffRecord>();
-        private readonly List<XlsBiffRecord> m_Fonts=new List<XlsBiffRecord>();
+        private readonly List<BinaryPackage> m_ExtendedFormats=new List<BinaryPackage>();
+        private readonly List<BinaryPackage> m_Fonts=new List<BinaryPackage>();
 
         private readonly Dictionary<ushort, XlsBiffFormatString> m_Formats=
             new Dictionary<ushort, XlsBiffFormatString>();
@@ -16,7 +16,7 @@ namespace Exceltk.Reader.Binary {
         private readonly List<XlsBiffHyperLink> m_HyperLinkTable;
 
         private readonly List<XlsBiffBoundSheet> m_Sheets=new List<XlsBiffBoundSheet>();
-        private readonly List<XlsBiffRecord> m_Styles=new List<XlsBiffRecord>();
+        private readonly List<BinaryPackage> m_Styles=new List<BinaryPackage>();
 
         public XlsWorkbookGlobals() {
             m_HyperLinkTable=new List<XlsBiffHyperLink>();
@@ -27,12 +27,12 @@ namespace Exceltk.Reader.Binary {
             set;
         }
 
-        public XlsBiffRecord MMS {
+        public BinaryPackage MMS {
             get;
             set;
         }
 
-        public XlsBiffRecord WriteAccess {
+        public BinaryPackage WriteAccess {
             get;
             set;
         }
@@ -42,12 +42,12 @@ namespace Exceltk.Reader.Binary {
             set;
         }
 
-        public XlsBiffRecord DSF {
+        public BinaryPackage DSF {
             get;
             set;
         }
 
-        public XlsBiffRecord Country {
+        public BinaryPackage Country {
             get;
             set;
         }
@@ -57,7 +57,7 @@ namespace Exceltk.Reader.Binary {
             set;
         }
 
-        public List<XlsBiffRecord> Fonts {
+        public List<BinaryPackage> Fonts {
             get {
                 return m_Fonts;
             }
@@ -70,13 +70,13 @@ namespace Exceltk.Reader.Binary {
         }
 
 
-        public List<XlsBiffRecord> ExtendedFormats {
+        public List<BinaryPackage> ExtendedFormats {
             get {
                 return m_ExtendedFormats;
             }
         }
 
-        public List<XlsBiffRecord> Styles {
+        public List<BinaryPackage> Styles {
             get {
                 return m_Styles;
             }
@@ -96,7 +96,7 @@ namespace Exceltk.Reader.Binary {
             set;
         }
 
-        public XlsBiffRecord ExtSST {
+        public BinaryPackage ExtSST {
             get;
             set;
         }

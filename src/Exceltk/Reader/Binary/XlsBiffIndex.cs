@@ -1,64 +1,123 @@
+using System;
 using System.Collections.Generic;
 
 namespace Exceltk.Reader.Binary {
     /// <summary>
-    /// Represents a worksheet index
+    /// BIFF Package: INDEX (row block index table).
     /// </summary>
-    internal class XlsBiffIndex : XlsBiffRecord {
-        private bool isV8=true;
+    internal class XlsBiffIndex : BinaryPackage {
+        private bool isV8 = true;
+        private uint m_firstExistingRow;
+        private uint m_lastExistingRow;
+        private uint[] m_dbCellAddresses = Array.Empty<uint>();
+
+        internal XlsBiffIndex(ExcelBinaryReader reader)
+            : base(reader) {
+        }
 
         internal XlsBiffIndex(byte[] bytes, uint offset, ExcelBinaryReader reader)
             : base(bytes, offset, reader) {
         }
 
-        /// <summary>
-        /// Gets or sets if BIFF8 addressing is used
-        /// </summary>
+        protected override void DecodeBody(byte[] buffer, int offset, int length) {
+            ParseFields(buffer, offset, length);
+        }
+
+        private void ParseFields(byte[] buffer, int offset, int length) {
+            if (buffer == null || length <= 0) {
+                m_dbCellAddresses = Array.Empty<uint>();
+                return;
+            }
+
+            if (isV8) {
+                if (length >= 12) {
+                    m_firstExistingRow = BodyReadUInt32(buffer, offset, 0x4);
+                    m_lastExistingRow = BodyReadUInt32(buffer, offset, 0x8);
+                }
+            } else {
+                if (length >= 8) {
+                    m_firstExistingRow = BodyReadUInt16(buffer, offset, 0x4);
+                    m_lastExistingRow = BodyReadUInt16(buffer, offset, 0x6);
+                }
+            }
+
+            int firstIdx = isV8 ? 16 : 12;
+            if (length <= firstIdx) {
+                m_dbCellAddresses = Array.Empty<uint>();
+                return;
+            }
+
+            var cells = new List<uint>((length - firstIdx) / 4);
+            for (int i = firstIdx; i + 4 <= length; i += 4) {
+                cells.Add(BodyReadUInt32(buffer, offset, i));
+            }
+            m_dbCellAddresses = cells.ToArray();
+        }
+
+        protected override int GetRequiredEncodeBodyBufferLength() {
+            int header = isV8 ? 16 : 12;
+            return header + m_dbCellAddresses.Length * 4;
+        }
+
+        protected override void EncodeBody(byte[] buffer, int offset, int capacity, out int written) {
+            int need = GetRequiredEncodeBodyBufferLength();
+            if (capacity < need) {
+                throw new ArgumentException(Errors.ErrorBIFFBufferSize);
+            }
+
+            // Reserved leading zeros (BIFF INDEX layout).
+            for (int i = 0; i < (isV8 ? 16 : 12); i++) {
+                buffer[offset + i] = 0;
+            }
+
+            if (isV8) {
+                WriteUInt32(buffer, offset + 0x4, m_firstExistingRow);
+                WriteUInt32(buffer, offset + 0x8, m_lastExistingRow);
+                // bytes 0-3 and 12-15 remain reserved zeros
+                int pos = 16;
+                for (int i = 0; i < m_dbCellAddresses.Length; i++) {
+                    WriteUInt32(buffer, offset + pos, m_dbCellAddresses[i]);
+                    pos += 4;
+                }
+            } else {
+                WriteUInt16(buffer, offset + 0x4, (ushort)m_firstExistingRow);
+                WriteUInt16(buffer, offset + 0x6, (ushort)m_lastExistingRow);
+                int pos = 12;
+                for (int i = 0; i < m_dbCellAddresses.Length; i++) {
+                    WriteUInt32(buffer, offset + pos, m_dbCellAddresses[i]);
+                    pos += 4;
+                }
+            }
+            written = need;
+        }
+
         public bool IsV8 {
             get {
                 return isV8;
             }
             set {
-                isV8=value;
+                isV8 = value;
+                if (m_bytes != null && m_bytes.Length > 0) {
+                    ParseFields(m_bytes, m_readoffset, m_bodyLength);
+                }
             }
         }
 
-        /// <summary>
-        /// Returns zero-based index of first existing row
-        /// </summary>
         public uint FirstExistingRow {
             get {
-                return (isV8)?base.ReadUInt32(0x4):base.ReadUInt16(0x4);
+                return m_firstExistingRow;
             }
         }
 
-        /// <summary>
-        /// Returns zero-based index of last existing row
-        /// </summary>
         public uint LastExistingRow {
             get {
-                return (isV8)?base.ReadUInt32(0x8):base.ReadUInt16(0x6);
+                return m_lastExistingRow;
             }
         }
 
-        /// <summary>
-        /// Returns addresses of DbCell records
-        /// </summary>
         public uint[] DbCellAddresses {
             get {
-                int size=RecordSize;
-                int firstIdx=(isV8)?16:12;
-                
-                if (size<=firstIdx){
-                    return new uint[0];
-                }
-                
-                var cells=new List<uint>((size-firstIdx)/4);
-                for (int i=firstIdx; i<size; i+=4){
-                    cells.Add(base.ReadUInt32(i));
-                }
-                
-                return cells.ToArray();
+                return m_dbCellAddresses;
             }
         }
     }
